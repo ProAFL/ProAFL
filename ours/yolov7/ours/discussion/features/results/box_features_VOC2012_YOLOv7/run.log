@@ -1,0 +1,59 @@
+matched gt_box数量:10345
+all gbox数量:13609
+matched gbox数量:10345
+============================================================
+feature_name: early_conf_mean
+feature sign: -1
+/home/mml/workspace/data_debugging/yolov7/ours/discussion/features/box_features.py:132: MatplotlibDeprecationWarning: The 'labels' parameter of boxplot() has been renamed 'tick_labels' since Matplotlib 3.9; support for the old name will be dropped in 3.11.
+  ax1.boxplot([correct_list, error_list], labels=['correct', 'error'])
+Mann-Whitney U检验：U值=36977604.500, p值=0.000
+效应量r：0.716
+============================================================
+feature_name: early_iou_mean
+feature sign: -1
+/home/mml/workspace/data_debugging/yolov7/ours/discussion/features/box_features.py:132: MatplotlibDeprecationWarning: The 'labels' parameter of boxplot() has been renamed 'tick_labels' since Matplotlib 3.9; support for the old name will be dropped in 3.11.
+  ax1.boxplot([correct_list, error_list], labels=['correct', 'error'])
+Mann-Whitney U检验：U值=37096496.500, p值=0.000
+效应量r：0.721
+============================================================
+feature_name: lastly_conf_mean
+feature sign: -1
+/home/mml/workspace/data_debugging/yolov7/ours/discussion/features/box_features.py:132: MatplotlibDeprecationWarning: The 'labels' parameter of boxplot() has been renamed 'tick_labels' since Matplotlib 3.9; support for the old name will be dropped in 3.11.
+  ax1.boxplot([correct_list, error_list], labels=['correct', 'error'])
+Mann-Whitney U检验：U值=37548830.000, p值=0.000
+效应量r：0.739
+============================================================
+feature_name: lastly_iou_mean
+feature sign: -1
+/home/mml/workspace/data_debugging/yolov7/ours/discussion/features/box_features.py:132: MatplotlibDeprecationWarning: The 'labels' parameter of boxplot() has been renamed 'tick_labels' since Matplotlib 3.9; support for the old name will be dropped in 3.11.
+  ax1.boxplot([correct_list, error_list], labels=['correct', 'error'])
+Mann-Whitney U检验：U值=37232126.000, p值=0.000
+效应量r：0.726
+============================================================
+feature_name: conf_mean
+feature sign: -1
+/home/mml/workspace/data_debugging/yolov7/ours/discussion/features/box_features.py:132: MatplotlibDeprecationWarning: The 'labels' parameter of boxplot() has been renamed 'tick_labels' since Matplotlib 3.9; support for the old name will be dropped in 3.11.
+  ax1.boxplot([correct_list, error_list], labels=['correct', 'error'])
+Mann-Whitney U检验：U值=38288771.000, p值=0.000
+效应量r：0.769
+============================================================
+feature_name: iou_mean
+feature sign: -1
+/home/mml/workspace/data_debugging/yolov7/ours/discussion/features/box_features.py:132: MatplotlibDeprecationWarning: The 'labels' parameter of boxplot() has been renamed 'tick_labels' since Matplotlib 3.9; support for the old name will be dropped in 3.11.
+  ax1.boxplot([correct_list, error_list], labels=['correct', 'error'])
+Mann-Whitney U检验：U值=38378764.000, p值=0.000
+效应量r：0.773
+============================================================
+feature_name: D_conf
+feature sign: 1
+/home/mml/workspace/data_debugging/yolov7/ours/discussion/features/box_features.py:132: MatplotlibDeprecationWarning: The 'labels' parameter of boxplot() has been renamed 'tick_labels' since Matplotlib 3.9; support for the old name will be dropped in 3.11.
+  ax1.boxplot([correct_list, error_list], labels=['correct', 'error'])
+Mann-Whitney U检验：U值=1197996.000, p值=0.000
+效应量r：0.745
+============================================================
+feature_name: D_iou
+feature sign: 1
+/home/mml/workspace/data_debugging/yolov7/ours/discussion/features/box_features.py:132: MatplotlibDeprecationWarning: The 'labels' parameter of boxplot() has been renamed 'tick_labels' since Matplotlib 3.9; support for the old name will be dropped in 3.11.
+  ax1.boxplot([correct_list, error_list], labels=['correct', 'error'])
+Mann-Whitney U检验：U值=927291.500, p值=0.000
+效应量r：0.756

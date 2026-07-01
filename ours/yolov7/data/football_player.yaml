@@ -1,0 +1,13 @@
+train: ./datasets/football_player/train/images
+val: ./datasets/football_player/valid/images
+test: ./datasets/football_player/test/images
+
+nc: 2
+names: ['football', 'player']
+
+roboflow:
+  workspace: augmented-startups
+  project: football-player-detection-kucab
+  version: 8
+  license: CC BY 4.0
+  url: https://universe.roboflow.com/augmented-startups/football-player-detection-kucab/dataset/8

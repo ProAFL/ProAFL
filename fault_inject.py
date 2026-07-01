@@ -7,6 +7,7 @@ import torch
 from torchvision.ops import boxes as box_ops
 import pandas as pd
 import copy
+from utils.common import read_yaml
 
 
 def cal_IoU(X, Y):
@@ -143,9 +144,10 @@ if __name__ == "__main__":
     # 设置随机数种子
     random.seed(42)
     # 设置实验数据保存目录
-    exp_data_root = "/data/mml/data_debugging_data"
+    config = read_yaml("config.yaml")
+    exp_data_root = config["exp_data_dir"]
     # 设置数据集名称
-    dataset_name = "KITTI_8" # VOC2012|KITTI_8|VisDrone
+    dataset_name = config["dataset_name"]
     # 设置数据集correct anno path
     correct_anno_json_path = os.path.join(exp_data_root,"datasets", f"{dataset_name}-coco","train","_annotations.coco_correct.json")
     # 转换为COCO实例

@@ -1,0 +1,1208 @@
+{
+  "VOC2012": {
+    "0.5": {
+      "image_count": 5717,
+      "miss_image_count": 1191,
+      "candidate_image_count": 1728,
+      "cluster_count": 2246,
+      "positive_cluster_count": 672,
+      "negative_cluster_count": 1574,
+      "total_missed": 1360,
+      "loced": 675,
+      "loc_success_rate": 0.4963235294117647,
+      "auc": 0.5995794760089551,
+      "best_f1": {
+        "threshold": 0.429205647519599,
+        "precision": 0.33559531153608885,
+        "recall": 0.8095238095238095,
+        "f1": 0.47448757086785875,
+        "tp": 544,
+        "fp": 1077,
+        "fn": 128
+      },
+      "topk": [
+        {
+          "scope": "top1",
+          "k": 1,
+          "hits": 1,
+          "precision": 1.0,
+          "recall": 0.001488095238095238,
+          "f1": 0.002971768202080237
+        },
+        {
+          "scope": "top5",
+          "k": 5,
+          "hits": 2,
+          "precision": 0.4,
+          "recall": 0.002976190476190476,
+          "f1": 0.005908419497784343
+        },
+        {
+          "scope": "top10",
+          "k": 10,
+          "hits": 5,
+          "precision": 0.5,
+          "recall": 0.00744047619047619,
+          "f1": 0.014662756598240468
+        },
+        {
+          "scope": "top1%",
+          "k": 22,
+          "hits": 10,
+          "precision": 0.45454545454545453,
+          "recall": 0.01488095238095238,
+          "f1": 0.028818443804034578
+        },
+        {
+          "scope": "top5%",
+          "k": 112,
+          "hits": 52,
+          "precision": 0.4642857142857143,
+          "recall": 0.07738095238095238,
+          "f1": 0.1326530612244898
+        },
+        {
+          "scope": "top10%",
+          "k": 224,
+          "hits": 91,
+          "precision": 0.40625,
+          "recall": 0.13541666666666666,
+          "f1": 0.203125
+        },
+        {
+          "scope": "top20%",
+          "k": 449,
+          "hits": 178,
+          "precision": 0.39643652561247217,
+          "recall": 0.2648809523809524,
+          "f1": 0.3175735950044603
+        }
+      ],
+      "roc_path": "ours/discussion/features/results/mis_loc/VOC2012/YOLOv7/cluster_loc_roc_iou_0.5.png"
+    },
+    "0.6": {
+      "image_count": 5717,
+      "miss_image_count": 1191,
+      "candidate_image_count": 1728,
+      "cluster_count": 2246,
+      "positive_cluster_count": 664,
+      "negative_cluster_count": 1582,
+      "total_missed": 1360,
+      "loced": 666,
+      "loc_success_rate": 0.48970588235294116,
+      "auc": 0.6031340913591154,
+      "best_f1": {
+        "threshold": 0.429205647519599,
+        "precision": 0.33312769895126465,
+        "recall": 0.8132530120481928,
+        "f1": 0.4726477024070022,
+        "tp": 540,
+        "fp": 1081,
+        "fn": 124
+      },
+      "topk": [
+        {
+          "scope": "top1",
+          "k": 1,
+          "hits": 1,
+          "precision": 1.0,
+          "recall": 0.0015060240963855422,
+          "f1": 0.0030075187969924814
+        },
+        {
+          "scope": "top5",
+          "k": 5,
+          "hits": 2,
+          "precision": 0.4,
+          "recall": 0.0030120481927710845,
+          "f1": 0.005979073243647235
+        },
+        {
+          "scope": "top10",
+          "k": 10,
+          "hits": 5,
+          "precision": 0.5,
+          "recall": 0.007530120481927711,
+          "f1": 0.01483679525222552
+        },
+        {
+          "scope": "top1%",
+          "k": 22,
+          "hits": 10,
+          "precision": 0.45454545454545453,
+          "recall": 0.015060240963855422,
+          "f1": 0.029154518950437316
+        },
+        {
+          "scope": "top5%",
+          "k": 112,
+          "hits": 52,
+          "precision": 0.4642857142857143,
+          "recall": 0.0783132530120482,
+          "f1": 0.13402061855670105
+        },
+        {
+          "scope": "top10%",
+          "k": 224,
+          "hits": 91,
+          "precision": 0.40625,
+          "recall": 0.13704819277108435,
+          "f1": 0.20495495495495497
+        },
+        {
+          "scope": "top20%",
+          "k": 449,
+          "hits": 178,
+          "precision": 0.39643652561247217,
+          "recall": 0.2680722891566265,
+          "f1": 0.31985624438454624
+        }
+      ],
+      "roc_path": "ours/discussion/features/results/mis_loc/VOC2012/YOLOv7/cluster_loc_roc_iou_0.6.png"
+    },
+    "0.7": {
+      "image_count": 5717,
+      "miss_image_count": 1191,
+      "candidate_image_count": 1728,
+      "cluster_count": 2246,
+      "positive_cluster_count": 644,
+      "negative_cluster_count": 1602,
+      "total_missed": 1360,
+      "loced": 645,
+      "loc_success_rate": 0.4742647058823529,
+      "auc": 0.6106187141849087,
+      "best_f1": {
+        "threshold": 0.429205647519599,
+        "precision": 0.32634176434299816,
+        "recall": 0.8214285714285714,
+        "f1": 0.46710816777041947,
+        "tp": 529,
+        "fp": 1092,
+        "fn": 115
+      },
+      "topk": [
+        {
+          "scope": "top1",
+          "k": 1,
+          "hits": 1,
+          "precision": 1.0,
+          "recall": 0.0015527950310559005,
+          "f1": 0.0031007751937984496
+        },
+        {
+          "scope": "top5",
+          "k": 5,
+          "hits": 2,
+          "precision": 0.4,
+          "recall": 0.003105590062111801,
+          "f1": 0.0061633281972265025
+        },
+        {
+          "scope": "top10",
+          "k": 10,
+          "hits": 5,
+          "precision": 0.5,
+          "recall": 0.007763975155279503,
+          "f1": 0.01529051987767584
+        },
+        {
+          "scope": "top1%",
+          "k": 22,
+          "hits": 10,
+          "precision": 0.45454545454545453,
+          "recall": 0.015527950310559006,
+          "f1": 0.03003003003003003
+        },
+        {
+          "scope": "top5%",
+          "k": 112,
+          "hits": 52,
+          "precision": 0.4642857142857143,
+          "recall": 0.08074534161490683,
+          "f1": 0.13756613756613756
+        },
+        {
+          "scope": "top10%",
+          "k": 224,
+          "hits": 91,
+          "precision": 0.40625,
+          "recall": 0.14130434782608695,
+          "f1": 0.20967741935483872
+        },
+        {
+          "scope": "top20%",
+          "k": 449,
+          "hits": 176,
+          "precision": 0.39198218262806234,
+          "recall": 0.2732919254658385,
+          "f1": 0.3220494053064959
+        }
+      ],
+      "roc_path": "ours/discussion/features/results/mis_loc/VOC2012/YOLOv7/cluster_loc_roc_iou_0.7.png"
+    },
+    "0.8": {
+      "image_count": 5717,
+      "miss_image_count": 1191,
+      "candidate_image_count": 1728,
+      "cluster_count": 2246,
+      "positive_cluster_count": 588,
+      "negative_cluster_count": 1658,
+      "total_missed": 1360,
+      "loced": 588,
+      "loc_success_rate": 0.4323529411764706,
+      "auc": 0.6173069348366609,
+      "best_f1": {
+        "threshold": 0.429205647519599,
+        "precision": 0.30228254164096235,
+        "recall": 0.8333333333333334,
+        "f1": 0.4436396559529199,
+        "tp": 490,
+        "fp": 1131,
+        "fn": 98
+      },
+      "topk": [
+        {
+          "scope": "top1",
+          "k": 1,
+          "hits": 0,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0
+        },
+        {
+          "scope": "top5",
+          "k": 5,
+          "hits": 1,
+          "precision": 0.2,
+          "recall": 0.0017006802721088435,
+          "f1": 0.0033726812816188873
+        },
+        {
+          "scope": "top10",
+          "k": 10,
+          "hits": 4,
+          "precision": 0.4,
+          "recall": 0.006802721088435374,
+          "f1": 0.013377926421404682
+        },
+        {
+          "scope": "top1%",
+          "k": 22,
+          "hits": 9,
+          "precision": 0.4090909090909091,
+          "recall": 0.015306122448979591,
+          "f1": 0.029508196721311473
+        },
+        {
+          "scope": "top5%",
+          "k": 112,
+          "hits": 48,
+          "precision": 0.42857142857142855,
+          "recall": 0.08163265306122448,
+          "f1": 0.13714285714285712
+        },
+        {
+          "scope": "top10%",
+          "k": 224,
+          "hits": 85,
+          "precision": 0.3794642857142857,
+          "recall": 0.1445578231292517,
+          "f1": 0.20935960591133004
+        },
+        {
+          "scope": "top20%",
+          "k": 449,
+          "hits": 163,
+          "precision": 0.36302895322939865,
+          "recall": 0.27721088435374147,
+          "f1": 0.3143683702989392
+        }
+      ],
+      "roc_path": "ours/discussion/features/results/mis_loc/VOC2012/YOLOv7/cluster_loc_roc_iou_0.8.png"
+    },
+    "0.9": {
+      "image_count": 5717,
+      "miss_image_count": 1191,
+      "candidate_image_count": 1728,
+      "cluster_count": 2246,
+      "positive_cluster_count": 453,
+      "negative_cluster_count": 1793,
+      "total_missed": 1360,
+      "loced": 453,
+      "loc_success_rate": 0.33308823529411763,
+      "auc": 0.6298765495937723,
+      "best_f1": {
+        "threshold": 0.7552549777327567,
+        "precision": 0.285551763367463,
+        "recall": 0.5540838852097131,
+        "f1": 0.3768768768768769,
+        "tp": 251,
+        "fp": 628,
+        "fn": 202
+      },
+      "topk": [
+        {
+          "scope": "top1",
+          "k": 1,
+          "hits": 0,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0
+        },
+        {
+          "scope": "top5",
+          "k": 5,
+          "hits": 1,
+          "precision": 0.2,
+          "recall": 0.002207505518763797,
+          "f1": 0.004366812227074236
+        },
+        {
+          "scope": "top10",
+          "k": 10,
+          "hits": 4,
+          "precision": 0.4,
+          "recall": 0.008830022075055188,
+          "f1": 0.017278617710583154
+        },
+        {
+          "scope": "top1%",
+          "k": 22,
+          "hits": 7,
+          "precision": 0.3181818181818182,
+          "recall": 0.01545253863134658,
+          "f1": 0.029473684210526315
+        },
+        {
+          "scope": "top5%",
+          "k": 112,
+          "hits": 39,
+          "precision": 0.3482142857142857,
+          "recall": 0.08609271523178808,
+          "f1": 0.13805309734513274
+        },
+        {
+          "scope": "top10%",
+          "k": 224,
+          "hits": 74,
+          "precision": 0.33035714285714285,
+          "recall": 0.16335540838852097,
+          "f1": 0.21861152141802068
+        },
+        {
+          "scope": "top20%",
+          "k": 449,
+          "hits": 139,
+          "precision": 0.30957683741648107,
+          "recall": 0.3068432671081678,
+          "f1": 0.30820399113082037
+        }
+      ],
+      "roc_path": "ours/discussion/features/results/mis_loc/VOC2012/YOLOv7/cluster_loc_roc_iou_0.9.png"
+    }
+  },
+  "KITTI_8": {
+    "0.5": {
+      "image_count": 3740,
+      "miss_image_count": 1476,
+      "candidate_image_count": 2562,
+      "cluster_count": 4972,
+      "positive_cluster_count": 1572,
+      "negative_cluster_count": 3400,
+      "total_missed": 2042,
+      "loced": 1570,
+      "loc_success_rate": 0.7688540646425074,
+      "auc": 0.562027952402335,
+      "best_f1": {
+        "threshold": 0.4835771967257752,
+        "precision": 0.33622141997593263,
+        "recall": 0.888676844783715,
+        "f1": 0.4878645014841977,
+        "tp": 1397,
+        "fp": 2758,
+        "fn": 175
+      },
+      "topk": [
+        {
+          "scope": "top1",
+          "k": 1,
+          "hits": 0,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0
+        },
+        {
+          "scope": "top5",
+          "k": 5,
+          "hits": 3,
+          "precision": 0.6,
+          "recall": 0.0019083969465648854,
+          "f1": 0.0038046924540266324
+        },
+        {
+          "scope": "top10",
+          "k": 10,
+          "hits": 5,
+          "precision": 0.5,
+          "recall": 0.0031806615776081423,
+          "f1": 0.006321112515802782
+        },
+        {
+          "scope": "top1%",
+          "k": 49,
+          "hits": 18,
+          "precision": 0.3673469387755102,
+          "recall": 0.011450381679389313,
+          "f1": 0.02220851326341764
+        },
+        {
+          "scope": "top5%",
+          "k": 248,
+          "hits": 96,
+          "precision": 0.3870967741935484,
+          "recall": 0.061068702290076333,
+          "f1": 0.1054945054945055
+        },
+        {
+          "scope": "top10%",
+          "k": 497,
+          "hits": 189,
+          "precision": 0.38028169014084506,
+          "recall": 0.12022900763358779,
+          "f1": 0.18269695505074915
+        },
+        {
+          "scope": "top20%",
+          "k": 994,
+          "hits": 369,
+          "precision": 0.37122736418511065,
+          "recall": 0.23473282442748092,
+          "f1": 0.28760717069368663
+        }
+      ],
+      "roc_path": "ours/discussion/features/results/mis_loc/KITTI_8/YOLOv7/cluster_loc_roc_iou_0.5.png"
+    },
+    "0.6": {
+      "image_count": 3740,
+      "miss_image_count": 1476,
+      "candidate_image_count": 2562,
+      "cluster_count": 4972,
+      "positive_cluster_count": 1551,
+      "negative_cluster_count": 3421,
+      "total_missed": 2042,
+      "loced": 1553,
+      "loc_success_rate": 0.7605288932419196,
+      "auc": 0.5671893042762577,
+      "best_f1": {
+        "threshold": 0.4835771967257752,
+        "precision": 0.3338146811070999,
+        "recall": 0.8942617666021921,
+        "f1": 0.486154924640729,
+        "tp": 1387,
+        "fp": 2768,
+        "fn": 164
+      },
+      "topk": [
+        {
+          "scope": "top1",
+          "k": 1,
+          "hits": 0,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0
+        },
+        {
+          "scope": "top5",
+          "k": 5,
+          "hits": 3,
+          "precision": 0.6,
+          "recall": 0.0019342359767891683,
+          "f1": 0.003856041131105398
+        },
+        {
+          "scope": "top10",
+          "k": 10,
+          "hits": 5,
+          "precision": 0.5,
+          "recall": 0.003223726627981947,
+          "f1": 0.006406149903907751
+        },
+        {
+          "scope": "top1%",
+          "k": 49,
+          "hits": 18,
+          "precision": 0.3673469387755102,
+          "recall": 0.01160541586073501,
+          "f1": 0.022500000000000003
+        },
+        {
+          "scope": "top5%",
+          "k": 248,
+          "hits": 96,
+          "precision": 0.3870967741935484,
+          "recall": 0.061895551257253385,
+          "f1": 0.10672595886603668
+        },
+        {
+          "scope": "top10%",
+          "k": 497,
+          "hits": 189,
+          "precision": 0.38028169014084506,
+          "recall": 0.1218568665377176,
+          "f1": 0.1845703125
+        },
+        {
+          "scope": "top20%",
+          "k": 994,
+          "hits": 368,
+          "precision": 0.3702213279678068,
+          "recall": 0.23726627981947132,
+          "f1": 0.28919449901768174
+        }
+      ],
+      "roc_path": "ours/discussion/features/results/mis_loc/KITTI_8/YOLOv7/cluster_loc_roc_iou_0.6.png"
+    },
+    "0.7": {
+      "image_count": 3740,
+      "miss_image_count": 1476,
+      "candidate_image_count": 2562,
+      "cluster_count": 4972,
+      "positive_cluster_count": 1522,
+      "negative_cluster_count": 3450,
+      "total_missed": 2042,
+      "loced": 1524,
+      "loc_success_rate": 0.7463271302644466,
+      "auc": 0.5733234302690967,
+      "best_f1": {
+        "threshold": 0.4835771967257752,
+        "precision": 0.3302045728038508,
+        "recall": 0.9014454664914586,
+        "f1": 0.4833538840937115,
+        "tp": 1372,
+        "fp": 2783,
+        "fn": 150
+      },
+      "topk": [
+        {
+          "scope": "top1",
+          "k": 1,
+          "hits": 0,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0
+        },
+        {
+          "scope": "top5",
+          "k": 5,
+          "hits": 3,
+          "precision": 0.6,
+          "recall": 0.0019710906701708277,
+          "f1": 0.00392927308447937
+        },
+        {
+          "scope": "top10",
+          "k": 10,
+          "hits": 5,
+          "precision": 0.5,
+          "recall": 0.0032851511169513796,
+          "f1": 0.006527415143603133
+        },
+        {
+          "scope": "top1%",
+          "k": 49,
+          "hits": 18,
+          "precision": 0.3673469387755102,
+          "recall": 0.011826544021024968,
+          "f1": 0.022915340547422027
+        },
+        {
+          "scope": "top5%",
+          "k": 248,
+          "hits": 96,
+          "precision": 0.3870967741935484,
+          "recall": 0.06307490144546649,
+          "f1": 0.10847457627118644
+        },
+        {
+          "scope": "top10%",
+          "k": 497,
+          "hits": 188,
+          "precision": 0.3782696177062374,
+          "recall": 0.12352168199737187,
+          "f1": 0.18623080733036157
+        },
+        {
+          "scope": "top20%",
+          "k": 994,
+          "hits": 366,
+          "precision": 0.3682092555331992,
+          "recall": 0.240473061760841,
+          "f1": 0.29093799682034976
+        }
+      ],
+      "roc_path": "ours/discussion/features/results/mis_loc/KITTI_8/YOLOv7/cluster_loc_roc_iou_0.7.png"
+    },
+    "0.8": {
+      "image_count": 3740,
+      "miss_image_count": 1476,
+      "candidate_image_count": 2562,
+      "cluster_count": 4972,
+      "positive_cluster_count": 1421,
+      "negative_cluster_count": 3551,
+      "total_missed": 2042,
+      "loced": 1423,
+      "loc_success_rate": 0.6968658178256611,
+      "auc": 0.5924070907264429,
+      "best_f1": {
+        "threshold": 0.47413383776390206,
+        "precision": 0.3132790028763183,
+        "recall": 0.9197748064743139,
+        "f1": 0.4673699266940819,
+        "tp": 1307,
+        "fp": 2865,
+        "fn": 114
+      },
+      "topk": [
+        {
+          "scope": "top1",
+          "k": 1,
+          "hits": 0,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0
+        },
+        {
+          "scope": "top5",
+          "k": 5,
+          "hits": 3,
+          "precision": 0.6,
+          "recall": 0.00211118930330753,
+          "f1": 0.004207573632538569
+        },
+        {
+          "scope": "top10",
+          "k": 10,
+          "hits": 5,
+          "precision": 0.5,
+          "recall": 0.003518648838845883,
+          "f1": 0.006988120195667365
+        },
+        {
+          "scope": "top1%",
+          "k": 49,
+          "hits": 18,
+          "precision": 0.3673469387755102,
+          "recall": 0.012667135819845179,
+          "f1": 0.024489795918367342
+        },
+        {
+          "scope": "top5%",
+          "k": 248,
+          "hits": 95,
+          "precision": 0.38306451612903225,
+          "recall": 0.06685432793807178,
+          "f1": 0.11384062312762132
+        },
+        {
+          "scope": "top10%",
+          "k": 497,
+          "hits": 185,
+          "precision": 0.3722334004024145,
+          "recall": 0.1301900070372977,
+          "f1": 0.1929092805005214
+        },
+        {
+          "scope": "top20%",
+          "k": 994,
+          "hits": 359,
+          "precision": 0.3611670020120724,
+          "recall": 0.2526389866291344,
+          "f1": 0.29730848861283643
+        }
+      ],
+      "roc_path": "ours/discussion/features/results/mis_loc/KITTI_8/YOLOv7/cluster_loc_roc_iou_0.8.png"
+    },
+    "0.9": {
+      "image_count": 3740,
+      "miss_image_count": 1476,
+      "candidate_image_count": 2562,
+      "cluster_count": 4972,
+      "positive_cluster_count": 941,
+      "negative_cluster_count": 4031,
+      "total_missed": 2042,
+      "loced": 941,
+      "loc_success_rate": 0.460822722820764,
+      "auc": 0.6250722680311539,
+      "best_f1": {
+        "threshold": 0.6667467577414949,
+        "precision": 0.22641509433962265,
+        "recall": 0.8671625929861849,
+        "f1": 0.3590759075907591,
+        "tp": 816,
+        "fp": 2788,
+        "fn": 125
+      },
+      "topk": [
+        {
+          "scope": "top1",
+          "k": 1,
+          "hits": 0,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0
+        },
+        {
+          "scope": "top5",
+          "k": 5,
+          "hits": 3,
+          "precision": 0.6,
+          "recall": 0.003188097768331562,
+          "f1": 0.006342494714587738
+        },
+        {
+          "scope": "top10",
+          "k": 10,
+          "hits": 5,
+          "precision": 0.5,
+          "recall": 0.005313496280552604,
+          "f1": 0.010515247108307046
+        },
+        {
+          "scope": "top1%",
+          "k": 49,
+          "hits": 14,
+          "precision": 0.2857142857142857,
+          "recall": 0.01487778958554729,
+          "f1": 0.02828282828282828
+        },
+        {
+          "scope": "top5%",
+          "k": 248,
+          "hits": 72,
+          "precision": 0.2903225806451613,
+          "recall": 0.0765143464399575,
+          "f1": 0.12111017661900758
+        },
+        {
+          "scope": "top10%",
+          "k": 497,
+          "hits": 145,
+          "precision": 0.2917505030181087,
+          "recall": 0.15409139213602552,
+          "f1": 0.20166898470097358
+        },
+        {
+          "scope": "top20%",
+          "k": 994,
+          "hits": 274,
+          "precision": 0.27565392354124746,
+          "recall": 0.2911795961742827,
+          "f1": 0.2832041343669251
+        }
+      ],
+      "roc_path": "ours/discussion/features/results/mis_loc/KITTI_8/YOLOv7/cluster_loc_roc_iou_0.9.png"
+    }
+  },
+  "VisDrone": {
+    "0.5": {
+      "image_count": 6471,
+      "miss_image_count": 5976,
+      "candidate_image_count": 5897,
+      "cluster_count": 31163,
+      "positive_cluster_count": 9466,
+      "negative_cluster_count": 21697,
+      "total_missed": 34320,
+      "loced": 9468,
+      "loc_success_rate": 0.27587412587412585,
+      "auc": 0.5263096673027798,
+      "best_f1": {
+        "threshold": 0.3665404451265179,
+        "precision": 0.30396065067832573,
+        "recall": 0.9988379463342489,
+        "f1": 0.4660849847185251,
+        "tp": 9455,
+        "fp": 21651,
+        "fn": 11
+      },
+      "topk": [
+        {
+          "scope": "top1",
+          "k": 1,
+          "hits": 0,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0
+        },
+        {
+          "scope": "top5",
+          "k": 5,
+          "hits": 2,
+          "precision": 0.4,
+          "recall": 0.00021128248468201986,
+          "f1": 0.00042234188575651996
+        },
+        {
+          "scope": "top10",
+          "k": 10,
+          "hits": 2,
+          "precision": 0.2,
+          "recall": 0.00021128248468201986,
+          "f1": 0.00042211903756859433
+        },
+        {
+          "scope": "top1%",
+          "k": 311,
+          "hits": 90,
+          "precision": 0.28938906752411575,
+          "recall": 0.009507711810690893,
+          "f1": 0.01841055538508745
+        },
+        {
+          "scope": "top5%",
+          "k": 1558,
+          "hits": 502,
+          "precision": 0.32220795892169446,
+          "recall": 0.053031903655186986,
+          "f1": 0.09107402031930334
+        },
+        {
+          "scope": "top10%",
+          "k": 3116,
+          "hits": 1008,
+          "precision": 0.32349165596919127,
+          "recall": 0.106486372279738,
+          "f1": 0.16022889842632332
+        },
+        {
+          "scope": "top20%",
+          "k": 6232,
+          "hits": 2031,
+          "precision": 0.3258985879332478,
+          "recall": 0.21455736319459118,
+          "f1": 0.2587590775895019
+        }
+      ],
+      "roc_path": "ours/discussion/features/results/mis_loc/VisDrone/YOLOv7/cluster_loc_roc_iou_0.5.png"
+    },
+    "0.6": {
+      "image_count": 6471,
+      "miss_image_count": 5976,
+      "candidate_image_count": 5897,
+      "cluster_count": 31163,
+      "positive_cluster_count": 9378,
+      "negative_cluster_count": 21785,
+      "total_missed": 34320,
+      "loced": 9382,
+      "loc_success_rate": 0.27336829836829835,
+      "auc": 0.5302468461412063,
+      "best_f1": {
+        "threshold": 0.3665709303254291,
+        "precision": 0.3012719368861697,
+        "recall": 0.9976540840264448,
+        "f1": 0.4627902950560186,
+        "tp": 9356,
+        "fp": 21699,
+        "fn": 22
+      },
+      "topk": [
+        {
+          "scope": "top1",
+          "k": 1,
+          "hits": 0,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0
+        },
+        {
+          "scope": "top5",
+          "k": 5,
+          "hits": 2,
+          "precision": 0.4,
+          "recall": 0.00021326508850501172,
+          "f1": 0.00042630288820206754
+        },
+        {
+          "scope": "top10",
+          "k": 10,
+          "hits": 2,
+          "precision": 0.2,
+          "recall": 0.00021326508850501172,
+          "f1": 0.00042607584149978694
+        },
+        {
+          "scope": "top1%",
+          "k": 311,
+          "hits": 90,
+          "precision": 0.28938906752411575,
+          "recall": 0.009596928982725527,
+          "f1": 0.01857776860357106
+        },
+        {
+          "scope": "top5%",
+          "k": 1558,
+          "hits": 501,
+          "precision": 0.3215661103979461,
+          "recall": 0.053422904670505436,
+          "f1": 0.09162399414776884
+        },
+        {
+          "scope": "top10%",
+          "k": 3116,
+          "hits": 1007,
+          "precision": 0.3231707317073171,
+          "recall": 0.10737897206227341,
+          "f1": 0.16119737473987514
+        },
+        {
+          "scope": "top20%",
+          "k": 6232,
+          "hits": 2029,
+          "precision": 0.32557766367137353,
+          "recall": 0.2163574322883344,
+          "f1": 0.25996156310057655
+        }
+      ],
+      "roc_path": "ours/discussion/features/results/mis_loc/VisDrone/YOLOv7/cluster_loc_roc_iou_0.6.png"
+    },
+    "0.7": {
+      "image_count": 6471,
+      "miss_image_count": 5976,
+      "candidate_image_count": 5897,
+      "cluster_count": 31163,
+      "positive_cluster_count": 9041,
+      "negative_cluster_count": 22122,
+      "total_missed": 34320,
+      "loced": 9045,
+      "loc_success_rate": 0.26354895104895104,
+      "auc": 0.5427641504685967,
+      "best_f1": {
+        "threshold": 0.42889598075149543,
+        "precision": 0.3004599065351235,
+        "recall": 0.8960292003097002,
+        "f1": 0.4500180540510513,
+        "tp": 8101,
+        "fp": 18861,
+        "fn": 940
+      },
+      "topk": [
+        {
+          "scope": "top1",
+          "k": 1,
+          "hits": 0,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0
+        },
+        {
+          "scope": "top5",
+          "k": 5,
+          "hits": 2,
+          "precision": 0.4,
+          "recall": 0.00022121446742616967,
+          "f1": 0.0004421843908910015
+        },
+        {
+          "scope": "top10",
+          "k": 10,
+          "hits": 2,
+          "precision": 0.2,
+          "recall": 0.00022121446742616967,
+          "f1": 0.000441940117114131
+        },
+        {
+          "scope": "top1%",
+          "k": 311,
+          "hits": 90,
+          "precision": 0.28938906752411575,
+          "recall": 0.009954651034177635,
+          "f1": 0.01924721984602224
+        },
+        {
+          "scope": "top5%",
+          "k": 1558,
+          "hits": 499,
+          "precision": 0.32028241335044927,
+          "recall": 0.05519300962282933,
+          "f1": 0.09415982639871685
+        },
+        {
+          "scope": "top10%",
+          "k": 3116,
+          "hits": 1004,
+          "precision": 0.32220795892169446,
+          "recall": 0.11104966264793717,
+          "f1": 0.16517232869951468
+        },
+        {
+          "scope": "top20%",
+          "k": 6232,
+          "hits": 2021,
+          "precision": 0.3242939666238768,
+          "recall": 0.22353721933414444,
+          "f1": 0.26465003601126175
+        }
+      ],
+      "roc_path": "ours/discussion/features/results/mis_loc/VisDrone/YOLOv7/cluster_loc_roc_iou_0.7.png"
+    },
+    "0.8": {
+      "image_count": 6471,
+      "miss_image_count": 5976,
+      "candidate_image_count": 5897,
+      "cluster_count": 31163,
+      "positive_cluster_count": 7942,
+      "negative_cluster_count": 23221,
+      "total_missed": 34320,
+      "loced": 7943,
+      "loc_success_rate": 0.23143939393939394,
+      "auc": 0.5763186465207668,
+      "best_f1": {
+        "threshold": 0.5484757947239854,
+        "precision": 0.2777502272915117,
+        "recall": 0.8462603878116344,
+        "f1": 0.41823273179838205,
+        "tp": 6721,
+        "fp": 17477,
+        "fn": 1221
+      },
+      "topk": [
+        {
+          "scope": "top1",
+          "k": 1,
+          "hits": 0,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0
+        },
+        {
+          "scope": "top5",
+          "k": 5,
+          "hits": 2,
+          "precision": 0.4,
+          "recall": 0.0002518257365902795,
+          "f1": 0.0005033345916698125
+        },
+        {
+          "scope": "top10",
+          "k": 10,
+          "hits": 2,
+          "precision": 0.2,
+          "recall": 0.0002518257365902795,
+          "f1": 0.0005030181086519114
+        },
+        {
+          "scope": "top1%",
+          "k": 311,
+          "hits": 89,
+          "precision": 0.2861736334405145,
+          "recall": 0.011206245278267439,
+          "f1": 0.021567914697685694
+        },
+        {
+          "scope": "top5%",
+          "k": 1558,
+          "hits": 494,
+          "precision": 0.3170731707317073,
+          "recall": 0.06220095693779904,
+          "f1": 0.104
+        },
+        {
+          "scope": "top10%",
+          "k": 3116,
+          "hits": 988,
+          "precision": 0.3170731707317073,
+          "recall": 0.12440191387559808,
+          "f1": 0.17869415807560138
+        },
+        {
+          "scope": "top20%",
+          "k": 6232,
+          "hits": 1968,
+          "precision": 0.3157894736842105,
+          "recall": 0.24779652480483505,
+          "f1": 0.27769154790461403
+        }
+      ],
+      "roc_path": "ours/discussion/features/results/mis_loc/VisDrone/YOLOv7/cluster_loc_roc_iou_0.8.png"
+    },
+    "0.9": {
+      "image_count": 6471,
+      "miss_image_count": 5976,
+      "candidate_image_count": 5897,
+      "cluster_count": 31163,
+      "positive_cluster_count": 4329,
+      "negative_cluster_count": 26834,
+      "total_missed": 34320,
+      "loced": 4330,
+      "loc_success_rate": 0.12616550116550115,
+      "auc": 0.6542241612674645,
+      "best_f1": {
+        "threshold": 0.7733060708818335,
+        "precision": 0.2023529411764706,
+        "recall": 0.6555786555786556,
+        "f1": 0.3092513893429225,
+        "tp": 2838,
+        "fp": 11187,
+        "fn": 1491
+      },
+      "topk": [
+        {
+          "scope": "top1",
+          "k": 1,
+          "hits": 0,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0
+        },
+        {
+          "scope": "top5",
+          "k": 5,
+          "hits": 2,
+          "precision": 0.4,
+          "recall": 0.000462000462000462,
+          "f1": 0.0009229349330872173
+        },
+        {
+          "scope": "top10",
+          "k": 10,
+          "hits": 2,
+          "precision": 0.2,
+          "recall": 0.000462000462000462,
+          "f1": 0.0009218713989398478
+        },
+        {
+          "scope": "top1%",
+          "k": 311,
+          "hits": 73,
+          "precision": 0.2347266881028939,
+          "recall": 0.016863016863016864,
+          "f1": 0.03146551724137932
+        },
+        {
+          "scope": "top5%",
+          "k": 1558,
+          "hits": 393,
+          "precision": 0.2522464698331194,
+          "recall": 0.09078309078309078,
+          "f1": 0.13351452352641413
+        },
+        {
+          "scope": "top10%",
+          "k": 3116,
+          "hits": 781,
+          "precision": 0.2506418485237484,
+          "recall": 0.1804111804111804,
+          "f1": 0.20980523841504364
+        },
+        {
+          "scope": "top20%",
+          "k": 6232,
+          "hits": 1490,
+          "precision": 0.2390885750962773,
+          "recall": 0.34419034419034417,
+          "f1": 0.282170249029448
+        }
+      ],
+      "roc_path": "ours/discussion/features/results/mis_loc/VisDrone/YOLOv7/cluster_loc_roc_iou_0.9.png"
+    }
+  }
+}
