@@ -1,4 +1,7 @@
 
+'''
+基于coco style annotaion json注入错误
+'''
 import os
 import random
 import json

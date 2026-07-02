@@ -1,3 +1,6 @@
-exp_data_dir: ./exp_data
+exp_data_dir: /data/mml/data_debugging_data/ProAFL_data
 dataset_name: VOC # VOC,KITTI,VisDrone
 model_name: YOLOv7 # YOLOv7,FRCNN,RT-DETR
+
+baselines: ["datactive","entropy","loss","deepgini","margin","objectlab"]
+all_methods: ["ours","datactive","entropy","loss","deepgini","margin","objectlab"]
