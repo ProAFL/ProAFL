@@ -59,11 +59,13 @@ def get_all_files(directory)->list[str]:
     return files
 
 def get_nc(dataset_name)->int:
-    if dataset_name == "voc":
+    if dataset_name == "VOC2012":
         nc = 20
-    elif dataset_name == "kitti":
+    elif dataset_name == "KITTI_8":
         nc = 8
-    elif dataset_name == "vidrone":
+    elif dataset_name == "KITTI":
+        nc = 9
+    elif dataset_name == "VisDrone":
         nc = 10
     else:
         raise Exception("数据集参数错误")

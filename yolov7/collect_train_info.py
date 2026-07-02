@@ -14,8 +14,22 @@ from pathlib import Path
 from collections import defaultdict
 from PIL import Image
 import pandas as pd
-from ours.base_data_manager import get_error_train_model_weight_file_path,get_error_ann_file_path
-from ours.small_utils import get_nc
+
+from custom_module.base_data_manager import get_error_train_model_weight_file_path,get_error_ann_file_path
+from custom_module.small_utils import read_yaml
+
+def get_nc(dataset_name)->int:
+    if dataset_name == "VOC2012":
+        nc = 20
+    elif dataset_name == "KITTI_8":
+        nc = 8
+    elif dataset_name == "KITTI":
+        nc = 9
+    elif dataset_name == "VisDrone":
+        nc = 10
+    else:
+        raise Exception("数据集参数错误")
+    return nc
 
 
 def collect_one_epoch(model,dataloader,epoch, conf_thres=0.25,iou_thres=0.65):
@@ -171,23 +185,33 @@ def search_annotations_by_img_id(img_id,annotations_no_miss):
     # 这张图像顺序的anns
     return annos_of_img
 
+def read_yaml(yaml_path):
+    with open(yaml_path, "r", encoding="utf-8") as f:
+        config = yaml.safe_load(f)
+    return 
+
 if __name__ == "__main__":
-    exp_data_root = "/data/mml/data_debugging_data"
-    dataset_name = "VisDrone" # VOC2012|KITTI_8|VisDrone
+    config = read_yaml("config.yaml")
+    exp_data_root = config["exp_data_dir"]
+    dataset_name = "voc" # voc|kitti|visdrone
     nc = get_nc(dataset_name)
-    model_name = "YOLOv7"
+    model_name = "yolov7" # yolov7 这里只能是 yolov7
     # 脚本设备
     device = select_device('0')
     # create model 结构
     model = Model("cfg/training/yolov7.yaml", ch=3, nc=nc, anchors=3).to(device)
+
+    pbox_confi_thres = 0.25
+    iou_thres = 0.65
     epochs = 50
 
     # 收集预测框的存放目录
-    collect_p_box_dir = os.path.join(exp_data_root,"collection_indicator_bbox_level",dataset_name,model_name,"collected_predicted_box","v3")
+    collect_p_box_dir = os.path.join(exp_data_root,
+                                     "collection_process_info",dataset_name,model_name,"collected_predicted_box")
     os.makedirs(collect_p_box_dir,exist_ok=True)
-    collect_predicted_box(conf_thres=0.25,iou_thres=0.65)
+    collect_predicted_box(conf_thres=pbox_confi_thres,iou_thres=iou_thres)
 
     
     error_annotations_path = get_error_ann_file_path(dataset_name)
-    collect_gt_box_dir = os.path.join(exp_data_root,"collection_indicator_bbox_level",dataset_name,model_name)
+    collect_gt_box_dir = os.path.join(exp_data_root,"collection_process_info",dataset_name)
     collect_gt_box()

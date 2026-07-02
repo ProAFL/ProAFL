@@ -21,7 +21,7 @@ from torch.cuda import amp
 from torch.nn.parallel import DistributedDataParallel as DDP
 from torch.utils.tensorboard import SummaryWriter
 from tqdm import tqdm
-from utils.common import read_yaml
+from custom_utils.common import read_yaml
 import test  # import test.py to get mAP after each epoch
 from yolov7.models.experimental import attempt_load
 from yolov7.models.yolo import Model

@@ -2,13 +2,10 @@
 中间实验数据管理
 '''
 import os
-from ours.small_utils import read_yaml
-
-config = read_yaml("config.yaml")
-baselines = config["baselines"]
+from custom_module.small_utils import read_yaml
 # 实验数据存放目录
+config = read_yaml["config.yaml"]
 exp_data_root_dir = config["exp_data_dir"]
-
 # 注错类型map
 fault_type_map = {
     'no_fault': 0,
@@ -17,35 +14,6 @@ fault_type_map = {
     'redundancy_fault': 3,
     'missing_fault': 4,
 }
-
-def get_rank_data_path(dataset_name,method_name,model_name=None):
-    rank_data_path = None
-    if method_name in baselines:
-        if method_name == "datactive":
-            rank_data_path = os.path.join(exp_data_root_dir,"baselines","datactive",dataset_name,"rank", "rank.joblib")
-        else:
-            assert model_name is not None, "model_name is None"
-            rank_data_path = os.path.join(exp_data_root_dir,"baselines",method_name,dataset_name,model_name,"rank","rank.joblib")
-    elif method_name == "ours":
-        assert model_name is not None, "model_name is None"
-        rank_data_path = os.path.join(exp_data_root_dir,"ours",method_name,dataset_name,model_name,"rank","rank.joblib")
-    assert rank_data_path is not None, "没有正确获得rank data path"
-    return rank_data_path
-
-
-def get_converted_data_path(dataset_name,method_name,model_name=None):
-    converted_rank_data_path = None
-    if method_name in baselines:
-        if method_name == "datactive":
-            converted_rank_data_path = os.path.join(exp_data_root_dir,"baselines","datactive",dataset_name,"rank", "converted_rank.joblib")
-        else:
-            assert model_name is not None, "model_name is None"
-            converted_rank_data_path = os.path.join(exp_data_root_dir,"baselines",method_name,dataset_name,model_name,"rank","converted_rank.joblib")
-    elif method_name == "ours":
-        assert model_name is not None, "model_name is None"
-        converted_rank_data_path = os.path.join(exp_data_root_dir,"ours",method_name,dataset_name,model_name,"rank","converted_rank.joblib")
-    assert converted_rank_data_path is not None, "没有正确获得converted rank data path"
-    return converted_rank_data_path
 
 def get_correct_ann_file_path(dataset_name,train_or_val):
     '''
