@@ -7,9 +7,9 @@ import torch.nn as nn
 import torch.nn.functional as F
 from ours.small_utils import read_json
 from queue import PriorityQueue
-from ours.data_organization_tools import get_all_gids,get_all_errored_g_box_id_set
-from ours.base_data_manager import get_collected_gt_box_json_path,get_all_img_name,get_annotations_with_miss_json_path
-from ours.rank_analyse.other_baselines_analyse import analyse_rank as other_baseline_analyse_rank
+from helper.data_organization_tools import get_all_gids,get_all_errored_g_box_id_set
+from helper.base_data_manager import get_collected_gt_box_json_path,get_all_img_name,get_annotations_with_miss_json_path
+from ours.rank.analyse.other_baselines_analyse import analyse_rank as other_baseline_analyse_rank
 
 def calcu_entropy(prob_list):
     entropy = 0.0

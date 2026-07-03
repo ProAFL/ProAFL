@@ -1,7 +1,7 @@
 '''
 打印数据集的fault信息
 '''
-from ours.base_data_manager import get_annotations_with_miss_json_path
+from helper.base_data_manager import get_annotations_with_miss_json_path
 from ours.data_provider import get_all_miss_error_img_name_set
 
 

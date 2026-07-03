@@ -20,7 +20,7 @@ import torch
 import torch.nn as nn
 from pycocotools.coco import COCO
 from yolov7.models.yolo import Model
-from ours.base_data_manager import (
+from helper.base_data_manager import (
                             exp_data_root_dir,
                             get_collected_gt_box_json_path,
                             get_error_train_model_weight_file_path, 

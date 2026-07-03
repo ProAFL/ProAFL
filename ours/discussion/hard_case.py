@@ -6,12 +6,12 @@ import numpy as np
 import os
 import joblib
 from pycocotools.coco import COCO
-from ours.base_data_manager import (exp_data_root_dir,get_collected_gt_box_json_path,
+from helper.base_data_manager import (exp_data_root_dir,get_collected_gt_box_json_path,
                                     get_error_ann_file_path,
                                     get_annotations_with_miss_json_path,
                                     get_correct_ann_file_path)
 
-from ours.data_organization_tools import (conver_ours_rank, conver_datactive_rank,
+from helper.data_organization_tools import (conver_ours_rank, conver_datactive_rank,
                                           get_all_miss_error_img_name_set,
                                           get_all_annoids_detail,
                                           get_all_img_name,get_gid_to_anno_id,

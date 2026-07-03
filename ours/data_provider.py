@@ -2,7 +2,7 @@
 负责提供一些高层数据
 '''
 from ours.small_utils import read_json
-from ours.data_organization_tools import get_imgid_to_imgname
+from helper.data_organization_tools import get_imgid_to_imgname
 def get_all_miss_error_img_name_set(annos_with_miss_json_path:str) -> set[str]:
     '''
     获得所有具有miss fault的 img name set

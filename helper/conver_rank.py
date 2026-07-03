@@ -5,8 +5,8 @@
 import os
 
 import joblib
-from ours.data_organization_tools import conver_ours_rank,conver_datactive_rank
-from ours.base_data_manager import get_collected_gt_box_json_path,get_error_ann_file_path
+from helper.data_organization_tools import conver_ours_rank,conver_datactive_rank
+from helper.base_data_manager import get_collected_gt_box_json_path,get_error_ann_file_path
 from ours.small_utils import read_json
 from pycocotools.coco import COCO
 from ours.small_utils import read_yaml

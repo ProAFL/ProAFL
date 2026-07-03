@@ -17,7 +17,7 @@ from utils.metrics import ap_per_class,ConfusionMatrix
 from pycocotools.coco import COCO
 from pycocotools.cocoeval import COCOeval
 import json
-from ours.base_data_manager import (get_correct_ann_file_path,get_error_ann_file_path,
+from helper.base_data_manager import (get_correct_ann_file_path,get_error_ann_file_path,
                                     get_clean_train_model_weight_file_path,
                                     get_error_train_model_weight_file_path, 
                                     get_repair_train_model_weight_file_path)

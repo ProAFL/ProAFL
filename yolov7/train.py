@@ -583,7 +583,6 @@ if __name__ == '__main__':
     PID = os.getpid()
     print("PID:",PID)
     exp_data_root = config["exp_data_dir"]
-    exp_id = "01"
     # 设置实验相关参数
     _args = {
         "dataset_name":"VisDrone", # VOC2012|KITTI_8|VisDrone
@@ -598,15 +597,19 @@ if __name__ == '__main__':
     method_name = _args["trainset_stat"]
 
     if _args["trainset_stat"]  == "ours":
-        _args["model_save_dir"] = os.path.join(exp_data_root, _args["trainset_stat"],
-                                   dataset_name,model_name,f"exp_{exp_id}","retrain")
+        _args["model_save_dir"] = os.path.join(exp_data_root,"ours",
+                                   dataset_name,model_name,"retrain","models")
         # 创建dir
         os.makedirs(_args["model_save_dir"],exist_ok=True)
 
     elif _args["trainset_stat"] in config["baselines"]:
-        # 如果此时准备训练模型的训练集状态已经是baseline corrected,corrected 的 method是baselines或者ours
-        _args["model_save_dir"] = os.path.join(exp_data_root,"baselines", method_name,
-                                   dataset_name,model_name,f"exp_{exp_id}","retrain")
+        if _args["trainset_stat"] == "datactive":
+            # 如果此时准备训练模型的训练集状态已经是baseline corrected,corrected 的 method是baselines或者ours
+            _args["model_save_dir"] = os.path.join(exp_data_root,"baselines", "datactive",
+                                    dataset_name,"retrain","yolov7")
+        else:
+            _args["model_save_dir"] = os.path.join(exp_data_root,"baselines", _args["trainset_stat"],
+                                    dataset_name,"yolov7","retrain","models")
         # 创建dir
         os.makedirs(_args["model_save_dir"],exist_ok=True)
     else:

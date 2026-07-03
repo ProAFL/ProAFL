@@ -3,7 +3,7 @@ import joblib
 import numpy as np
 from collections import defaultdict
 from PIL import Image
-from ours.base_data_manager import get_collected_gt_box_json_path
+from helper.base_data_manager import get_collected_gt_box_json_path
 from ours.small_utils import read_json,xcycwh_to_x1y1x2y2,calu_iou,get_nc
 
 def infer_clod_error_type(gts, preds):
