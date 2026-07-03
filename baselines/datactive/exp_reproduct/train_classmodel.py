@@ -9,6 +9,9 @@ import time
 from torchvision.models import ResNet50_Weights
 from datetime import datetime
 
+from custom_module.small_utils import read_yaml
+from custom_module.base_data_manager import get_annotations_with_miss_json_path,get_all_trainimgs_dir
+
 def build_dataset(mask_type,class_num):
     data_transform = transforms.Compose(
         [transforms.ToTensor(),
@@ -154,24 +157,23 @@ def train():
 
 
 if __name__ == "__main__":
-    exp_data_root = "/data/mml/data_debugging_data"
-    dataset_name = "VisDrone" # VOC2012|KITTI_8|VisDrone
+    config = read_yaml("config.yaml")
+    exp_data_root = config["exp_data_dir"]
+    dataset_name = "voc" # voc|kitti|visdrone
     img_root_dir = f"{exp_data_root}/datasets/{dataset_name}-coco/train"
     annotation_path = f"{exp_data_root}/datasets/{dataset_name}-coco/train/_annotations.coco_error.json"
-    mask_type = "other_objects" # crop | other_objects
-    if dataset_name == "VOC2012":
+    mask_type = "crop" # crop | other_objects
+    if dataset_name == "voc":
         class_num = 21 # 20 + 1
-    elif dataset_name == "VisDrone":
+    elif dataset_name == "visdrone":
         class_num = 11 # 10 + 1
-    elif dataset_name == "KITTI":
-        class_num = 10 # 9 + 1
-    elif dataset_name == "KITTI_8":
+    elif dataset_name == "kitti":
         class_num = 9 # 8 + 1
     else:
         raise Exception("数据集名称错误")
     epoches = 13
     device = torch.device("cuda:0")
-    model_save_dir = f"{exp_data_root}/final_res/datactive/{dataset_name}/saved_models/new/{mask_type}"
+    model_save_dir = f"{exp_data_root}/baselines/datactive/{dataset_name}/rank/models/{mask_type}"
     os.makedirs(model_save_dir,exist_ok=True)
     train()
 

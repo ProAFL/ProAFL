@@ -5,11 +5,11 @@ import joblib
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from ours.small_utils import read_json
+
 from queue import PriorityQueue
 from helper.data_organization_tools import get_all_gids,get_all_errored_g_box_id_set
-from helper.base_data_manager import get_collected_gt_box_json_path,get_all_img_name,get_annotations_with_miss_json_path
-from ours.rank.analyse.other_baselines_analyse import analyse_rank as other_baseline_analyse_rank
+from helper.base_data_manager import get_collected_gt_box_json_path,get_all_img_name,get_annotations_with_miss_json_path,get_all_trainimgs_dir
+from baselines.other_baselines.custom_module.small_utils import read_json,read_yaml
 
 def calcu_entropy(prob_list):
     entropy = 0.0
@@ -112,30 +112,27 @@ def main(g_json_path,match_json_path,baseline_name:str):
 
 
 if __name__ == "__main__":
+    config = read_yaml["config.yaml"]
     PID = os.getpid()
     print("PID:",PID)
-    exp_root_dir = "/data/mml/data_debugging_data"
-    dataset_name = "KITTI_8" # VOC2012|KITTI_8|VisDrone
-    model_name = "rtdetr" # YOLOv7|FRCNN|SSD|rtdetr
-    exp_id = "01"
-    baseline_name = "margin" # entropy|loss|deepgini|margin|
+    exp_root_dir = config["exp_data_dir"]
+    dataset_name = "voc" # voc|kitti|visdrone
+    model_name = "yolov7" # yolov7|frcnn|rtdetr
+    baseline_name = "entropy" # entropy|loss|deepgini|margin|
     g_json_path = get_collected_gt_box_json_path(dataset_name)
-    match_json_path = os.path.join(exp_root_dir, "collection_bbox_level",
-                              dataset_name,model_name,"other_baselines","match.json")
-    all_train_img_dir = os.path.join(exp_root_dir,"retrain_dataset_split", dataset_name,
-                                    "images", "origin")
+    
+    match_json_path = os.path.join(exp_root_dir, "collection_process_info",
+                              dataset_name,model_name,"for_baselines","match.json")
+    all_train_img_dir = get_all_trainimgs_dir(dataset_name)
     rank = main(g_json_path,match_json_path,baseline_name)
     annos_with_miss_json_path = get_annotations_with_miss_json_path(dataset_name)
 
-    # 保存rank数据    
-    save_dir = os.path.join(exp_root_dir,"Results","other_baselines",baseline_name,
-                            dataset_name,model_name,f"exp_{exp_id}","rank")
+    # 保存rank数据
+    save_dir = os.path.join(exp_root_dir,"baselines",baseline_name,
+                            dataset_name,model_name,"rank")
     os.makedirs(save_dir,exist_ok=True)
     save_file_name = "rank.joblib"
     save_path = os.path.join(save_dir,save_file_name)
     joblib.dump(rank,save_path)
     print(f"rank长度为:{len(rank)}")
     print(f'rank结果保存在:{save_path}')
-    
-    # 对排序结果进行一个简单性能分析
-    other_baseline_analyse_rank(dataset_name,g_json_path,rank,annos_with_miss_json_path,vis=False)

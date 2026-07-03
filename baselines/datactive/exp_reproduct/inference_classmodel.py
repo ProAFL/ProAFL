@@ -5,6 +5,8 @@ import torchvision
 from torchvision import transforms
 from torch.utils.data import DataLoader
 from exp_reproduct.inference_disassemble_dataset import Inference_classificationDataSet
+from custom_module.small_utils import read_yaml
+from custom_module.base_data_manager import get_all_trainimgs_dir
 
 def build_dataset(mask_type):
     data_transform = transforms.Compose(
@@ -68,22 +70,21 @@ def infer():
     print(f"结果保存在:{results_save_path}")
 
 if __name__ == "__main__":
-    exp_data_root = "/data/mml/data_debugging_data"
-    dataset_name = "VisDrone" # VOC2012|KITTI_8|VisDrone
-    img_root = f"{exp_data_root}/datasets/{dataset_name}-coco/train"
+    config = read_yaml("config.yaml")
+    exp_data_root = config["exp_data_dir"]
+    dataset_name = "voc" # voc|kitti|visdrone
+    img_root = get_all_trainimgs_dir(dataset_name)
     annotation_path = f"{exp_data_root}/datasets/{dataset_name}-coco/train/_annotations.coco_error.json"
-    if dataset_name == "VOC2012":
-        class_num = 21
-    elif dataset_name == "VisDrone":
-        class_num = 11
-    elif dataset_name == "KITTI":
-        class_num = 10
-    elif dataset_name == "KITTI_8":
-        class_num = 9
+    if dataset_name == "voc":
+        class_num = 21 # 0 is bgclass
+    elif dataset_name == "visdrone":
+        class_num = 11 # 0 is bgclass
+    elif dataset_name == "kitti":
+        class_num = 9 # 0 is bgclass
     gpu_id = 0
     mask_type = "other_objects" # crop (裁剪模式,更加耗时些) and other_objects (背景推理模式)
-    trained_model_path = f"{exp_data_root}/final_res/datactive/{dataset_name}/saved_models/new/{mask_type}/epoch_12.pt"
-    results_save_path = f"{exp_data_root}/final_res/datactive/{dataset_name}/infer_results/new/{mask_type}.json"
+    trained_model_path = f"{exp_data_root}/baselines/datactive/{dataset_name}/rank/models/{mask_type}/epoch_12.pt"
+    results_save_path = f"{exp_data_root}/baselines/datactive/{dataset_name}/rank/infer/{mask_type}.json"
     infer()
 
 

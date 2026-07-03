@@ -4,8 +4,7 @@ import numpy as np
 from collections import defaultdict
 from PIL import Image
 from helper.base_data_manager import get_collected_gt_box_json_path
-from ours.small_utils import read_json,xcycwh_to_x1y1x2y2,calu_iou
-
+from baselines.other_baselines.custom_module.small_utils import read_json,xcycwh_to_x1y1x2y2,calu_iou,read_yaml
 def softmin(q):
     q = np.asarray(q, dtype=float)
     logits = 1.0 - q
@@ -146,23 +145,17 @@ def main():
 
 
 if __name__ == "__main__":
-    exp_root_dir = "/data/mml/data_debugging_data"
-    exp_id = "01"
-    dataset_name = "KITTI_8" # VOC2012|KITTI_8|VisDrone
-    model_name = "YOLOv7" # YOLOv7|FRCNN|rtdetr
+    config = read_yaml("config.yaml")
+    exp_root_dir = config["exp_data_dir"]
+    dataset_name = "voc" # voc|kitti|visdrone
+    model_name = "yolov7" # yolov7|frcnn|rtdetr
     epoch = 99 if model_name == "rtdetr" else 49
     train_img_dir = os.path.join(exp_root_dir,"datasets",f"{dataset_name}-yolo","origin","train","images")
     g_json_path = get_collected_gt_box_json_path(dataset_name)
     g_json = read_json(g_json_path)
-    if model_name in ["YOLOv7","FRCNN"]:
-        collect_p_box_dir = os.path.join(exp_root_dir,"collection_bbox_level",
-                                        dataset_name,model_name,"other_baselines",
-                                        "collected_predicted_box_withprobs")
-    else:
-        collect_p_box_dir = os.path.join(exp_root_dir,"collection_bbox_level",
-                                        dataset_name,model_name,"other_baselines",
-                                        "predicted_bbox_withprobs")
-        
+    
+    collect_p_box_dir = os.path.join(exp_root_dir,"collection_process_info",dataset_name,model_name,"for_baselines","collected_predict_boxes_withprobs")
+
     p_json_path = os.path.join(collect_p_box_dir,
         f"epoch_{epoch}_predicted_bboxs.json"
     )

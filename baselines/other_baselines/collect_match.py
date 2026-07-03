@@ -26,7 +26,7 @@ from helper.base_data_manager import (
                             get_error_train_model_weight_file_path, 
                             get_nc_by_datasetname, 
                             get_error_ann_file_path)
-from ours.small_utils import read_json
+from baselines.other_baselines.custom_module.small_utils import read_yaml,read_json
 
 
 def calu_iou(gt_bbox,predicted_bbox):
@@ -361,28 +361,32 @@ def collect_p():
 
 
 if __name__ == "__main__":
-    exp_root_dir = "/data/mml/data_debugging_data"
-    dataset_name = "KITTI_8" # VOC2012|KITTI_8|VisDrone
-    model_name = "rtdetr" # YOLOv7|FRCNN|SSD|rtdetr
+    config = read_yaml("config.yaml")
+    exp_root_dir = config["exp_data_dir"]
+    dataset_name = "voc" # voc|kitti|visdrone
+    model_name = "yolov7" # yolov7|frcnn|rtdetr
     epoch = 49
     if model_name == "rtdetr":
         epoch = 99
     gpu_id = 0
     device = torch.device(f"cuda:{gpu_id}")
     error_anno_file_path = get_error_ann_file_path(dataset_name)
-    collect_p_box_dir = os.path.join(exp_data_root_dir,"collection_bbox_level",
-                                     dataset_name,model_name,"other_baselines",
-                                     "predicted_bbox_withprobs")
+    
+    collect_p_box_dir = os.path.join(exp_data_root_dir,"collection_process_info",
+                                     dataset_name,model_name,"for_baselines",
+                                     "collected_predict_boxes_withprobs")
     os.makedirs(collect_p_box_dir,exist_ok=True)
+    # collect
     # collect_p()
 
     g_json_path = get_collected_gt_box_json_path(dataset_name)
     p_json_path = os.path.join(collect_p_box_dir,
         f"epoch_{epoch}_predicted_bboxs.json"
     )
-    offset = (model_name not in ["YOLOv7","rtdetr"] ) # 是否会对预测标签进行offset(-1)
-    match_save_dir = os.path.join(exp_root_dir,"collection_bbox_level",
-                                  dataset_name,model_name,"other_baselines")
+    offset = (model_name not in ["yolov7","rtdetr"] ) # 是否会对预测标签进行offset(-1)
+    match_save_dir = os.path.join(exp_root_dir,"collection_process_info",
+                                  dataset_name,model_name,"for_baselines")
     os.makedirs(match_save_dir,exist_ok=True)
     match_save_path = os.path.join(match_save_dir,"match.json")
-    match(g_json_path,p_json_path,offset)
+    # match
+    # match(g_json_path,p_json_path,offset)

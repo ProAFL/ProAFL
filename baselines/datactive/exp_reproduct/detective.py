@@ -6,7 +6,8 @@ import json
 import torch
 from collections import defaultdict
 from pycocotools.coco import COCO
-from small_utils import read_yaml
+from custom_module.small_utils import read_yaml
+from custom_module.base_data_manager import get_annotations_with_miss_json_path
 
 def aggregation(obj_list:list):
     '''
@@ -101,19 +102,17 @@ if __name__ == "__main__":
     exp_data_root = config["exp_data_dir"]
     dataset_name = "voc" # voc|kitti|visdrone
     
-    crop_infer_results_path=f'{exp_data_root}/final_res/datactive/{dataset_name}/infer_results/new/crop.json'
-    others_infer_results_path=f'{exp_data_root}/final_res/datactive/{dataset_name}/infer_results/new/other_objects.json'
-
+    crop_infer_results_path=f'{exp_data_root}/baselines/datactive/{dataset_name}/rank/infer/crop.json'
+    others_infer_results_path=f'{exp_data_root}/baselines/datactive/{dataset_name}/rank/infer/other_objects.json'
+    
     annotation_path=f'{exp_data_root}/datasets/{dataset_name}-coco/train/_annotations.coco_error.json'
-    annotation_with_miss_path = os.path.join(exp_data_root,"error_anno",dataset_name,"coco_format", "annotations_with_miss.json")
-    rank_result_save_path = os.path.join(exp_data_root,"final_res","datactive",dataset_name, "ranked_result","new","ranked_list.joblib")
-    if dataset_name == "VOC2012":
+    annotation_with_miss_path = get_annotations_with_miss_json_path(dataset_name)
+    rank_result_save_path = os.path.join(exp_data_root,"baselines","datactive",dataset_name, "rank","rank.joblib")
+    if dataset_name == "voc":
         bg_clss_id = 20
-    elif dataset_name == "KITTI": # 9 个 clss
-        bg_clss_id = 9
-    elif dataset_name == "KITTI_8": # 8 个 clss
+    elif dataset_name == "kitti":
         bg_clss_id = 8
-    elif dataset_name == "VisDrone": # 10 个 clss
+    elif dataset_name == "visdrone":
         bg_clss_id = 10
 
     apfd = main()
