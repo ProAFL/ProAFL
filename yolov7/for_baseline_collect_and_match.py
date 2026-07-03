@@ -26,7 +26,7 @@ from helper.base_data_manager import (
                             get_error_train_model_weight_file_path, 
                             get_nc_by_datasetname, 
                             get_error_ann_file_path)
-from baselines.other_baselines.custom_module.small_utils import read_yaml,read_json
+from custom_module.small_utils import read_yaml,read_json
 
 
 def calu_iou(gt_bbox,predicted_bbox):

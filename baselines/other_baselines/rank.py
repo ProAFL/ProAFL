@@ -41,9 +41,6 @@ def caclu_loss(p_list,g_label,p_loc,g_loc):
     loss = loss.item()
     return loss
 
-
-
-
 def caclu_rank_score(baseline_name, p_list,g_label,p_loc,g_loc):
     '''
     score 越大越可疑
