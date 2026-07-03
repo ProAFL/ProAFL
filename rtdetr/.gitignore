@@ -1,0 +1,7 @@
+.vscode
+results/
+runs/
+test_images/
+*.pt
+*.log
+
