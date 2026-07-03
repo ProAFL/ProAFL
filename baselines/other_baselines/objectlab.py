@@ -6,10 +6,6 @@ from PIL import Image
 from helper.base_data_manager import get_collected_gt_box_json_path
 from ours.small_utils import read_json,xcycwh_to_x1y1x2y2,calu_iou
 
-
-
-
-
 def softmin(q):
     q = np.asarray(q, dtype=float)
     logits = 1.0 - q
