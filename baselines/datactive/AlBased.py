@@ -52,7 +52,7 @@ class ALBased:
             for instance in self.det:
                 instance['gini'] = self.compute_gini(instance['full_scores'])
 
-        # transform dec to {imagename:[]} format dict
+                                                     
         self.dec_dict = {}
         for i in range(len(self.det)):
             if self.det[i]["image_name"] in self.dec_dict:
@@ -111,7 +111,7 @@ class ALBased:
                 return 0
             return (1 - (x[0] - x[1])) ** 2
 
-        # get first two max prob in prob_list(unsorted)
+                                                       
         first_two = sorted(prob_list, reverse=True)[:2]
 
         margin = one_two_(first_two)

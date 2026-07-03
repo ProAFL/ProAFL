@@ -111,7 +111,7 @@ def adjust_hue(img: Image.Image, hue_factor: float) -> Image.Image:
     h, s, v = img.convert("HSV").split()
 
     np_h = np.array(h, dtype=np.uint8)
-    # uint8 addition take cares of rotation across boundaries
+                                                             
     with np.errstate(over="ignore"):
         np_h += np.uint8(hue_factor * 255)
     h = Image.fromarray(np_h, "L")
@@ -136,7 +136,7 @@ def adjust_gamma(
     input_mode = img.mode
     img = img.convert("RGB")
     gamma_map = [int((255 + 1 - 1e-3) * gain * pow(ele / 255.0, gamma)) for ele in range(256)] * 3
-    img = img.point(gamma_map)  # use PIL's point-function to accelerate this part
+    img = img.point(gamma_map)                                                    
 
     img = img.convert(input_mode)
     return img
@@ -167,7 +167,7 @@ def pad(
         raise ValueError(f"Padding must be an int or a 1, 2, or 4 element tuple, not a {len(padding)} element tuple")
 
     if isinstance(padding, tuple) and len(padding) == 1:
-        # Compatibility with `functional_tensor.pad`
+                                                    
         padding = padding[0]
 
     if padding_mode not in ["constant", "edge", "reflect", "symmetric"]:
@@ -212,10 +212,10 @@ def pad(
             return img
 
         img = np.asarray(img)
-        # RGB image
+                   
         if len(img.shape) == 3:
             img = np.pad(img, ((pad_top, pad_bottom), (pad_left, pad_right), (0, 0)), padding_mode)
-        # Grayscale image
+                         
         if len(img.shape) == 2:
             img = np.pad(img, ((pad_top, pad_bottom), (pad_left, pad_right)), padding_mode)
 
@@ -289,7 +289,7 @@ def _parse_fill(
     name: str = "fillcolor",
 ) -> Dict[str, Optional[Union[float, List[float], Tuple[float, ...]]]]:
 
-    # Process fill color for affine transforms
+                                              
     num_bands = len(img.getbands())
     if fill is None:
         fill = 0

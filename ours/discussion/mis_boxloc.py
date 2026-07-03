@@ -1,10 +1,10 @@
 '''
-讨论一下我们方法在miss fault box上的location能力
+textmiss fault boxtextlocationtext
 '''
 
 
 '''
-基于收集到的数据获得我们方法的rank结果
+Get ranking results of our method based on collected data
 '''
 import os
 import json
@@ -28,20 +28,20 @@ from ours.small_utils import read_json
 
 def get_all_gids(gt_json:dict) -> list[int]:
     '''
-    得到所有的g_box_id_list
+    Get all g_box_id_list values
     
-    参数
+    Parameters
     ----
     gt_json : dict
-        数据格式：
+        Data format:
         {
             image_name:[g_box_1,g_box_2],
             ...
         }
-    返回
+    Returns
     ---
     all_g_box_id_list : list[int]
-        提取出的所有的g_box_id_list
+        All extracted g_box_id_list values
     '''
     all_g_box_id_list = []
     for img_name, g_box_list in gt_json.items():
@@ -52,11 +52,11 @@ def get_all_gids(gt_json:dict) -> list[int]:
 
 def get_g_id_to_metric(metric_json_path):
     '''
-    提供每个gid对应的metric(conf_list和iou_list)
+    Provide metrics (conf_list and iou_list) for each gid
     '''
     with open(metric_json_path, "r", encoding="utf-8") as f:
         gt_box_metric_collection_list = json.load(f)
-    print(f"matched gt_box数量:{len(gt_box_metric_collection_list)}")
+    print(f"matched gt_boxCount:{len(gt_box_metric_collection_list)}")
 
     g_box_id_to_metric = {}
 
@@ -74,10 +74,10 @@ def get_g_id_to_metric(metric_json_path):
 
 def add_path_value(d:dict, keys:list, value):
     '''
-    多层级字典，最后指向[]
+    Nested dictionary whose final value is [].
     '''
     cur = d
-    # 遍历所有层级的key
+                                     
     for k in keys[:-1]:
         cur = cur.setdefault(k, {})
     cur.setdefault(keys[-1], []).append(value)
@@ -123,44 +123,44 @@ def calu_iou(gt_bbox,predicted_bbox):
 
 def bbox_iou(box1, box2):
     """
-    计算两个边界框的IoU。
+    textIoU.
     box1: [x_min, y_min, x_max, y_max]
     box2: [x_min, y_min, x_max, y_max]
     """
-    # 计算交集的坐标
+          
     xi1 = max(box1[0], box2[0])
     yi1 = max(box1[1], box2[1])
     xi2 = min(box1[2], box2[2])
     yi2 = min(box1[3], box2[3])
     
-    # 计算交集的面积
+          
     inter_area = max(xi2 - xi1, 0) * max(yi2 - yi1, 0)
     if inter_area == 0:
         return 0.0
     
-    # 计算边界框的面积
+          
     box1_area = (box1[2] - box1[0]) * (box1[3] - box1[1])
     box2_area = (box2[2] - box2[0]) * (box2[3] - box2[1])
     
-    # 计算并集的面积
+          
     union_area = box1_area + box2_area - inter_area
     
-    # 计算IoU
+             
     iou = inter_area / union_area
     return iou
 
 def clusing(box_list:list,iou_thre:float=0.6) -> list[list[int]]:
     '''
-    使用并查集对这些box进行分簇
+    Use union-find to cluster these boxes
     box_list : list
-        数据结构示例:
+        Data structure example:
         [box_1,box_2,...]
     iou_thre : float, default = 0.6
-        元素归并的条件阈值
-    返回:
+        threshold condition for merging elements
+    Returns:
     ---
     cluster_list : list[list[int]]
-        数据结构示例
+        Data structure example
         [[loc_idx1,loc_idx3,...],...]
     '''
     N = len(box_list)
@@ -181,7 +181,7 @@ def clusing(box_list:list,iou_thre:float=0.6) -> list[list[int]]:
 
 def get_img_name_to_no_matched_p_boxs(img_name_to_epoch_to_no_match_p_boxs:dict) -> dict:
     '''
-    展平img_name to no matched_p_boxs
+    Flatten img_name to unmatched p_boxs
     '''
     img_to_p_boxs = defaultdict(list)
     for img_name in img_name_to_epoch_to_no_match_p_boxs.keys():
@@ -193,19 +193,19 @@ def get_img_name_to_no_matched_p_boxs(img_name_to_epoch_to_no_match_p_boxs:dict)
 
 def get_img_to_clusters(img_to_p_boxs:dict,iou_thre:float=0.6):
     '''
-    构建img_name -> p_box的分簇
-    参数
+    Build img_name -> p_boxclusters
+    Parameters
     ---
     img_to_p_boxs : dict
-        数据格式：
+        Data format:
         {image_name:[p_box1,p_box2]}
     iou_thre : float,default=0.6
-        分簇的iou条件
+        IoU condition for clustering
     
-    返回：
+    Returns:
     ---
     img_to_clusters : dict
-        数据格式示例：
+        Data format example:
         {
             img_name:[[p_box1,p_box2,...],...],
             ...
@@ -213,7 +213,7 @@ def get_img_to_clusters(img_to_p_boxs:dict,iou_thre:float=0.6):
     '''
     img_to_clusters = defaultdict(list)
     for img_name,p_box_list in img_to_p_boxs.items():
-        # [[loc_id1,loc_id2...],...]
+                                    
         cluster_list = clusing(p_box_list,iou_thre)
         for cluster in cluster_list:
             cur_cluster_p_box_list = []
@@ -264,57 +264,57 @@ def epoch_freq(boxes,last_epoch):
     return len(epoch_cover) / last_epoch
 
 def get_cluster_feaure(cluster,last_epoch):
-    conf = conf_score(cluster) # [0,1] 
-    stab = stability_pairwise_mean_iou(cluster) # [0,1]
-    cls_consis = cls_consis_score(cluster) # [0,1]
-    e_freq = epoch_freq(cluster,last_epoch) # [0,1]
+    conf = conf_score(cluster)         
+    stab = stability_pairwise_mean_iou(cluster)        
+    cls_consis = cls_consis_score(cluster)        
+    e_freq = epoch_freq(cluster,last_epoch)        
     sign = [1,1,1,1]
     feature = [conf,stab,cls_consis,e_freq]
     return feature, sign
 
 def get_img_to_topsis_score(img_to_clusters:dict,last_epoch:int):
     '''
-    获得img_name -> topsis score
+    Get img_name -> topsis score
     
-    参数：
+    Parameters:
     ---
     img_to_clusters : dict
-        数据格式
+        Data format
         {img_name:[[pbox1,pbox3],...]}
     last_epoch : int
     '''
-    # 存放每个cluster的features
+                                     
     clusters_features = []
-    # 存放features对应的政府指标符号
+                                   
     features_signs = []
 
-    # 存放每个img对应的cluster的idx list
+                                             
     img_name_to_cluster_ids = defaultdict(list)
 
-    # 追踪每个cluster的索引
+                                     
     cluster_idx = 0
-    # 遍历每个图像与其对应的簇群
+                                         
     for img_name,clusters in img_to_clusters.items():
-        # 遍历该图像的所有簇
+                                            
         for cluster in clusters:
-            # 得到该簇的特征数据和特征对应的正负符号
+                                                                           
             features,signs = get_cluster_feaure(cluster,last_epoch)
             clusters_features.append(features)
             features_signs = signs
             img_name_to_cluster_ids[img_name].append(cluster_idx)
             cluster_idx += 1
 
-    # 构建特征数据集
+                           
     data_array = np.array(clusters_features)
     n_features = data_array.shape[1]
-    assert data_array.shape[1] == len(features_signs), "数据有误"
+    assert data_array.shape[1] == len(features_signs), "Invalid data"
     weights = np.ones(n_features) / n_features
-    # 基于topsis获得clusters的score
+                                        
     best_cluster_id, score_array = tp.topsis(data_array, weights, features_signs)
     score_array = np.nan_to_num(score_array, nan=0.0, posinf=1.0, neginf=0.0)
-    # 从大到小排序并返回索引
-    # sorted_cluster_id = np.argsort(score_array)[::-1]
-    # 将img_name中得分最高的cluster的得分作为该img的score
+                                        
+                                                       
+                                                                   
     img_name_to_max_score = {}
     for img_name,cluster_ids in img_name_to_cluster_ids.items():
         max_score = 0
@@ -332,18 +332,18 @@ def missed_box_to_xyxy(missed_box:dict) -> list:
 
 def cluster_locates_any_missed_box(cluster:list, missed_boxs:list, iou_threshold:float):
     '''
-    判断一个候选cluster是否真正定位到了该图像中的任意missed box。
+    textcandidatesclustertextmissed box.
 
-    返回:
+    Returns:
     ---
     hit_flag: bool
-        cluster中是否存在p_box与任意missed box的IoU大于阈值
+        clustertextp_boxtextmissed boxtextIoUtext
     max_iou: float
-        cluster内所有p_box与所有missed box之间的最大IoU
+        clustertextp_boxtextmissed boxtextIoU
     '''
     max_iou = 0.0
     for missed_box in missed_boxs:
-        missed_bbox = missed_box_to_xyxy(missed_box) # coco:x1y1wh -> x1y1x2y2
+        missed_bbox = missed_box_to_xyxy(missed_box)                          
         for p_box in cluster:
             iou = calu_iou(missed_bbox, p_box["bbox"])
             max_iou = max(max_iou, iou)
@@ -352,15 +352,15 @@ def cluster_locates_any_missed_box(cluster:list, missed_boxs:list, iou_threshold
     return False, max_iou
 
 
-def evaluate_cluster_precision_at_iou(img_to_clusters:dict, # x1y1x2y2
+def evaluate_cluster_precision_at_iou(img_to_clusters:dict,           
                                       imgname_to_missed_boxs:dict,
                                       iou_threshold:float) -> dict:
     '''
-    计算指定IoU阈值下预测簇的precision。
+    textIoUtextprecision.
 
-    预测簇TP定义:
-    cluster中只要存在1个p_box与同图像任意miss box的IoU > iou_threshold，
-    该cluster即为TP；否则为FP。
+    textTPtext:
+    clustertext1textp_boxtextmiss boxtextIoU > iou_threshold,
+    textclustertextTP;textFP.
     '''
     tp = 0
     fp = 0
@@ -426,12 +426,12 @@ def build_cluster_rank_records(img_to_clusters:dict,
                                last_epoch:int,
                                iou_threshold:float) -> list[dict]:
     '''
-    构建cluster级排序评估样本。
+    textclustertextrankingtext.
 
-    每个cluster是一条样本:
-    - score: cluster的TOPSIS分数，越大越可疑
-    - label: 该cluster是否真正定位到任意missed box
-    - max_iou_to_missed: 与同图像missed boxes的最大IoU
+    textclustertext:
+    - score: clustertextTOPSIStext,larger means more suspicious
+    - label: textclustertextmissed box
+    - max_iou_to_missed: textmissed boxestextIoU
     '''
     cluster_features = []
     cluster_signs = []
@@ -478,8 +478,8 @@ def build_cluster_rank_records(img_to_clusters:dict,
 
 def best_f1_from_scores(y_true:np.ndarray, y_score:np.ndarray) -> dict:
     '''
-    在所有score阈值上扫描，返回最佳F1及对应precision/recall/threshold。
-    预测规则: score >= threshold 判为定位到miss fault的cluster。
+    textscoretext,ReturnstextF1textprecision/recall/threshold.
+    text: score >= threshold textmiss faulttextcluster.
     '''
     best = {
         "threshold": None,
@@ -523,7 +523,7 @@ def print_topk_cluster_metrics(records:list[dict], positive_count:int):
         ("top20%", max(1, int(len(records) * 0.20))),
     ]
 
-    print("\n[Cluster Top-K 定位命中]")
+    print("\n[Cluster Top-K text]")
     print(f"{'scope':<10}{'k':>8}{'hits':>8}{'precision':>12}"
           f"{'recall':>12}{'f1':>12}")
     for name, k in topk_specs:
@@ -544,15 +544,15 @@ def evaluate_cluster_ranking(img_to_clusters:dict,
                              iou_threshold:float,
                              save_dir:str):
     '''
-    评估“排名靠前的cluster是否真的定位到了miss fault”。
+    text"textclustertextmiss fault".
 
-    label=1: cluster中至少有一个p_box与真实missed box的IoU > iou_threshold
-    score: cluster TOPSIS分数
+    label=1: clustertextp_boxtextmissed boxtextIoU > iou_threshold
+    score: cluster TOPSIStext
     '''
     records = build_cluster_rank_records(
         img_to_clusters, imgname_to_missed_boxs, last_epoch, iou_threshold)
     if not records:
-        print("\n[Cluster Ranking] 没有候选cluster，无法评估。")
+        print("\n[Cluster Ranking] textcandidatescluster,text.")
         return
 
     y_true = np.array([r["label"] for r in records], dtype=int)
@@ -561,12 +561,12 @@ def evaluate_cluster_ranking(img_to_clusters:dict,
     negative_count = int(np.sum(y_true == 0))
 
     print("\n[Cluster Ranking ROC/AUC/F1]")
-    print(f"cluster总数: {len(records)}")
-    print(f"真正定位到miss fault的cluster数量: {positive_count}")
-    print(f"未定位到miss fault的cluster数量: {negative_count}")
+    print(f"clustertext: {len(records)}")
+    print(f"textmiss faulttextclusterCount: {positive_count}")
+    print(f"textmiss faulttextclusterCount: {negative_count}")
 
     if positive_count == 0 or negative_count == 0:
-        print("正负样本不同时存在，无法计算ROC/AUC和F1阈值扫描。")
+        print("text,textROC/AUCtextF1text.")
         return
 
     fpr, tpr, _ = roc_curve(y_true, y_score)
@@ -601,24 +601,24 @@ def evaluate_cluster_ranking(img_to_clusters:dict,
     plt.tight_layout()
     plt.savefig(roc_save_path, dpi=150)
     plt.close()
-    print(f"ROC曲线保存路径: {roc_save_path}")
+    print(f"ROCtextSave path: {roc_save_path}")
 
 
 def get_img_name_to_epoch_to_unmatched_p_boxs(epoch_to_matched_p_ids:dict,
                                               last_epoch: int=5, conf_threshold: float=0.6):
     '''
-    得到图像在后面几个epoch中未得到匹配的高置信度p_box
-    参数：
+    Get high-confidence unmatched p_boxes in later epochs for each image.
+    Parameters:
     ---
     epoch_to_matched_p_ids : dict
-        每个epoch下的被匹配的p_ids
+        matched p_ids under each epoch
     last_epoch : int, default=5
     conf_threshold: float, default=0.6
 
-    返回：
+    Returns:
     ---
     img_name_to_epoch_to_no_match_p_boxs : dict
-        数据结构示例：
+        Data structure example:
         {
             img_name:{
                 epoch:[p_box1,p_box2],
@@ -628,20 +628,20 @@ def get_img_name_to_epoch_to_unmatched_p_boxs(epoch_to_matched_p_ids:dict,
         }
     '''
     img_name_to_no_match_p = {}
-    # 只关心最后5个epoch的预测情况
+                                                    
     for epoch in range(epochs-last_epoch,epochs):
-        # 加载当前epoch的预测结果
+                                                      
         predicted_epoch_json_path = os.path.join(predicted_bboxs_dir, f"epoch_{epoch}_predicted_bboxs.json")
         with open(predicted_epoch_json_path,mode="r") as f:
             predicted_epoch_dict = json.load(f)
-        # 统计所有图像中没被gt_box匹配到的高置信度预测box
+                                                                                     
         for img_name in sorted(predicted_epoch_dict.keys()):
-            # img_name在该epoch下的所有预测框
+                                                          
             p_box_list = predicted_epoch_dict[img_name]["predicted_bboxs"]
-            # 遍历预测框
+                                     
             for p_box in p_box_list:
                 p_id = p_box["predicted_box_id"]
-                # 没被匹配的和conf大于一定阈值的pid
+                                                                      
                 if p_id not in epoch_to_matched_p_ids[epoch] and p_box["conf"] > conf_threshold:
                     add_path_value(img_name_to_no_match_p,keys=[img_name,epoch],value=p_box)
     return img_name_to_no_match_p
@@ -656,11 +656,11 @@ def get_all_img_name(imgs_dir:str) -> list[str]:
     return img_name_list
 
 def get_epoch_to_matched_p_boxs(gt_match_dict):
-    # 每个epoch中所有被匹配上的p_box
+                                       
     epoch_to_match_info = {}
-    # 遍历所有的g_box
+                         
     for g_box_id in gt_match_dict.keys():
-        # 当前g_box的匹配信息
+                                                
         match_info_list = gt_match_dict[g_box_id]
         for match_info in match_info_list:
             epoch = match_info["epoch"]
@@ -675,19 +675,19 @@ def get_epoch_to_matched_p_boxs(gt_match_dict):
 def rank_img_name(all_img_name_list:list[str], gt_match_json:dict, last_epoch=5, conf_threshold=0.6):
     epoch_to_matched_p_ids = get_epoch_to_matched_p_boxs(gt_match_json)
 
-    # 获得每张图像在后面几个epoch中没被g_box匹配的高置信度p_box
+                                                                                        
     img_name_to_epoch_no_match_p_boxs = get_img_name_to_epoch_to_unmatched_p_boxs(
         epoch_to_matched_p_ids,last_epoch,conf_threshold)
 
     img_name_to_no_matched_p_boxs  = get_img_name_to_no_matched_p_boxs(img_name_to_epoch_no_match_p_boxs)
-    # 采用并查集算法将该img这些高置信度未匹配p_box进行分簇，一个簇其实就是一个统一的p_box
+                                                                                                                         
     img_to_clusters = get_img_to_clusters(img_name_to_no_matched_p_boxs,iou_thre=0.6)
     img_name_to_topsis_score = get_img_to_topsis_score(img_to_clusters,last_epoch)
     no_clusters_image_name_set = sorted(set(all_img_name_list) - set(img_name_to_topsis_score.keys()))
-    print(f"没有预测簇的图像数量:{len(no_clusters_image_name_set)}")
+    print(f"Number of images without predicted clusters:{len(no_clusters_image_name_set)}")
     for img_name in no_clusters_image_name_set:
         img_name_to_topsis_score[img_name] = 0.0
-    # 同分按文件名稳定排序
+                 
     sorted_items = sorted(img_name_to_topsis_score.items(),key=lambda x: (-float(x[1]), x[0]))   
     ranked_image_name_list = []
     ranked_score_list = []
@@ -699,19 +699,19 @@ def rank_img_name(all_img_name_list:list[str], gt_match_json:dict, last_epoch=5,
 
 def img_name_to_missed_box_list(annos_with_miss_json:dict)->dict:
     imgname_to_missed_box = defaultdict(list)
-    # imgId_to_imgName
+                      
     imgId_to_imgName = get_imgid_to_imgname(annos_with_miss_json)
     annos = annos_with_miss_json["annotations"]
     for anno in annos:
         if anno["fault_type"] == 4:
             img_name = imgId_to_imgName[anno["image_id"]]
-            imgname_to_missed_box[img_name].append(anno) # anno["bbox"]:[x1,y1,width,height]
+            imgname_to_missed_box[img_name].append(anno)                                    
     return imgname_to_missed_box
 
 def main():
     all_img_name_list = get_all_img_name(imgs_dir)
     gt_match_json = read_json(match_json_path)
-    '''得到ours方法的img的排序'''
+    '''Get image ranking of our method'''
     ranked_image_name_list,ranked_img_score_list, img_to_clusters = rank_img_name(all_img_name_list, gt_match_json)
     imgname_to_missed_boxs = img_name_to_missed_box_list(annos_with_miss_json)
 
@@ -720,7 +720,7 @@ def main():
     print()
 
     '''
-    print("包含miss fault的img数量:", len(imgname_to_missed_boxs.keys()))
+    print("textmiss faulttextimgCount:", len(imgname_to_missed_boxs.keys()))
     for img_name, missed_boxs in imgname_to_missed_boxs.items():
         for missed_box in missed_boxs:
             missed_box["success_loc_flag"] = False
@@ -728,17 +728,17 @@ def main():
 
     for img_name, missed_boxs in imgname_to_missed_boxs.items():
         clusters = img_to_clusters[img_name]
-        # # 遍历该img的所有的missed boxs
+        # # textimgtextmissed boxs
         for missed_box in missed_boxs:
             missed_bbox = missed_box_to_xyxy(missed_box)
-            # 遍历该img的所有预测簇
+            # textimgtext
             for cluster in clusters:
                 for p_box in cluster:
                     px1,py1,px2,py2 = p_box["bbox"]
                     p_bbox = [px1,py1,px2,py2]
                     iou = bbox_iou(missed_bbox,p_bbox)
                     iou2 = calu_iou(missed_bbox,p_bbox)
-                    assert iou == iou2, "iou计算错误"
+                    assert iou == iou2, "ioutext"
                     if iou > iou_threshold:
                         missed_box["success_loc_flag"] = True
                         missed_box["loc_p_box_list"].append(p_box)
@@ -753,8 +753,8 @@ def main():
         for missed_box in missed_boxs:
             if missed_box["success_loc_flag"] is True:
                 loced_nums += 1
-    print("总共missed_box数量:",total_missed_box_nums)
-    print("loc准确的数量:",loced_nums)
+    print("textmissed_boxCount:",total_missed_box_nums)
+    print("loctextCount:",loced_nums)
     loc_success_rate = round(loced_nums / total_missed_box_nums,4)
     print("misloc_recall_rate:",loc_success_rate)
     evaluate_cluster_precision_at_iou(
@@ -771,12 +771,12 @@ def main():
 
 if __name__ == "__main__":
     exp_data_root_dir = "/data/mml/data_debugging_data"
-    iou_threshold = 0.5 # [0.5,0.6,0.7,0.8,0.9]
+    iou_threshold = 0.5                        
 
-    # 实验参数
+                    
     _args = {
-        "dataset_name":"VOC2012", # VOC2012|KITTI_8|VisDrone
-        "model_name":"YOLOv7",# YOLOv7|FRCNN|SSD
+        "dataset_name":"VOC2012",                           
+        "model_name":"YOLOv7",                  
         "epochs":50,
         "loc_iou_threshold": iou_threshold
     }
@@ -788,17 +788,17 @@ if __name__ == "__main__":
     pprint.pprint(_args)
 
 
-    # 需要的数据文件路径
+                              
     gt_json_path = get_collected_gt_box_json_path(dataset_name)
-    # match json
+                
     if dataset_name == "VisDrone":
         match_json_path = os.path.join(exp_data_root_dir,"collection_bbox_level",dataset_name,model_name, "gp_box_match",
-                                   "match_v3.json") # v3 for visdrone
+                                   "match_v3.json")                  
     else:
         match_json_path = os.path.join(exp_data_root_dir,"collection_bbox_level",dataset_name,model_name, "gp_box_match",
                                    "match_v2.json")
     if not os.path.exists(match_json_path):
-        # 使用了新路径
+              
         match_json_path = os.path.join(exp_data_root_dir,"collection_bbox_level",dataset_name,model_name,
                                    "match.json")
     
@@ -806,8 +806,8 @@ if __name__ == "__main__":
     annos_with_miss_json = read_json(annos_with_miss_json_path)
     predicted_bboxs_dir = os.path.join(exp_data_root_dir,"collection_bbox_level",
                                        dataset_name,model_name,"collected_predicted_box","v2")
-    # 一定要是全量的trainset的imgsdir
+                                                
     imgs_dir = os.path.join(exp_data_root_dir,"retrain_dataset_split", dataset_name,
                              "images", "origin")
-    # 主函数
+          
     main()

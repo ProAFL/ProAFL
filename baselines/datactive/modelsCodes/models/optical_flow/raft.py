@@ -30,12 +30,12 @@ class ResidualBlock(nn.Module):
     def __init__(self, in_channels, out_channels, *, norm_layer, stride=1):
         super().__init__()
 
-        # Note regarding bias=True:
-        # Usually we can pass bias=False in conv layers followed by a norm layer.
-        # But in the RAFT training reference, the BatchNorm2d layers are only activated for the first dataset,
-        # and frozen for the rest of the training process (i.e. set as eval()). The bias term is thus still useful
-        # for the rest of the datasets. Technically, we could remove the bias for other norm layers like Instance norm
-        # because these aren't frozen, but we don't bother (also, we woudn't be able to load the original weights).
+                                   
+                                                                                 
+                                                                                                              
+                                                                                                                  
+                                                                                                                      
+                                                                                                                   
         self.convnormrelu1 = Conv2dNormActivation(
             in_channels, out_channels, norm_layer=norm_layer, kernel_size=3, stride=stride, bias=True
         )
@@ -74,7 +74,7 @@ class BottleneckBlock(nn.Module):
     def __init__(self, in_channels, out_channels, *, norm_layer, stride=1):
         super().__init__()
 
-        # See note in ResidualBlock for the reason behind bias=True
+                                                                   
         self.convnormrelu1 = Conv2dNormActivation(
             in_channels, out_channels // 4, norm_layer=norm_layer, kernel_size=1, bias=True
         )
@@ -122,7 +122,7 @@ class FeatureEncoder(nn.Module):
         if len(layers) != 5:
             raise ValueError(f"The expected number of layers is 5, instead got {len(layers)}")
 
-        # See note in ResidualBlock for the reason behind bias=True
+                                                                   
         self.convnormrelu = Conv2dNormActivation(
             3, layers[0], norm_layer=norm_layer, kernel_size=7, stride=2, bias=True
         )
@@ -182,7 +182,7 @@ class MotionEncoder(nn.Module):
         self.convflow1 = Conv2dNormActivation(2, flow_layers[0], norm_layer=None, kernel_size=7)
         self.convflow2 = Conv2dNormActivation(flow_layers[0], flow_layers[1], norm_layer=None, kernel_size=3)
 
-        # out_channels - 2 because we cat the flow (2 channels) at the end
+                                                                          
         self.conv = Conv2dNormActivation(
             corr_layers[-1] + flow_layers[-1], out_channels - 2, norm_layer=None, kernel_size=3
         )
@@ -221,7 +221,7 @@ class ConvGRU(nn.Module):
 
 
 def _pass_through_h(h, _):
-    # Declared here for torchscript
+                                   
     return h
 
 
@@ -309,14 +309,14 @@ class MaskPredictor(nn.Module):
     def __init__(self, *, in_channels, hidden_size, multiplier=0.25):
         super().__init__()
         self.convrelu = Conv2dNormActivation(in_channels, hidden_size, norm_layer=None, kernel_size=3)
-        # 8 * 8 * 9 because the predicted flow is downsampled by 8, from the downsampling of the initial FeatureEncoder
-        # and we interpolate with all 9 surrounding neighbors. See paper and appendix B.
+                                                                                                                       
+                                                                                        
         self.conv = nn.Conv2d(hidden_size, 8 * 8 * 9, 1, padding=0)
 
-        # In the original code, they use a factor of 0.25 to "downweight the gradients" of that branch.
-        # See e.g. https://github.com/princeton-vl/RAFT/issues/119#issuecomment-953950419
-        # or https://github.com/princeton-vl/RAFT/issues/24.
-        # It doesn't seem to affect epe significantly and can likely be set to 1.
+                                                                                                       
+                                                                                         
+                                                            
+                                                                                 
         self.multiplier = multiplier
 
     def forward(self, x):
@@ -340,12 +340,12 @@ class CorrBlock(nn.Module):
         self.num_levels = num_levels
         self.radius = radius
 
-        self.corr_pyramid: List[Tensor] = [torch.tensor(0)]  # useless, but torchscript is otherwise confused :')
+        self.corr_pyramid: List[Tensor] = [torch.tensor(0)]                                                      
 
-        # The neighborhood of a centroid pixel x' is {x' + delta, ||delta||_inf <= radius}
-        # so it's a square surrounding x', and its sides have a length of 2 * radius + 1
-        # The paper claims that it's ||.||_1 instead of ||.||_inf but it's a typo:
-        # https://github.com/princeton-vl/RAFT/issues/122
+                                                                                          
+                                                                                        
+                                                                                  
+                                                         
         self.out_channels = num_levels * (2 * radius + 1) ** 2
 
     def build_pyramid(self, fmap1, fmap2):
@@ -362,7 +362,7 @@ class CorrBlock(nn.Module):
             )
         corr_volume = self._compute_corr_volume(fmap1, fmap2)
 
-        batch_size, h, w, num_channels, _, _ = corr_volume.shape  # _, _ = h, w
+        batch_size, h, w, num_channels, _, _ = corr_volume.shape               
         corr_volume = corr_volume.reshape(batch_size * h * w, num_channels, h, w)
         self.corr_pyramid = [corr_volume]
         for _ in range(self.num_levels - 1):
@@ -371,18 +371,18 @@ class CorrBlock(nn.Module):
 
     def index_pyramid(self, centroids_coords):
         """Return correlation features by indexing from the pyramid."""
-        neighborhood_side_len = 2 * self.radius + 1  # see note in __init__ about out_channels
+        neighborhood_side_len = 2 * self.radius + 1                                           
         di = torch.linspace(-self.radius, self.radius, neighborhood_side_len)
         dj = torch.linspace(-self.radius, self.radius, neighborhood_side_len)
         delta = torch.stack(torch.meshgrid(di, dj, indexing="ij"), dim=-1).to(centroids_coords.device)
         delta = delta.view(1, neighborhood_side_len, neighborhood_side_len, 2)
 
-        batch_size, _, h, w = centroids_coords.shape  # _ = 2
+        batch_size, _, h, w = centroids_coords.shape         
         centroids_coords = centroids_coords.permute(0, 2, 3, 1).reshape(batch_size * h * w, 1, 1, 2)
 
         indexed_pyramid = []
         for corr_volume in self.corr_pyramid:
-            sampling_coords = centroids_coords + delta  # end shape is (batch_size * h * w, side_len, side_len, 2)
+            sampling_coords = centroids_coords + delta                                                            
             indexed_corr_volume = grid_sample(corr_volume, sampling_coords, align_corners=True, mode="bilinear").view(
                 batch_size, h, w, -1
             )
@@ -478,9 +478,9 @@ class RAFT(nn.Module):
         if context_out.shape[-2:] != (h // 8, w // 8):
             raise ValueError("The context encoder should downsample H and W by 8")
 
-        # As in the original paper, the actual output of the context encoder is split in 2 parts:
-        # - one part is used to initialize the hidden state of the recurent units of the update block
-        # - the rest is the "actual" context.
+                                                                                                 
+                                                                                                     
+                                             
         hidden_state_size = self.update_block.hidden_state_size
         out_channels_context = context_out.shape[1] - hidden_state_size
         if out_channels_context <= 0:
@@ -496,7 +496,7 @@ class RAFT(nn.Module):
 
         flow_predictions = []
         for _ in range(num_flow_updates):
-            coords1 = coords1.detach()  # Don't backpropagate gradients through this branch, see paper
+            coords1 = coords1.detach()                                                                
             corr_features = self.corr_block.index_pyramid(centroids_coords=coords1)
 
             flow = coords1 - coords0
@@ -531,7 +531,7 @@ class Raft_Large_Weights(WeightsEnum):
     """
 
     C_T_V1 = Weights(
-        # Weights ported from https://github.com/princeton-vl/RAFT
+                                                                  
         url="https://download.pytorch.org/models/raft_large_C_T_V1-22a6c225.pth",
         transforms=OpticalFlow,
         meta={
@@ -568,7 +568,7 @@ class Raft_Large_Weights(WeightsEnum):
     )
 
     C_T_SKHT_V1 = Weights(
-        # Weights ported from https://github.com/princeton-vl/RAFT
+                                                                  
         url="https://download.pytorch.org/models/raft_large_C_T_SKHT_V1-0b8c9e55.pth",
         transforms=OpticalFlow,
         meta={
@@ -617,7 +617,7 @@ class Raft_Large_Weights(WeightsEnum):
     )
 
     C_T_SKHT_K_V1 = Weights(
-        # Weights ported from https://github.com/princeton-vl/RAFT
+                                                                  
         url="https://download.pytorch.org/models/raft_large_C_T_SKHT_K_V1-4a6a5039.pth",
         transforms=OpticalFlow,
         meta={
@@ -677,7 +677,7 @@ class Raft_Small_Weights(WeightsEnum):
     """
 
     C_T_V1 = Weights(
-        # Weights ported from https://github.com/princeton-vl/RAFT
+                                                                  
         url="https://download.pytorch.org/models/raft_small_C_T_V1-ad48884c.pth",
         transforms=OpticalFlow,
         meta={
@@ -719,28 +719,28 @@ def _raft(
     *,
     weights=None,
     progress=False,
-    # Feature encoder
+                     
     feature_encoder_layers,
     feature_encoder_block,
     feature_encoder_norm_layer,
-    # Context encoder
+                     
     context_encoder_layers,
     context_encoder_block,
     context_encoder_norm_layer,
-    # Correlation block
+                       
     corr_block_num_levels,
     corr_block_radius,
-    # Motion encoder
+                    
     motion_encoder_corr_layers,
     motion_encoder_flow_layers,
     motion_encoder_out_channels,
-    # Recurrent block
+                     
     recurrent_block_hidden_state_size,
     recurrent_block_kernel_size,
     recurrent_block_padding,
-    # Flow Head
+               
     flow_head_hidden_size,
-    # Mask predictor
+                    
     use_mask_predictor,
     **kwargs,
 ):
@@ -762,7 +762,7 @@ def _raft(
             out_channels=motion_encoder_out_channels,
         )
 
-        # See comments in forward pass of RAFT class about why we split the output of the context encoder
+                                                                                                         
         out_channels_context = context_encoder_layers[-1] - recurrent_block_hidden_state_size
         recurrent_block = RecurrentBlock(
             input_size=motion_encoder.out_channels + out_channels_context,
@@ -780,7 +780,7 @@ def _raft(
         mask_predictor = MaskPredictor(
             in_channels=recurrent_block_hidden_state_size,
             hidden_size=256,
-            multiplier=0.25,  # See comment in MaskPredictor about this
+            multiplier=0.25,                                           
         )
 
     model = RAFT(
@@ -789,7 +789,7 @@ def _raft(
         corr_block=corr_block,
         update_block=update_block,
         mask_predictor=mask_predictor,
-        **kwargs,  # not really needed, all params should be consumed by now
+        **kwargs,                                                           
     )
 
     if weights is not None:
@@ -826,28 +826,28 @@ def raft_large(*, weights: Optional[Raft_Large_Weights] = None, progress=True, *
     return _raft(
         weights=weights,
         progress=progress,
-        # Feature encoder
+                         
         feature_encoder_layers=(64, 64, 96, 128, 256),
         feature_encoder_block=ResidualBlock,
         feature_encoder_norm_layer=InstanceNorm2d,
-        # Context encoder
+                         
         context_encoder_layers=(64, 64, 96, 128, 256),
         context_encoder_block=ResidualBlock,
         context_encoder_norm_layer=BatchNorm2d,
-        # Correlation block
+                           
         corr_block_num_levels=4,
         corr_block_radius=4,
-        # Motion encoder
+                        
         motion_encoder_corr_layers=(256, 192),
         motion_encoder_flow_layers=(128, 64),
         motion_encoder_out_channels=128,
-        # Recurrent block
+                         
         recurrent_block_hidden_state_size=128,
         recurrent_block_kernel_size=((1, 5), (5, 1)),
         recurrent_block_padding=((0, 2), (2, 0)),
-        # Flow head
+                   
         flow_head_hidden_size=256,
-        # Mask predictor
+                        
         use_mask_predictor=True,
         **kwargs,
     )
@@ -880,28 +880,28 @@ def raft_small(*, weights: Optional[Raft_Small_Weights] = None, progress=True, *
     return _raft(
         weights=weights,
         progress=progress,
-        # Feature encoder
+                         
         feature_encoder_layers=(32, 32, 64, 96, 128),
         feature_encoder_block=BottleneckBlock,
         feature_encoder_norm_layer=InstanceNorm2d,
-        # Context encoder
+                         
         context_encoder_layers=(32, 32, 64, 96, 160),
         context_encoder_block=BottleneckBlock,
         context_encoder_norm_layer=None,
-        # Correlation block
+                           
         corr_block_num_levels=4,
         corr_block_radius=3,
-        # Motion encoder
+                        
         motion_encoder_corr_layers=(96,),
         motion_encoder_flow_layers=(64, 32),
         motion_encoder_out_channels=82,
-        # Recurrent block
+                         
         recurrent_block_hidden_state_size=96,
         recurrent_block_kernel_size=(3,),
         recurrent_block_padding=(1,),
-        # Flow head
+                   
         flow_head_hidden_size=128,
-        # Mask predictor
+                        
         use_mask_predictor=False,
         **kwargs,
     )

@@ -12,7 +12,7 @@ def cal_voc_map(model, results, val_dataset):
     iou_types = _get_iou_types(model)
     coco_evaluator = CocoEvaluator(coco, iou_types)
 
-    # instances results to image results
+                                        
     image_results = {}
     for result in results:
         image_id = result["image_id"]

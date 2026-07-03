@@ -12,12 +12,12 @@ class parameters:
             'redundancy fault': 3,
             'missing fault': 4,
         }
-        self.fault_ratio = 0.1  # 0.05
+        self.fault_ratio = 0.1        
         self.m_t = 0.5
         self.t_b = 0.1
         self.t_f = 0.5
         self.t_p = 0.5
-        self.missing_threshold = 0.5  # if IoU > missing_threshold, then it is a missing fault
+        self.missing_threshold = 0.5                                                          
         self.rauc_num = 500
         self.adaptive_epoch = 17
         self.adaptive_batchsize = 200
@@ -32,7 +32,7 @@ class parameters:
                            90]
 
 
-# test
+      
 if __name__ == "__main__":
     para = parameters()
     print(para.m_t)

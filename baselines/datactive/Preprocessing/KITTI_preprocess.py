@@ -37,8 +37,8 @@ def save(runtype='train',txts=None):
 
         results.append(targets)
 
-        # img = plt.imread(os.path.join('../dataset/KITTI/training/image_2', txt[:-4] + '.png'))
-        # _plot(targets, img)
+                                                                                                
+                             
     with open('../dataset/KITTI/'+runtype+'_annotations.json', 'w') as f:
         json.dump(results, f, indent=4)
 

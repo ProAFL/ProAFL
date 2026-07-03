@@ -59,9 +59,9 @@ class FCOSHead(nn.Module):
         matched_idxs: List[Tensor],
     ) -> Dict[str, Tensor]:
 
-        cls_logits = head_outputs["cls_logits"]  # [N, HWA, C]
-        bbox_regression = head_outputs["bbox_regression"]  # [N, HWA, 4]
-        bbox_ctrness = head_outputs["bbox_ctrness"]  # [N, HWA, 1]
+        cls_logits = head_outputs["cls_logits"]               
+        bbox_regression = head_outputs["bbox_regression"]               
+        bbox_ctrness = head_outputs["bbox_ctrness"]               
 
         all_gt_classes_targets = []
         all_gt_boxes_targets = []
@@ -72,34 +72,34 @@ class FCOSHead(nn.Module):
             else:
                 gt_classes_targets = targets_per_image["labels"][matched_idxs_per_image.clip(min=0)]
                 gt_boxes_targets = targets_per_image["boxes"][matched_idxs_per_image.clip(min=0)]
-            gt_classes_targets[matched_idxs_per_image < 0] = -1  # backgroud
+            gt_classes_targets[matched_idxs_per_image < 0] = -1             
             all_gt_classes_targets.append(gt_classes_targets)
             all_gt_boxes_targets.append(gt_boxes_targets)
 
         all_gt_classes_targets = torch.stack(all_gt_classes_targets)
-        # compute foregroud
+                           
         foregroud_mask = all_gt_classes_targets >= 0
         num_foreground = foregroud_mask.sum().item()
 
-        # classification loss
+                             
         gt_classes_targets = torch.zeros_like(cls_logits)
         gt_classes_targets[foregroud_mask, all_gt_classes_targets[foregroud_mask]] = 1.0
         loss_cls = sigmoid_focal_loss(cls_logits, gt_classes_targets, reduction="sum")
 
-        # regression loss: GIoU loss
-        # TODO: vectorize this instead of using a for loop
+                                    
+                                                          
         pred_boxes = [
             self.box_coder.decode_single(bbox_regression_per_image, anchors_per_image)
             for anchors_per_image, bbox_regression_per_image in zip(anchors, bbox_regression)
         ]
-        # amp issue: pred_boxes need to convert float
+                                                     
         loss_bbox_reg = generalized_box_iou_loss(
             torch.stack(pred_boxes)[foregroud_mask].float(),
             torch.stack(all_gt_boxes_targets)[foregroud_mask],
             reduction="sum",
         )
 
-        # ctrness loss
+                      
         bbox_reg_targets = [
             self.box_coder.encode_single(anchors_per_image, boxes_targets_per_image)
             for anchors_per_image, boxes_targets_per_image in zip(anchors, all_gt_boxes_targets)
@@ -188,11 +188,11 @@ class FCOSClassificationHead(nn.Module):
             cls_logits = self.conv(features)
             cls_logits = self.cls_logits(cls_logits)
 
-            # Permute classification output from (N, A * K, H, W) to (N, HWA, K).
+                                                                                 
             N, _, H, W = cls_logits.shape
             cls_logits = cls_logits.view(N, -1, self.num_classes, H, W)
             cls_logits = cls_logits.permute(0, 3, 4, 1, 2)
-            cls_logits = cls_logits.reshape(N, -1, self.num_classes)  # Size=(N, HWA, 4)
+            cls_logits = cls_logits.reshape(N, -1, self.num_classes)                    
 
             all_cls_logits.append(cls_logits)
 
@@ -252,14 +252,14 @@ class FCOSRegressionHead(nn.Module):
             bbox_regression = nn.functional.relu(self.bbox_reg(bbox_feature))
             bbox_ctrness = self.bbox_ctrness(bbox_feature)
 
-            # permute bbox regression output from (N, 4 * A, H, W) to (N, HWA, 4).
+                                                                                  
             N, _, H, W = bbox_regression.shape
             bbox_regression = bbox_regression.view(N, -1, 4, H, W)
             bbox_regression = bbox_regression.permute(0, 3, 4, 1, 2)
-            bbox_regression = bbox_regression.reshape(N, -1, 4)  # Size=(N, HWA, 4)
+            bbox_regression = bbox_regression.reshape(N, -1, 4)                    
             all_bbox_regression.append(bbox_regression)
 
-            # permute bbox ctrness output from (N, 1 * A, H, W) to (N, HWA, 1).
+                                                                               
             bbox_ctrness = bbox_ctrness.view(N, -1, 1, H, W)
             bbox_ctrness = bbox_ctrness.permute(0, 3, 4, 1, 2)
             bbox_ctrness = bbox_ctrness.reshape(N, -1, 1)
@@ -363,12 +363,12 @@ class FCOS(nn.Module):
         self,
         backbone: nn.Module,
         num_classes: int,
-        # transform parameters
+                              
         min_size: int = 800,
         max_size: int = 1333,
         image_mean: Optional[List[float]] = None,
         image_std: Optional[List[float]] = None,
-        # Anchor parameters
+                           
         anchor_generator: Optional[AnchorGenerator] = None,
         head: Optional[nn.Module] = None,
         center_sampling_radius: float = 1.5,
@@ -395,8 +395,8 @@ class FCOS(nn.Module):
             )
 
         if anchor_generator is None:
-            anchor_sizes = ((8,), (16,), (32,), (64,), (128,))  # equal to strides of multi-level feature map
-            aspect_ratios = ((1.0,),) * len(anchor_sizes)  # set only one anchor
+            anchor_sizes = ((8,), (16,), (32,), (64,), (128,))                                               
+            aspect_ratios = ((1.0,),) * len(anchor_sizes)                       
             anchor_generator = AnchorGenerator(anchor_sizes, aspect_ratios)
         self.anchor_generator = anchor_generator
         if self.anchor_generator.num_anchors_per_location()[0] != 1:
@@ -422,7 +422,7 @@ class FCOS(nn.Module):
         self.detections_per_img = detections_per_img
         self.topk_candidates = topk_candidates
 
-        # used only on torchscript mode
+                                       
         self._has_warned = False
 
     @torch.jit.unused
@@ -450,22 +450,22 @@ class FCOS(nn.Module):
                 continue
 
             gt_boxes = targets_per_image["boxes"]
-            gt_centers = (gt_boxes[:, :2] + gt_boxes[:, 2:]) / 2  # Nx2
-            anchor_centers = (anchors_per_image[:, :2] + anchors_per_image[:, 2:]) / 2  # N
+            gt_centers = (gt_boxes[:, :2] + gt_boxes[:, 2:]) / 2       
+            anchor_centers = (anchors_per_image[:, :2] + anchors_per_image[:, 2:]) / 2     
             anchor_sizes = anchors_per_image[:, 2] - anchors_per_image[:, 0]
-            # center sampling: anchor point must be close enough to gt center.
+                                                                              
             pairwise_match = (anchor_centers[:, None, :] - gt_centers[None, :, :]).abs_().max(
                 dim=2
             ).values < self.center_sampling_radius * anchor_sizes[:, None]
-            # compute pairwise distance between N points and M boxes
-            x, y = anchor_centers.unsqueeze(dim=2).unbind(dim=1)  # (N, 1)
-            x0, y0, x1, y1 = gt_boxes.unsqueeze(dim=0).unbind(dim=2)  # (1, M)
-            pairwise_dist = torch.stack([x - x0, y - y0, x1 - x, y1 - y], dim=2)  # (N, M)
+                                                                    
+            x, y = anchor_centers.unsqueeze(dim=2).unbind(dim=1)          
+            x0, y0, x1, y1 = gt_boxes.unsqueeze(dim=0).unbind(dim=2)          
+            pairwise_dist = torch.stack([x - x0, y - y0, x1 - x, y1 - y], dim=2)          
 
-            # anchor point must be inside gt
+                                            
             pairwise_match &= pairwise_dist.min(dim=2).values > 0
 
-            # each anchor is only responsible for certain scale range.
+                                                                      
             lower_bound = anchor_sizes * 4
             lower_bound[: num_anchors_per_level[0]] = 0
             upper_bound = anchor_sizes * 8
@@ -473,11 +473,11 @@ class FCOS(nn.Module):
             pairwise_dist = pairwise_dist.max(dim=2).values
             pairwise_match &= (pairwise_dist > lower_bound[:, None]) & (pairwise_dist < upper_bound[:, None])
 
-            # match the GT box with minimum area, if there are multiple GT matches
-            gt_areas = (gt_boxes[:, 2] - gt_boxes[:, 0]) * (gt_boxes[:, 3] - gt_boxes[:, 1])  # N
+                                                                                  
+            gt_areas = (gt_boxes[:, 2] - gt_boxes[:, 0]) * (gt_boxes[:, 3] - gt_boxes[:, 1])     
             pairwise_match = pairwise_match.to(torch.float32) * (1e8 - gt_areas[None, :])
-            min_values, matched_idx = pairwise_match.max(dim=1)  # R, per-anchor match
-            matched_idx[min_values < 1e-5] = -1  # unmatched anchors are assigned -1
+            min_values, matched_idx = pairwise_match.max(dim=1)                       
+            matched_idx[min_values < 1e-5] = -1                                     
 
             matched_idxs.append(matched_idx)
 
@@ -509,7 +509,7 @@ class FCOS(nn.Module):
             ):
                 num_classes = logits_per_level.shape[-1]
 
-                # remove low scoring boxes
+                                          
                 scores_per_level = torch.sqrt(
                     torch.sigmoid(logits_per_level) * torch.sigmoid(box_ctrness_per_level)
                 ).flatten()
@@ -517,7 +517,7 @@ class FCOS(nn.Module):
                 scores_per_level = scores_per_level[keep_idxs]
                 topk_idxs = torch.where(keep_idxs)[0]
 
-                # keep only topk scoring predictions
+                                                    
                 num_topk = det_utils._topk_min(topk_idxs, self.topk_candidates, 0)
                 scores_per_level, idxs = scores_per_level.topk(num_topk)
                 topk_idxs = topk_idxs[idxs]
@@ -538,7 +538,7 @@ class FCOS(nn.Module):
             image_scores = torch.cat(image_scores, dim=0)
             image_labels = torch.cat(image_labels, dim=0)
 
-            # non-maximum suppression
+                                     
             keep = box_ops.batched_nms(image_boxes, image_scores, image_labels, self.nms_thresh)
             keep = keep[: self.detections_per_img]
 
@@ -590,16 +590,16 @@ class FCOS(nn.Module):
             )
             original_image_sizes.append((val[0], val[1]))
 
-        # transform the input
+                             
         images, targets = self.transform(images, targets)
 
-        # Check for degenerate boxes
+                                    
         if targets is not None:
             for target_idx, target in enumerate(targets):
                 boxes = target["boxes"]
                 degenerate_boxes = boxes[:, 2:] <= boxes[:, :2]
                 if degenerate_boxes.any():
-                    # print the first degenerate box
+                                                    
                     bb_idx = torch.where(degenerate_boxes.any(dim=1))[0][0]
                     degen_bb: List[float] = boxes[bb_idx].tolist()
                     torch._assert(
@@ -607,19 +607,19 @@ class FCOS(nn.Module):
                         f"All bounding boxes should have positive height and width. Found invalid box {degen_bb} for target at index {target_idx}.",
                     )
 
-        # get the features from the backbone
+                                            
         features = self.backbone(images.tensors)
         if isinstance(features, torch.Tensor):
             features = OrderedDict([("0", features)])
 
         features = list(features.values())
 
-        # compute the fcos heads outputs using the features
+                                                           
         head_outputs = self.head(features)
 
-        # create the set of anchors
+                                   
         anchors = self.anchor_generator(images, features)
-        # recover level sizes
+                             
         num_anchors_per_level = [x.size(2) * x.size(3) for x in features]
 
         losses = {}
@@ -628,16 +628,16 @@ class FCOS(nn.Module):
             if targets is None:
                 torch._assert(False, "targets should not be none when in training mode")
             else:
-                # compute the losses
+                                    
                 losses = self.compute_loss(targets, head_outputs, anchors, num_anchors_per_level)
         else:
-            # split outputs per level
+                                     
             split_head_outputs: Dict[str, List[Tensor]] = {}
             for k in head_outputs:
                 split_head_outputs[k] = list(head_outputs[k].split(num_anchors_per_level, dim=1))
             split_anchors = [list(a.split(num_anchors_per_level)) for a in anchors]
 
-            # compute the detections
+                                    
             detections = self.postprocess_detections(split_head_outputs, split_anchors, images.image_sizes)
             detections = self.transform.postprocess(detections, images.image_sizes, original_image_sizes)
 
@@ -769,7 +769,7 @@ def fcos_resnet50_fpn(
     return model
 
 
-# The dictionary below is internal implementation detail and will be removed in v0.15
+                                                                                     
 from .._utils import _ModelURLs
 
 

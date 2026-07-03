@@ -168,7 +168,7 @@ def merge(img_ids, eval_imgs):
     merged_img_ids = np.array(merged_img_ids)
     merged_eval_imgs = np.concatenate(merged_eval_imgs, 2)
 
-    # keep only unique (and in sorted order) images
+                                                   
     merged_img_ids, idx = np.unique(merged_img_ids, return_index=True)
     merged_eval_imgs = merged_eval_imgs[..., idx]
 

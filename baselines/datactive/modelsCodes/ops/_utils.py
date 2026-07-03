@@ -8,8 +8,8 @@ def _cat(tensors: List[Tensor], dim: int = 0) -> Tensor:
     """
     Efficient version of torch.cat that avoids a copy if there is only a single element in a list
     """
-    # TODO add back the assert
-    # assert isinstance(tensors, (list, tuple))
+                              
+                                               
     if len(tensors) == 1:
         return tensors[0]
     return torch.cat(tensors, dim)
@@ -41,7 +41,7 @@ def check_roi_boxes_shape(boxes: Union[Tensor, List[Tensor]]):
 def split_normalization_params(
     model: nn.Module, norm_classes: Optional[List[type]] = None
 ) -> Tuple[List[Tensor], List[Tensor]]:
-    # Adapted from https://github.com/facebookresearch/ClassyVision/blob/659d7f78/classy_vision/generic/util.py#L501
+                                                                                                                    
     if not norm_classes:
         norm_classes = [
             nn.modules.batchnorm._BatchNorm,
@@ -70,7 +70,7 @@ def split_normalization_params(
 
 
 def _upcast(t: Tensor) -> Tensor:
-    # Protects from numerical overflows in multiplications by upcasting to the equivalent higher type
+                                                                                                     
     if t.is_floating_point():
         return t if t.dtype in (torch.float32, torch.float64) else t.float()
     else:
@@ -78,7 +78,7 @@ def _upcast(t: Tensor) -> Tensor:
 
 
 def _upcast_non_float(t: Tensor) -> Tensor:
-    # Protects from numerical overflows in multiplications by upcasting to the equivalent higher type
+                                                                                                     
     if t.dtype not in (torch.float32, torch.float64):
         return t.float()
     return t
@@ -92,7 +92,7 @@ def _loss_inter_union(
     x1, y1, x2, y2 = boxes1.unbind(dim=-1)
     x1g, y1g, x2g, y2g = boxes2.unbind(dim=-1)
 
-    # Intersection keypoints
+                            
     xkis1 = torch.max(x1, x1g)
     ykis1 = torch.max(y1, y1g)
     xkis2 = torch.min(x2, x2g)

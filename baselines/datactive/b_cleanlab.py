@@ -27,12 +27,12 @@ class CleanLab:
         root_path = "./data/fault_annotations/" + config["dataset"] + config["set"] + "_mixedfault0.1.json"
         self.gt = self.load_json(root_path)
         data = self.load_json(root_path)
-        # transform dirtylist to {imagename:[]} format dict
+                                                           
         imagename2targets = {}
         for target in data:
             if target["image_name"] not in imagename2targets:
                 imagename2targets[target["image_name"]] = []
-            if target["fault_type"] != fault_type_dict["missing fault"]:  # missing is not a target
+            if target["fault_type"] != fault_type_dict["missing fault"]:                           
                 imagename2targets[target["image_name"]].append(target)
         print("imagename2targets len:", len(imagename2targets))
         names_list = list(imagename2targets.keys())
@@ -57,15 +57,15 @@ class CleanLab:
 
         pre_path = "./data/detection_results/" + config["model"] + "dirty0.1_" + config["dataset"] + config["set"] + "_inferences.json"
         pre_data = self.load_json(pre_path)
-        # transform dirtylist to {imagename:[]} format dict
+                                                           
         pre_imagename2targets = {}
         for target in pre_data:
             if target["image_name"] not in pre_imagename2targets:
                 pre_imagename2targets[target["image_name"]] = []
             pre_imagename2targets[target["image_name"]].append(target)
 
-        # pre_names_list = list(pre_imagename2targets.keys())
-        # assert len(pre_names_list) == len(names_list)
+                                                             
+                                                       
         predictions = []
         for image_name in names_list:
             pred = [[] for _ in range(label_length)]
@@ -74,8 +74,8 @@ class CleanLab:
                     pred[target["category_id"]].append([*target["bbox"], target["score"]])
             pred_final = []
             for p in pred:
-                # convert to numpy array
-                # convert to : array([], shape=(0, 5), dtype=float32)
+                                        
+                                                                     
                 tmp = np.zeros((len(p), 5))
                 for i in range(len(p)):
                     tmp[i] = p[i]

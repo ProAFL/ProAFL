@@ -1,15 +1,15 @@
 '''
-中间实验数据管理
+Intermediate experiment data management
 '''
 import os
 from ours.small_utils import read_yaml
 
 config = read_yaml("config.yaml")
 baselines = config["baselines"]
-# 实验数据存放目录
+                           
 exp_data_root_dir = config["exp_data_dir"]
 
-# 注错类型map
+                
 fault_type_map = {
     'no_fault': 0,
     'cls_fault': 1,
@@ -68,14 +68,14 @@ def get_all_img_name(imgs_dir:str) -> list[str]:
 
 def get_annotations_with_miss_json_path(dataset_name):
     '''
-    获得该数据集注错的anno json, 带有miss fault.
+    Get the faulty annotation JSON for this dataset, including miss faults.
     '''
     return os.path.join(exp_data_root_dir,"error",
                         dataset_name,"labels","coco_format","annotations_with_miss.json")
 
 def get_error_ann_file_path(dataset_name):
     '''
-    得到数据集（trainset）注入错的anno json path (coco-style)
+    Get the injected-fault annotation JSON path for the train set (COCO style).
     '''
     ann_file_path = os.path.join(exp_data_root_dir,"datasets",f"{dataset_name}-coco","train",
                                  "_annotations.coco_error.json")
@@ -83,7 +83,7 @@ def get_error_ann_file_path(dataset_name):
 
 def get_correct_ann_file_path(dataset_name,train_or_val):
     '''
-    得到正确的anno file
+    Get the clean annotation file.
     '''
     ann_file_path = ""
     if train_or_val == "val":
@@ -97,8 +97,8 @@ def get_correct_ann_file_path(dataset_name,train_or_val):
 
 def get_collected_gt_box_json_path(dataset_name):
     '''
-    得到收集上来的数据集trainset的bboxs(不含miss falut,因为miss是无法收集到bbox的)
-    gid格式（我们自己组织的gid,不是coco annotation json中的anno_id）
+    Get collected train-set bounding boxes, excluding miss faults because miss faults have no box to collect.
+    gid format, using our own gid rather than the anno_id in the COCO annotation JSON.
     '''
     return os.path.join(exp_data_root_dir,"collection_process_info",dataset_name,"gt_bboxs.json")
 
@@ -129,7 +129,7 @@ def get_rank_data_path(dataset_name,method_name,model_name=None):
     elif method_name == "ours":
         assert model_name is not None, "model_name is None"
         rank_data_path = os.path.join(exp_data_root_dir,"ours",dataset_name,model_name,"rank","rank.joblib")
-    assert rank_data_path is not None, "没有正确获得rank data path"
+    assert rank_data_path is not None, "Failed to get rank data path"
     return rank_data_path
 
 def get_converted_rank_data_path(dataset_name,method_name,model_name=None):
@@ -143,12 +143,12 @@ def get_converted_rank_data_path(dataset_name,method_name,model_name=None):
     elif method_name == "ours":
         assert model_name is not None, "model_name is None"
         converted_rank_data_path = os.path.join(exp_data_root_dir,"ours",method_name,dataset_name,model_name,"rank","converted_rank.joblib")
-    assert converted_rank_data_path is not None, "没有正确获得converted rank data path"
+    assert converted_rank_data_path is not None, "Failed to get converted rank data path"
     return converted_rank_data_path
 
 def get_nc_by_datasetname(dataset_name) -> int:
     '''
-    得到数据集的类别总数
+    Get the number of dataset classes.
     '''
     if dataset_name == "voc":
         return 20

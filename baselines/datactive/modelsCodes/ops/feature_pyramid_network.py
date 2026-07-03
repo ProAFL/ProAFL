@@ -97,7 +97,7 @@ class FeaturePyramidNetwork(nn.Module):
             self.inner_blocks.append(inner_block_module)
             self.layer_blocks.append(layer_block_module)
 
-        # initialize parameters now to avoid modifying the initialization of top_blocks
+                                                                                       
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
                 nn.init.kaiming_uniform_(m.weight, a=1)
@@ -180,7 +180,7 @@ class FeaturePyramidNetwork(nn.Module):
             results (OrderedDict[Tensor]): feature maps after FPN layers.
                 They are ordered from highest resolution first.
         """
-        # unpack OrderedDict into two lists for easier handling
+                                                               
         names = list(x.keys())
         x = list(x.values())
 
@@ -198,7 +198,7 @@ class FeaturePyramidNetwork(nn.Module):
         if self.extra_blocks is not None:
             results, names = self.extra_blocks(results, x, names)
 
-        # make it back an OrderedDict
+                                     
         out = OrderedDict([(k, v) for k, v in zip(names, results)])
 
         return out

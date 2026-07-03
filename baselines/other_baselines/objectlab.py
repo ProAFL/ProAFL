@@ -16,7 +16,7 @@ def get_imgname2gboxs():
     imgname2gboxs = defaultdict(list)
     for img_name,gbox_list in g_json.items():
         img_path = os.path.join(train_img_dir,img_name)
-        # 图像的width,height
+                                
         image = Image.open(img_path)
         width, height = image.size
         for gbox in gbox_list:
@@ -59,32 +59,32 @@ def objectlab_score(imgname,gboxs,pboxs):
 
     for gbox in gboxs:
         res[gbox['id']] = {}
-        # loc fault rule
+                        
         same_cls_preds = [
             pbox for pbox in pboxs
             if pbox["cls"]  == gbox['cls'] and iou_map[f"{gbox['id']}#{pbox['id']}"] > 0
         ]
         if len(same_cls_preds) == 0:
-            badloc_score = 1.0 # 越靠近1表示标注越可靠，越靠近0表示标注越可疑
+            badloc_score = 1.0                      
         else:
             badloc_score = max(iou_map[f"{gbox['id']}#{pbox['id']}"] for pbox in same_cls_preds)
 
         
         res[gbox['id']]["badloc_score"] = badloc_score
 
-        # cls fault rule
+                        
         diff_cls_high_conf_preds = [
             pbox for pbox in pboxs
             if pbox["cls"] != gbox['cls'] and iou_map[f"{gbox['id']}#{pbox['id']}"] > 0.95
         ]
         if len(diff_cls_high_conf_preds) == 0:
-            badcls_score = 1.0 # 越大越可信
+            badcls_score = 1.0       
         else:
             badcls_score = 1.0 - max(iou_map[f"{gbox['id']}#{pbox['id']}"] for pbox in diff_cls_high_conf_preds)
         res[gbox['id']]["badcls_score"] = badcls_score
 
-    # miss fault rule
-    miss_scores = [] # img level
+                     
+    miss_scores = []            
     sim_min = 1e-6
     for pbox in pboxs:
         if pbox['conf'] <= 0.65:
@@ -109,7 +109,7 @@ def objectlab_score(imgname,gboxs,pboxs):
 def main():
     imgname2gboxs = get_imgname2gboxs()
     imgname2pboxs = get_imgname2pboxs()
-    print("gboxs and pboxs 重组完毕")
+    print("gboxs and pboxs text")
     res = {}
     for imgname in imgname2gboxs.keys():
         gboxs = imgname2gboxs[imgname]
@@ -117,12 +117,12 @@ def main():
         score_res = objectlab_score(imgname,gboxs,pboxs)
         for key,value in score_res.items():
             res[key] = value
-    print("object lab打分完毕")
-    # ranking
+    print("object labtext")
+             
     _dict = {}
     for key in res.keys():
         if type(key) == int:
-            # gid
+                 
             gid = key
             score = min(res[key]["badloc_score"],res[key]["badcls_score"])
             _dict[gid] = score
@@ -130,25 +130,25 @@ def main():
             imgname = key
             score = res[key]["miss_score"]
             _dict[imgname] = score
-    rank = sorted(_dict, key=_dict.get) # gid/imgname rank, 值越小越可疑越靠前
+    rank = sorted(_dict, key=_dict.get)                                                          
 
-    # 保存rank
+              
     save_dir = os.path.join(exp_root_dir,"Results","other_baselines","objectlab",
                             dataset_name,model_name,f"exp_{exp_id}","rank")
     os.makedirs(save_dir,exist_ok=True)
     save_file_name = "rank.joblib"
     save_path = os.path.join(save_dir,save_file_name)
     joblib.dump(rank,save_path)
-    print(f"rank长度为:{len(rank)}")
-    print(f'rank结果保存在:{save_path}')
+    print(f"ranktext:{len(rank)}")
+    print(f'rankResult saved at:{save_path}')
 
 
 
 if __name__ == "__main__":
     config = read_yaml("config.yaml")
     exp_root_dir = config["exp_data_dir"]
-    dataset_name = "voc" # voc|kitti|visdrone
-    model_name = "yolov7" # yolov7|frcnn|rtdetr
+    dataset_name = "voc"                     
+    model_name = "yolov7"                      
     epoch = 99 if model_name == "rtdetr" else 49
     train_img_dir = os.path.join(exp_root_dir,"datasets",f"{dataset_name}-yolo","origin","train","images")
     g_json_path = get_collected_gt_box_json_path(dataset_name)

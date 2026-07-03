@@ -51,7 +51,7 @@ def train_one_epoch(epoch,model,train_dataloader,
         model.load_state_dict(best_checkpoint["model"])
         model.eval()
         for batch_idx, (inputs, targets, indexes) in enumerate(train_dataloader):
-            # print("\rrunning update_weight:{} / {}".format(batch_idx, len(train_dataloader)), end="")
+                                                                                                       
             inputs, targets = inputs.to(device), targets.to(device)
             outputs = model(inputs)
             criterion.update_weight(outputs, targets, indexes)
@@ -61,20 +61,20 @@ def train_one_epoch(epoch,model,train_dataloader,
 
     for i, (inputs, labels, indexes) in enumerate(train_dataloader):
         inputs, labels = inputs.to(device), labels.to(device)
-        # forward
+                 
         outputs = model(inputs)
         if is_LNL:
             loss = criterion(outputs, labels, indexes)
         else:
             loss = criterion(outputs, labels)
         loss_sum += loss.item()
-        # backward
+                  
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
-        # Training progress bar
-        # print("\rEpoch: {}/{} | Step: {}/{} | Loss: {:.4f}".format(epoch + 1, epoches, i + 1, len(train_dataloader),
-        #                                                             loss.item()), end="")
+                               
+                                                                                                                      
+                                                                                           
     loss_avg = round(loss_sum / len(train_dataloader),4)
     return loss_avg
 
@@ -90,8 +90,8 @@ def val_one_epoch(model,val_dataloader,device):
             _, predicted = torch.max(outputs.data, 1)
             total += labels.size(0)
             correct += (predicted == labels).sum().item()
-            # test progress bar
-            # print("\rVal: {}/{}".format(total, len(val_dataloader)), end="")
+                               
+                                                                              
 
     print("\rAccuracy of the val images: {} %".format(100 * correct / total))
 
@@ -110,12 +110,12 @@ def train():
     is_LNL = True
     criterion = build_criterion(is_LNL=is_LNL,train_dataset=train_disassembled_dataset)
     criterion.to(device)
-    # optimizer
+               
     optimizer = torch.optim.SGD(model.parameters(), lr=0.001, momentum=0.9)
     lr_scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=[7, 11], gamma=0.1)
 
     best_acc = 0.0
-    # train
+           
     for epoch in range(epoches):
         loss_avg = train_one_epoch(epoch,model,train_dataloader,
                     optimizer,criterion,
@@ -137,7 +137,7 @@ def train():
             }, os.path.join(model_save_dir,"best.pt"))
 
         print("Now best acc: {} %".format(best_acc))
-        # save checkpoint
+                         
         torch.save({
             "epoch": epoch,
             "model": model.state_dict(),
@@ -146,31 +146,31 @@ def train():
             "acc": val_acc
         }, os.path.join(model_save_dir,f"epoch_{epoch}.pt"))
         end_time = time.time()
-        elapsed_time = end_time - start_time  # 计算运行时间（秒）
-        hours = int(elapsed_time // 3600)  # 计算小时数
-        minutes = int((elapsed_time % 3600) // 60)  # 计算分钟数
-        seconds = elapsed_time % 60  # 计算剩余的秒数
-        print(f"运行时间：{hours:02d}:{minutes:02d}:{seconds:02.0f}")
+        elapsed_time = end_time - start_time                                     
+        hours = int(elapsed_time // 3600)                   
+        minutes = int((elapsed_time % 3600) // 60)                     
+        seconds = elapsed_time % 60                               
+        print(f"Elapsed time: {hours:02d}:{minutes:02d}:{seconds:02.0f}")
         now_str = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-        print(f"实验结束时刻: {now_str}")
+        print(f"text: {now_str}")
         
 
 
 if __name__ == "__main__":
     config = read_yaml("config.yaml")
     exp_data_root = config["exp_data_dir"]
-    dataset_name = "voc" # voc|kitti|visdrone
+    dataset_name = "voc"                     
     img_root_dir = f"{exp_data_root}/datasets/{dataset_name}-coco/train"
     annotation_path = f"{exp_data_root}/datasets/{dataset_name}-coco/train/_annotations.coco_error.json"
-    mask_type = "crop" # crop | other_objects
+    mask_type = "crop"                       
     if dataset_name == "voc":
-        class_num = 21 # 20 + 1
+        class_num = 21         
     elif dataset_name == "visdrone":
-        class_num = 11 # 10 + 1
+        class_num = 11         
     elif dataset_name == "kitti":
-        class_num = 9 # 8 + 1
+        class_num = 9        
     else:
-        raise Exception("数据集名称错误")
+        raise Exception("text")
     epoches = 13
     device = torch.device("cuda:0")
     model_save_dir = f"{exp_data_root}/baselines/datactive/{dataset_name}/rank/models/{mask_type}"
@@ -199,11 +199,11 @@ detective(crop_path='./crop_test_inf.json',
               dirty_path='./dataset/COCO/casestudy_test.json')
 '''
 
-# resume
-# checkpoint = torch.load('./models/resnet50_voc_epoch_10.pt', map_location="cpu")
-# model.load_state_dict(checkpoint["model"])
-# optimizer.load_state_dict(checkpoint["optimizer"])
-# epoch = checkpoint["epoch"]
-# loss = checkpoint["loss"]
-# acc=checkpoint["acc"]
-# print("checkpoint acc = ",acc)
+        
+                                                                                  
+                                            
+                                                    
+                             
+                           
+                       
+                                

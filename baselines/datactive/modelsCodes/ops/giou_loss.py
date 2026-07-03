@@ -38,7 +38,7 @@ def generalized_box_iou_loss(
         https://arxiv.org/abs/1902.09630
     """
 
-    # Original implementation from https://github.com/facebookresearch/fvcore/blob/bfff2ef/fvcore/nn/giou_loss.py
+                                                                                                                 
 
     if not torch.jit.is_scripting() and not torch.jit.is_tracing():
         _log_api_usage_once(generalized_box_iou_loss)
@@ -51,7 +51,7 @@ def generalized_box_iou_loss(
     x1, y1, x2, y2 = boxes1.unbind(dim=-1)
     x1g, y1g, x2g, y2g = boxes2.unbind(dim=-1)
 
-    # smallest enclosing box
+                            
     xc1 = torch.min(x1, x1g)
     yc1 = torch.min(y1, y1g)
     xc2 = torch.max(x2, x2g)

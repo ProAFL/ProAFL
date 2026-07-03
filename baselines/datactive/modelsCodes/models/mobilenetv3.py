@@ -38,7 +38,7 @@ class SqueezeExcitation(SElayer):
 
 
 class InvertedResidualConfig:
-    # Stores information listed at Tables 1 and 2 of the MobileNetV3 paper
+                                                                          
     def __init__(
         self,
         input_channels: int,
@@ -66,7 +66,7 @@ class InvertedResidualConfig:
 
 
 class InvertedResidual(nn.Module):
-    # Implemented as described at section 5 of MobileNetV3 paper
+                                                                
     def __init__(
         self,
         cnf: InvertedResidualConfig,
@@ -82,7 +82,7 @@ class InvertedResidual(nn.Module):
         layers: List[nn.Module] = []
         activation_layer = nn.Hardswish if cnf.use_hs else nn.ReLU
 
-        # expand
+                
         if cnf.expanded_channels != cnf.input_channels:
             layers.append(
                 Conv2dNormActivation(
@@ -94,7 +94,7 @@ class InvertedResidual(nn.Module):
                 )
             )
 
-        # depthwise
+                   
         stride = 1 if cnf.dilation > 1 else cnf.stride
         layers.append(
             Conv2dNormActivation(
@@ -112,7 +112,7 @@ class InvertedResidual(nn.Module):
             squeeze_channels = _make_divisible(cnf.expanded_channels // 4, 8)
             layers.append(se_layer(cnf.expanded_channels, squeeze_channels))
 
-        # project
+                 
         layers.append(
             Conv2dNormActivation(
                 cnf.expanded_channels, cnf.out_channels, kernel_size=1, norm_layer=norm_layer, activation_layer=None
@@ -171,7 +171,7 @@ class MobileNetV3(nn.Module):
 
         layers: List[nn.Module] = []
 
-        # building first layer
+                              
         firstconv_output_channels = inverted_residual_setting[0].input_channels
         layers.append(
             Conv2dNormActivation(
@@ -184,11 +184,11 @@ class MobileNetV3(nn.Module):
             )
         )
 
-        # building inverted residual blocks
+                                           
         for cnf in inverted_residual_setting:
             layers.append(block(cnf, norm_layer))
 
-        # building last several layers
+                                      
         lastconv_input_channels = inverted_residual_setting[-1].out_channels
         lastconv_output_channels = 6 * lastconv_input_channels
         layers.append(
@@ -248,37 +248,37 @@ def _mobilenet_v3_conf(
     if arch == "mobilenet_v3_large":
         inverted_residual_setting = [
             bneck_conf(16, 3, 16, 16, False, "RE", 1, 1),
-            bneck_conf(16, 3, 64, 24, False, "RE", 2, 1),  # C1
+            bneck_conf(16, 3, 64, 24, False, "RE", 2, 1),      
             bneck_conf(24, 3, 72, 24, False, "RE", 1, 1),
-            bneck_conf(24, 5, 72, 40, True, "RE", 2, 1),  # C2
+            bneck_conf(24, 5, 72, 40, True, "RE", 2, 1),      
             bneck_conf(40, 5, 120, 40, True, "RE", 1, 1),
             bneck_conf(40, 5, 120, 40, True, "RE", 1, 1),
-            bneck_conf(40, 3, 240, 80, False, "HS", 2, 1),  # C3
+            bneck_conf(40, 3, 240, 80, False, "HS", 2, 1),      
             bneck_conf(80, 3, 200, 80, False, "HS", 1, 1),
             bneck_conf(80, 3, 184, 80, False, "HS", 1, 1),
             bneck_conf(80, 3, 184, 80, False, "HS", 1, 1),
             bneck_conf(80, 3, 480, 112, True, "HS", 1, 1),
             bneck_conf(112, 3, 672, 112, True, "HS", 1, 1),
-            bneck_conf(112, 5, 672, 160 // reduce_divider, True, "HS", 2, dilation),  # C4
+            bneck_conf(112, 5, 672, 160 // reduce_divider, True, "HS", 2, dilation),      
             bneck_conf(160 // reduce_divider, 5, 960 // reduce_divider, 160 // reduce_divider, True, "HS", 1, dilation),
             bneck_conf(160 // reduce_divider, 5, 960 // reduce_divider, 160 // reduce_divider, True, "HS", 1, dilation),
         ]
-        last_channel = adjust_channels(1280 // reduce_divider)  # C5
+        last_channel = adjust_channels(1280 // reduce_divider)      
     elif arch == "mobilenet_v3_small":
         inverted_residual_setting = [
-            bneck_conf(16, 3, 16, 16, True, "RE", 2, 1),  # C1
-            bneck_conf(16, 3, 72, 24, False, "RE", 2, 1),  # C2
+            bneck_conf(16, 3, 16, 16, True, "RE", 2, 1),      
+            bneck_conf(16, 3, 72, 24, False, "RE", 2, 1),      
             bneck_conf(24, 3, 88, 24, False, "RE", 1, 1),
-            bneck_conf(24, 5, 96, 40, True, "HS", 2, 1),  # C3
+            bneck_conf(24, 5, 96, 40, True, "HS", 2, 1),      
             bneck_conf(40, 5, 240, 40, True, "HS", 1, 1),
             bneck_conf(40, 5, 240, 40, True, "HS", 1, 1),
             bneck_conf(40, 5, 120, 48, True, "HS", 1, 1),
             bneck_conf(48, 5, 144, 48, True, "HS", 1, 1),
-            bneck_conf(48, 5, 288, 96 // reduce_divider, True, "HS", 2, dilation),  # C4
+            bneck_conf(48, 5, 288, 96 // reduce_divider, True, "HS", 2, dilation),      
             bneck_conf(96 // reduce_divider, 5, 576 // reduce_divider, 96 // reduce_divider, True, "HS", 1, dilation),
             bneck_conf(96 // reduce_divider, 5, 576 // reduce_divider, 96 // reduce_divider, True, "HS", 1, dilation),
         ]
-        last_channel = adjust_channels(1024 // reduce_divider)  # C5
+        last_channel = adjust_channels(1024 // reduce_divider)      
     else:
         raise ValueError(f"Unsupported model type {arch}")
 
@@ -431,7 +431,7 @@ def mobilenet_v3_small(
     return _mobilenet_v3(inverted_residual_setting, last_channel, weights, progress, **kwargs)
 
 
-# The dictionary below is internal implementation detail and will be removed in v0.15
+                                                                                     
 from ._utils import _ModelURLs
 
 

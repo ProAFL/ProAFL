@@ -66,7 +66,7 @@ class WeightsEnum(StrEnum):
         return f"{self.__class__.__name__}.{self._name_}"
 
     def __getattr__(self, name):
-        # Be able to fetch Weights attributes directly
+                                                      
         for f in fields(Weights):
             if f.name == name:
                 return object.__getattribute__(self.value, name)
@@ -127,9 +127,9 @@ def _get_enum_from_fn(fn: Callable) -> WeightsEnum:
     if isinstance(ann, type) and issubclass(ann, WeightsEnum):
         weights_enum = ann
     else:
-        # handle cases like Union[Optional, T]
-        # TODO: Replace ann.__args__ with typing.get_args(ann) after python >= 3.8
-        for t in ann.__args__:  # type: ignore[union-attr]
+                                              
+                                                                                  
+        for t in ann.__args__:                            
             if isinstance(t, type) and issubclass(t, WeightsEnum):
                 weights_enum = t
                 break

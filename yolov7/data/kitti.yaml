@@ -15,14 +15,14 @@ nc: 8
 
 # Classes
 names:
-  0: Car # 轿车
-  1: Van # 厢式的运输车辆
-  2: Truck # 大型的载货卡车
-  3: Pedestrian # 道路上行走的人
-  4: Person_sitting # 坐着的人
-  5: Cyclist # 骑着自行车等两轮车辆的人
-  6: Tram # 城市中的电车
-  7: Misc # 其他（难以归类）
+  0: Car # car
+  1: Van # van transport vehicle
+  2: Truck # large cargo truck
+  3: Pedestrian # person walking on the road
+  4: Person_sitting # sitting person
+  5: Cyclist # person riding a bicycle or other two-wheeled vehicle
+  6: Tram # urban tram
+  7: Misc # miscellaneous, hard to classify
 
 # names: [ 'Car', 'Van', 'Truck', 'Pedestrian', 'Person_sitting', 
 #         'Cyclist', 'Tram', 'Misc']

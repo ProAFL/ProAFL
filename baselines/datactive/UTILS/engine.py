@@ -17,13 +17,13 @@ def train_one_epoch(model, optimizer, data_loader, device, epoch, print_freq, mo
     header = f"Epoch: [{epoch}]"
 
     lr_scheduler = None
-    # if epoch == 0:
-    #     warmup_factor = 1.0 / 1000
-    #     warmup_iters = min(1000, len(data_loader) - 1)
-    #
-    #     lr_scheduler = torch.optim.lr_scheduler.LinearLR(
-    #         optimizer, start_factor=warmup_factor, total_iters=warmup_iters
-    #     )
+                    
+                                    
+                                                        
+     
+                                                           
+                                                                             
+           
 
     for images, targets in metric_logger.log_every(data_loader, print_freq, header):
 
@@ -33,7 +33,7 @@ def train_one_epoch(model, optimizer, data_loader, device, epoch, print_freq, mo
         loss_dict = model(images, targets)
         losses = sum(loss for loss in loss_dict.values())
 
-        # reduce losses over all GPUs for logging purposes
+                                                          
         loss_dict_reduced = utils.reduce_dict(loss_dict)
         losses_reduced = sum(loss for loss in loss_dict_reduced.values())
         loss_value = losses_reduced.item()
@@ -53,11 +53,11 @@ def train_one_epoch(model, optimizer, data_loader, device, epoch, print_freq, mo
 
     if modeltype == 'frcnn':
         return metric_logger, metric_logger.meters['loss'].global_avg, metric_logger.meters[
-            'loss_classifier'].global_avg, \
+            'loss_classifier'].global_avg,\
                metric_logger.meters['loss_box_reg'].global_avg, metric_logger.meters['loss_objectness'].global_avg
     elif modeltype == 'ssd':
         return metric_logger, metric_logger.meters['loss'].global_avg, metric_logger.meters[
-            'classification'].global_avg, \
+            'classification'].global_avg,\
                metric_logger.meters['bbox_regression'].global_avg
 
 
@@ -76,7 +76,7 @@ def _get_iou_types(model):
 @torch.inference_mode()
 def evaluate(model, data_loader, device):
     n_threads = torch.get_num_threads()
-    # FIXME remove this and make paste_masks_in_image run on the GPU
+                                                                    
     torch.set_num_threads(1)
     cpu_device = torch.device("cpu")
     model.eval()
@@ -105,12 +105,12 @@ def evaluate(model, data_loader, device):
         evaluator_time = time.time() - evaluator_time
         metric_logger.update(model_time=model_time, evaluator_time=evaluator_time)
 
-    # gather the stats from all processes
+                                         
     metric_logger.synchronize_between_processes()
     print("Averaged stats:", metric_logger)
     coco_evaluator.synchronize_between_processes()
 
-    # accumulate predictions from all images
+                                            
     coco_evaluator.accumulate()
     coco_evaluator.summarize()
     torch.set_num_threads(n_threads)

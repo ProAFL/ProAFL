@@ -57,7 +57,7 @@ class Metric:
 
             rauc_curve['theoretical'].append(rauc_curve['theoretical'][i] + 1)
 
-        # print rauc
+                    
         print('RAUC-{:} class fault = {:.5f}'.format(rauc_num,
                                                      sum(rauc_curve['class fault']) / sum(rauc_curve['theoretical'])))
         print('RAUC-{:} location fault = {:.5f}'.format(rauc_num, sum(rauc_curve['location fault']) / sum(
@@ -69,7 +69,7 @@ class Metric:
         print('RAUC-{:} any fault = {:.5f}'.format(rauc_num,
                                                    sum(rauc_curve['any fault']) / sum(rauc_curve['theoretical'])))
 
-        # plt rauc curve
+                        
         plt.figure()
         plt.plot(rauc_curve['theoretical'], label='theoretical')
         plt.plot(rauc_curve['class fault'], label='class fault')
@@ -105,7 +105,7 @@ class Metric:
         for key in fault_ratio.keys():
             if key != 'all':
                 fault_ratio[key] = len([i for i in FaultSet if i["fault_type"] == fault_type_dict[key]]) / len(FaultSet)
-                fault_inclusiveness[key] = len([i for i in FaultSet if i["fault_type"] == fault_type_dict[key]]) / \
+                fault_inclusiveness[key] = len([i for i in FaultSet if i["fault_type"] == fault_type_dict[key]]) /\
                                            gt_fault_num[key]
 
         fault_ratio['all'] = len([i for i in FaultSet if i["fault_type"] != fault_type_dict['no fault']]) / len(
@@ -155,7 +155,7 @@ class Metric:
                                                                                len(results) * m_missing_fault)
         apfd_results['any fault'] = 1 - tf_any_fault / (m_any_fault * len(results)) + 1 / (
                 len(results) * m_any_fault)
-        # keep 4 decimal places
+                               
         for key in apfd_results.keys():
             apfd_results[key] = round(apfd_results[key], 4)
         return apfd_results
@@ -225,7 +225,7 @@ class Metric:
                 if fault_ not in key:
                     Stacked_line_chart[key][i] = Stacked_line_chart[key][i - 1]
 
-        # satcked line chart
+                            
         for key in Stacked_line_chart.keys():
             for i in range(len(Stacked_line_chart[key])):
                 Stacked_line_chart[key][i] = Stacked_line_chart[key][i] / max_fault
@@ -234,18 +234,18 @@ class Metric:
                       Stacked_line_chart['mis'],
                       labels=['Cls Bug', 'Loc Bug', 'Red Bug',
                               'Mis Bug'])
-        # plt.plot([0, len(results)], [0, len(fault_t)], color='r')
+                                                                   
 
-        # 标记右上角的点 用横轴和纵轴的坐标
+                   
 
-        pointy = Stacked_line_chart['cls'][-1] + Stacked_line_chart['loc'][-1] + Stacked_line_chart['red'][-1] + \
+        pointy = Stacked_line_chart['cls'][-1] + Stacked_line_chart['loc'][-1] + Stacked_line_chart['red'][-1] +\
                  Stacked_line_chart['mis'][-1]
-        # plt.scatter(len(results), pointy, s=50, color='r')
-        # plt.annotate('(%s,%s)' % (len(results), pointy), xy=(len(results), pointy), xytext=(len(results), pointy))
+                                                            
+                                                                                                                    
 
-        # plt a y=max_fault Dotted line
+                                       
         plt.plot([0, 1], [0, 1], color='b', linestyle='--')
-        # plt.annotate('number of total bugs', xy=(len(results), max_fault), xytext=(len(results)//2, max_fault+50), color='b')
+                                                                                                                               
         plt.xlabel('$Ratio\ of\ Inspected\ Instances$')
         plt.ylabel('$Ratio\ of\ Detected\ Bugs$')
         plt.legend(loc='upper left')
@@ -274,7 +274,7 @@ class Metric:
             img_idx[item['image_name']] += 1
             item['rel_rank'] = item['rank'] / img_num[item['image_name']]
 
-        # EXAM_F = AVG(rank['fault_type'])
+                                          
 
         EXAM_F, EXAM_F_rel = {'class fault': [],
                               'location fault': [],
@@ -306,7 +306,7 @@ class Metric:
             else:
                 EXAM_F_rel[key] = sum(EXAM_F_rel[key]) / len(EXAM_F_rel[key])
 
-        # Top-1 or 3: number of rank_rel<= 1 or 3 has fault_type / total number of images has fault_type
+                                                                                                        
 
         Top_1 = {
             'class fault': 0,
@@ -329,7 +329,7 @@ class Metric:
                     Top_3[fault_type_dict_rv[item['fault_type']]] += 1
                     Top_3['any fault'] += 1
 
-        # print('Top-1: ', Top_1)
+                                 
         img_fault_num = {
             'class fault': 0,
             'location fault': 0,

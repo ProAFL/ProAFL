@@ -20,7 +20,7 @@ class RegisterNMS(object):
         self.graph = gs.import_onnx(onnx.load(onnx_model_path))
         assert self.graph
         LOGGER.info("ONNX graph created successfully")
-        # Fold constants via ONNX-GS that PyTorch2ONNX may have missed
+                                                                      
         self.graph.fold_constants()
         self.precision = precision
         self.batch_size = 1
@@ -54,7 +54,7 @@ class RegisterNMS(object):
 
             count_after = len(self.graph.nodes)
             if count_before == count_after:
-                # No new folding occurred in this iteration, so we can stop for now.
+                                                                                    
                 break
 
     def save(self, output_path):
@@ -89,12 +89,12 @@ class RegisterNMS(object):
         """
 
         self.infer()
-        # Find the concat node at the end of the network
+                                                        
         op_inputs = self.graph.outputs
         op = "EfficientNMS_TRT"
         attrs = {
             "plugin_version": "1",
-            "background_class": -1,  # no background class
+            "background_class": -1,                       
             "max_output_boxes": detections_per_img,
             "score_threshold": score_thresh,
             "iou_threshold": nms_thresh,
@@ -109,12 +109,12 @@ class RegisterNMS(object):
         else:
             raise NotImplementedError(f"Currently not supports precision: {self.precision}")
 
-        # NMS Outputs
+                     
         output_num_detections = gs.Variable(
             name="num_dets",
             dtype=np.int32,
             shape=[self.batch_size, 1],
-        )  # A scalar indicating the number of valid detections per batch image.
+        )                                                                       
         output_boxes = gs.Variable(
             name="det_boxes",
             dtype=dtype_output,
@@ -133,8 +133,8 @@ class RegisterNMS(object):
 
         op_outputs = [output_num_detections, output_boxes, output_scores, output_labels]
 
-        # Create the NMS Plugin node with the selected inputs. The outputs of the node will also
-        # become the final outputs of the graph.
+                                                                                                
+                                                
         self.graph.layer(op=op, name="batched_nms", inputs=op_inputs, outputs=op_outputs, attrs=attrs)
         LOGGER.info(f"Created NMS plugin '{op}' with attributes: {attrs}")
 

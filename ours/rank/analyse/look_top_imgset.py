@@ -1,5 +1,5 @@
 '''
-查看排序后的前top rate(top40%)涉及到的imgname set
+textrankingtexttop rate(top40%)textimgname set
 '''
 import os
 import joblib
@@ -13,10 +13,10 @@ from pycocotools.coco import COCO
 
 
 def cut(rank_list:list,cut_rate:float=0.4)->list:
-    print(f"rank的原始长度:{len(rank_list)}")
+    print(f"ranktext:{len(rank_list)}")
     cut_point = int(len(rank_list) * cut_rate)
     cutted_rank = rank_list[:cut_point]
-    print(f"cut前{int(cut_rate*100)}%的长度:{len(cutted_rank)}")
+    print(f"cuttext{int(cut_rate*100)}%text:{len(cutted_rank)}")
     return cutted_rank
 
 def get_suspicious_imgName_set(cutted_rank_list:list,anno_error_json:dict)->set:
@@ -31,8 +31,8 @@ def get_suspicious_imgName_set(cutted_rank_list:list,anno_error_json:dict)->set:
             anno = annoId_to_anno[annoid]
             img_name =  imgId_to_imgName[anno["image_id"]]
         suspicious_imgName_set.add(img_name)
-    print(f"总的图像数量: {len(anno_error_json['images'])}")
-    print(f"可疑的图像数量: {len(suspicious_imgName_set)}")
+    print(f"textCount: {len(anno_error_json['images'])}")
+    print(f"textCount: {len(suspicious_imgName_set)}")
     return suspicious_imgName_set
 
 
@@ -40,9 +40,9 @@ def main_ours():
     g_boxes_json = read_json(g_boxes_json_path)
     anno_error_json =  read_json(anno_error_json_path)
     converted_rank_res = conver_ours_rank(rank_res,g_boxes_json,anno_error_json)
-    # 切出排序的前40%idd(imgname or annoid)
+                                              
     cut_off_rank = cut(converted_rank_res)
-    # 得到top序中指向的imgset
+                       
     suspicious_imgName_set = get_suspicious_imgName_set(cut_off_rank,anno_error_json)
     
 
@@ -57,7 +57,7 @@ def main_datactive():
 if __name__ == "__main__":
     dataset_name = "VisDrone"
     
-    # ours
+          
     model_name = "YOLOv7"
     anno_error_json_path  = get_error_ann_file_path(dataset_name)
     rank_res = joblib.load(os.path.join(exp_data_root_dir,"final_res","ours",dataset_name,model_name,

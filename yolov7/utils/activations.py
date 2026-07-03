@@ -1,22 +1,22 @@
-# Activation functions
+                      
 
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
 
-# SiLU https://arxiv.org/pdf/1606.08415.pdf ----------------------------------------------------------------------------
-class SiLU(nn.Module):  # export-friendly version of nn.SiLU()
+                                                                                                                        
+class SiLU(nn.Module):                                        
     @staticmethod
     def forward(x):
         return x * torch.sigmoid(x)
 
 
-class Hardswish(nn.Module):  # export-friendly version of nn.Hardswish()
+class Hardswish(nn.Module):                                             
     @staticmethod
     def forward(x):
-        # return x * F.hardsigmoid(x)  # for torchscript and CoreML
-        return x * F.hardtanh(x + 3, 0., 6.) / 6.  # for torchscript, CoreML and ONNX
+                                                                   
+        return x * F.hardtanh(x + 3, 0., 6.) / 6.                                    
 
 
 class MemoryEfficientSwish(nn.Module):
@@ -36,7 +36,7 @@ class MemoryEfficientSwish(nn.Module):
         return self.F.apply(x)
 
 
-# Mish https://github.com/digantamisra98/Mish --------------------------------------------------------------------------
+                                                                                                                        
 class Mish(nn.Module):
     @staticmethod
     def forward(x):
@@ -48,7 +48,7 @@ class MemoryEfficientMish(nn.Module):
         @staticmethod
         def forward(ctx, x):
             ctx.save_for_backward(x)
-            return x.mul(torch.tanh(F.softplus(x)))  # x * tanh(ln(1 + exp(x)))
+            return x.mul(torch.tanh(F.softplus(x)))                            
 
         @staticmethod
         def backward(ctx, grad_output):
@@ -61,9 +61,9 @@ class MemoryEfficientMish(nn.Module):
         return self.F.apply(x)
 
 
-# FReLU https://arxiv.org/abs/2007.11824 -------------------------------------------------------------------------------
+                                                                                                                        
 class FReLU(nn.Module):
-    def __init__(self, c1, k=3):  # ch_in, kernel
+    def __init__(self, c1, k=3):                 
         super().__init__()
         self.conv = nn.Conv2d(c1, c1, k, 1, 1, groups=c1, bias=False)
         self.bn = nn.BatchNorm2d(c1)

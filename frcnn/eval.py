@@ -16,22 +16,22 @@ import os
 import joblib
 
 exp_data_root_dir = "/data/mml/data_debugging_data"
-dataset_name = "KITTI" # VOC2012|VisDrone|KITTI
-model_name = "FRCNN" # SSD|FRCNN
+dataset_name = "KITTI"                         
+model_name = "FRCNN"            
 gpu_id = 0
 num_epochs = 50
 conf_threshold = 0.8
-# Transform PIL image --> PyTorch tensor
+                                        
 def get_transform():
     return ToTensor()
-# Load training dataset
+                       
 train_dataset = CocoDetectionDataset(
     image_dir=f"{exp_data_root_dir}/datasets/{dataset_name}-coco/train", 
     annotation_path=f"{exp_data_root_dir}/datasets/{dataset_name}-coco/train/_annotations.coco_error.json",
     transforms=get_transform()
 )
 
-# Load validation dataset
+                         
 '''
 val_dataset = CocoDetectionDataset(
     image_dir=f"{exp_data_root_dir}/datasets/{dataset_name}-coco/val",
@@ -40,26 +40,26 @@ val_dataset = CocoDetectionDataset(
 )
 '''
  
-# Load dataset with DataLoaders, you can change batch_size 
+                                                           
 train_loader = DataLoader(train_dataset, batch_size=16, shuffle=True, collate_fn=lambda x: tuple(zip(*x)))
-# val_loader = DataLoader(val_dataset, batch_size=16, shuffle=False, collate_fn=lambda x: tuple(zip(*x)))
-# train_t_loader = DataLoader(train_dataset, batch_size=1, shuffle=False, collate_fn=lambda x: tuple(zip(*x)))
+                                                                                                         
+                                                                                                              
 
 def test():
-    # class names
+                 
     label_list= ["","ball", "goalkeeper", "player", "referee",""]
     
-    # Number of classes (include background)
-    num_classes = 6   # this has to be 5 in normally, but because of some labeling issues in dataset this is 6.
+                                            
+    num_classes = 6                                                                                            
     
-    # Load the same model 
+                          
     model = models.detection.fasterrcnn_resnet50_fpn(pretrained=False, num_classes=num_classes)
     
-    # Load trained Faster R-CNN model
+                                     
     model.load_state_dict(torch.load("check_points/model_epoch_10.pth"))
     model.eval()
     
-    # Load image with OpenCV and convert to RGB
+                                               
     img_path = "football-players-detection/valid/2e57b9_1_6_png.rf.74724a3814311da25a648a48d778d589.jpg"
     image_bgr = cv2.imread(img_path)
     image_rgb = cv2.cvtColor(image_bgr, cv2.COLOR_BGR2RGB)
@@ -69,11 +69,11 @@ def test():
     transform = transforms.Compose([transforms.ToTensor()])
     image_tensor = transform(image_pil).unsqueeze(0)
     
-    # Inference
+               
     with torch.no_grad():
         predictions = model(image_tensor)
     
-    # detection data
+                    
     boxes = predictions[0]['boxes']
     labels = predictions[0]['labels']
     scores = predictions[0]['scores']
@@ -92,18 +92,18 @@ def test():
             cv2.putText(image_bgr, text, (box[0], box[1] - 10), cv2.FONT_HERSHEY_SIMPLEX,
                         0.9, (0, 255, 0), 2, cv2.LINE_AA)
     
-            # Draw bbox and label
+                                 
             cv2.rectangle(image_bgr, (box[0], box[1]), (box[2], box[3]), (0, 0, 255), 2)
     
     
-    # Convert BGR --> RGB
+                         
     image_rgb = cv2.cvtColor(image_bgr, cv2.COLOR_BGR2RGB)
     
-    # Show image with larger figure size
+                                        
     plt.figure(figsize=(16, 12)) 
     plt.imshow(image_rgb)
     plt.axis('off')
-    # plt.show()
+                
     plt.savefig("test.png")
 
 def build_ssd_model(num_classes):
@@ -117,7 +117,7 @@ def build_ssd_model(num_classes):
 
 def build_frcnn_model(num_classes):
     model =torchvision.models.detection.fasterrcnn_resnet50_fpn(weights=FasterRCNN_ResNet50_FPN_Weights.DEFAULT)
-    # Number of input features for the classifier head
+                                                      
     in_features = model.roi_heads.box_predictor.cls_score.in_features
     """  
     Number of classes must be equal to your label number
@@ -126,24 +126,24 @@ def build_frcnn_model(num_classes):
     return model
 
 def main():
-    # 加载FRCNN模型（预训练）
-    # +1 for bg class
+                                   
+                     
     num_classes = len(train_dataset.coco.getCatIds()) + 1
     if model_name == "SSD":
         model = build_ssd_model(num_classes)
     elif model_name == "FRCNN":
         model = build_frcnn_model(num_classes)
     else:
-        raise Exception("模型名称错误")
-    # Move the model to the GPU for faster training
+        raise Exception("Invalid model name")
+                                                   
     device = torch.device(f"cuda:{gpu_id}")
     model.to(device)
-    # Loop through each epoch
+                             
     epoch_loss_value_list = []
     model.train()
     for epoch in range(num_epochs):
         print(f"\nEpoch {epoch}/{num_epochs}")
-        # 加载模型
+                    
         w_path = os.path.join(exp_data_root_dir,"models",f"{dataset_name}_error", model_name, f"epoch_{epoch}.pth")
         state_dict = torch.load(w_path,map_location="cpu")
         model.load_state_dict(state_dict)
@@ -151,7 +151,7 @@ def main():
         for images, targets in train_loader:
             images = list(image.to(device) for image in images)
             targets = [{k: v.to(device) if isinstance(v, torch.Tensor) else v for k, v in t.items()} for t in targets]
-            # torch.amp.autocast
+                                
             with torch.amp.autocast('cuda',enabled=False):
                 loss_dict = model(images, targets)
                 losses = sum(loss for loss in loss_dict.values())
@@ -167,4 +167,4 @@ def main():
 
 if __name__ == "__main__":
     main()
-    # test()
+            

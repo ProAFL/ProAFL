@@ -18,7 +18,7 @@ def _get_shape_onnx(image: Tensor) -> Tensor:
 
 @torch.jit.unused
 def _fake_cast_onnx(v: Tensor) -> float:
-    # ONNX requires a tensor but here we fake its type for JIT.
+                                                               
     return v
 
 
@@ -109,10 +109,10 @@ class GeneralizedRCNNTransform(nn.Module):
     ) -> Tuple[ImageList, Optional[List[Dict[str, Tensor]]]]:
         images = [img for img in images]
         if targets is not None:
-            # make a copy of targets to avoid modifying it in-place
-            # once torchscript supports dict comprehension
-            # this can be simplified as follows
-            # targets = [{k: v for k,v in t.items()} for t in targets]
+                                                                   
+                                                          
+                                               
+                                                                      
             targets_copy: List[Dict[str, Tensor]] = []
             for t in targets:
                 data: Dict[str, Tensor] = {}
@@ -176,7 +176,7 @@ class GeneralizedRCNNTransform(nn.Module):
                 return image, target
             size = float(self.torch_choice(self.min_size))
         else:
-            # FIXME assume for now that testing uses the largest scale
+                                                                      
             size = float(self.min_size[-1])
         image, target = _resize_image_and_masks(image, size, float(self.max_size), target, self.fixed_size)
 
@@ -193,8 +193,8 @@ class GeneralizedRCNNTransform(nn.Module):
             target["keypoints"] = keypoints
         return image, target
 
-    # _onnx_batch_images() is an implementation of
-    # batch_images() that is supported by ONNX tracing.
+                                                  
+                                                       
     @torch.jit.unused
     def _onnx_batch_images(self, images: List[Tensor], size_divisible: int = 32) -> Tensor:
         max_size = []
@@ -206,9 +206,9 @@ class GeneralizedRCNNTransform(nn.Module):
         max_size[2] = (torch.ceil((max_size[2].to(torch.float32)) / stride) * stride).to(torch.int64)
         max_size = tuple(max_size)
 
-        # work around for
-        # pad_img[: img.shape[0], : img.shape[1], : img.shape[2]].copy_(img)
-        # which is not yet supported in onnx
+                         
+                                                                            
+                                            
         padded_imgs = []
         for img in images:
             padding = [(s1 - s2) for s1, s2 in zip(max_size, tuple(img.shape))]
@@ -226,8 +226,8 @@ class GeneralizedRCNNTransform(nn.Module):
 
     def batch_images(self, images: List[Tensor], size_divisible: int = 32) -> Tensor:
         if torchvision._is_tracing():
-            # batch_images() does not export well to ONNX
-            # call _onnx_batch_images() instead
+                                                         
+                                               
             return self._onnx_batch_images(images, size_divisible)
 
         max_size = self.max_by_axis([list(img.shape) for img in images])

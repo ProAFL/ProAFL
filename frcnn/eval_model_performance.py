@@ -1,6 +1,6 @@
 
 '''
-用于评估FRCNN和SSD模型的mAP
+textFRCNNtextSSDtextmAP
 '''
 import os
 import json
@@ -34,7 +34,7 @@ def build_ssd_model(num_classes):
 
 def build_frcnn_model(num_classes):
     model =torchvision.models.detection.fasterrcnn_resnet50_fpn(weights=FasterRCNN_ResNet50_FPN_Weights.DEFAULT)
-    # Number of input features for the classifier head
+                                                      
     in_features = model.roi_heads.box_predictor.cls_score.in_features
     """  
     Number of classes must be equal to your label number
@@ -42,9 +42,9 @@ def build_frcnn_model(num_classes):
     model.roi_heads.box_predictor = FastRCNNPredictor(in_features, num_classes)
 
 
-    # 替换成我们的 RoIHeads
+                               
 
-    # 获取原 roi_heads 参数（很关键）
+                                                           
     rh = model.roi_heads
 
     model.roi_heads = RoIHeadsCustom(
@@ -52,19 +52,19 @@ def build_frcnn_model(num_classes):
         rh.box_head,
         rh.box_predictor,
 
-        # ---- Training ----
+                            
         rh.proposal_matcher.high_threshold,
         rh.proposal_matcher.low_threshold,
         rh.fg_bg_sampler.batch_size_per_image,
         rh.fg_bg_sampler.positive_fraction,
         rh.box_coder.weights,
 
-        # ---- Inference ----
+                             
         rh.score_thresh,
         rh.nms_thresh,
         rh.detections_per_img,
 
-        # ---- Mask / Keypoints（保持原样） ----
+                                                    
         rh.mask_roi_pool,
         rh.mask_head,
         rh.mask_predictor,
@@ -78,7 +78,7 @@ def build_frcnn_model(num_classes):
 
 
 def model_load_weight(model,model_weights_path):
-    # 加载模型
+                
     state_dict = torch.load(model_weights_path,map_location="cpu")
     model.load_state_dict(state_dict)
     return model
@@ -99,12 +99,12 @@ def get_coco_results(model, data_loader, device, score_thresh=0.5):
             keep = scores >= score_thresh
             boxes, scores, labels = boxes[keep], scores[keep], labels[keep]
 
-            # xyxy -> xywh
+                          
             boxes_xywh = boxes.clone()
-            boxes_xywh[:, 2] = boxes[:, 2] - boxes[:, 0]  # w
-            boxes_xywh[:, 3] = boxes[:, 3] - boxes[:, 1]  # h
-            boxes_xywh[:, 0] = boxes[:, 0]                # x
-            boxes_xywh[:, 1] = boxes[:, 1]                # y
+            boxes_xywh[:, 2] = boxes[:, 2] - boxes[:, 0]     
+            boxes_xywh[:, 3] = boxes[:, 3] - boxes[:, 1]     
+            boxes_xywh[:, 0] = boxes[:, 0]                   
+            boxes_xywh[:, 1] = boxes[:, 1]                   
 
             for box, score, label in zip(boxes_xywh, scores, labels):
                 results.append({
@@ -124,7 +124,7 @@ def set_nms(model, model_name, conf_threshold=0.25,iou_threshold=0.5):
         model.roi_heads.nms_thresh = iou_threshold
         model.roi_heads.score_thresh = conf_threshold
     else:
-        raise Exception("模型名称错误")
+        raise Exception("Invalid model name")
     return model
 
 def offset_category_id(cocoGt):
@@ -139,7 +139,7 @@ def offset_category_id(cocoGt):
 
 
 def eval_performance():
-    # 加载数据
+          
     dataset = CocoDetectionDataset(
         image_dir=get_imgs_dir(dataset_name,train_or_val,style="coco"),
         annotation_path=ANN_FILE,
@@ -147,19 +147,19 @@ def eval_performance():
     )
     dataset_loader = DataLoader(dataset, batch_size=16, shuffle=False, collate_fn=lambda x: tuple(zip(*x)))
 
-    # 加载模型
+                
     num_classes = len(dataset.coco.getCatIds()) + 1
     if model_name == "SSD":
         model = build_ssd_model(num_classes)
     elif model_name == "FRCNN":
         model = build_frcnn_model(num_classes)
     else:
-        raise Exception("模型名称错误")
+        raise Exception("Invalid model name")
     
     device = torch.device(f"cuda:{gpu_id}")
     model.to(device)
     model = model_load_weight(model,model_weights_path)
-    # model = set_nms(model, model_name, conf_threshold=0.25,iou_threshold=0.5)
+                                                                               
     
     model.eval()
     '''
@@ -176,9 +176,9 @@ def eval_performance():
     evaluate(model, dataset_loader, device=device)
 
     '''
-    # 开始评估
+    # text
     coco_results = get_coco_results(model, dataset_loader, device, score_thresh=0.0)
-    # 加载ground truth data
+    # textground truth data
     cocoGt = COCO(ANN_FILE)
     cocoGt = offset_category_id(cocoGt)
     cocoDt = cocoGt.loadRes(coco_results)
@@ -190,11 +190,11 @@ def eval_performance():
     '''
 
 if __name__ == "__main__":
-    dataset_name = "VOC2012" # VOC2012|KITTI_8|VisDrone
-    model_name = "SSD" # FRCNN|SSD
-    model_state = "clean" # clean|error|repair_ours|repair_datactive
+    dataset_name = "VOC2012"                           
+    model_name = "SSD"            
+    model_state = "clean"                                           
     gpu_id = 0
-    train_or_val = "val" # train|val(val就是test)
+    train_or_val = "val"                         
     ANN_FILE = get_correct_ann_file_path(dataset_name,train_or_val)
     if model_state == "clean":
         model_weights_path = get_clean_train_model_weight_file_path(dataset_name,model_name)

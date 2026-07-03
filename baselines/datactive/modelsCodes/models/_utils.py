@@ -83,7 +83,7 @@ def _make_divisible(v: float, divisor: int, min_value: Optional[int] = None) -> 
     if min_value is None:
         min_value = divisor
     new_v = max(min_value, int(v + divisor / 2) // divisor * divisor)
-    # Make sure that round down does not go down by more than 10%.
+                                                                  
     if new_v < 0.9 * v:
         new_v += divisor
     return new_v
@@ -171,10 +171,10 @@ def handle_legacy_interface(**weights: Tuple[str, Union[Optional[W], Callable[[D
         @kwonly_to_pos_or_kw
         @functools.wraps(builder)
         def inner_wrapper(*args: Any, **kwargs: Any) -> M:
-            for weights_param, (pretrained_param, default) in weights.items():  # type: ignore[union-attr]
-                # If neither the weights nor the pretrained parameter as passed, or the weights argument already use
-                # the new style arguments, there is nothing to do. Note that we cannot use `None` as sentinel for the
-                # weight argument, since it is a valid value.
+            for weights_param, (pretrained_param, default) in weights.items():                            
+                                                                                                                    
+                                                                                                                     
+                                                             
                 sentinel = object()
                 weights_arg = kwargs.get(weights_param, sentinel)
                 if (
@@ -185,14 +185,14 @@ def handle_legacy_interface(**weights: Tuple[str, Union[Optional[W], Callable[[D
                 ):
                     continue
 
-                # If the pretrained parameter was passed as positional argument, it is now mapped to
-                # `kwargs[weights_param]`. This happens because the @kwonly_to_pos_or_kw decorator uses the current
-                # signature to infer the names of positionally passed arguments and thus has no knowledge that there
-                # used to be a pretrained parameter.
+                                                                                                    
+                                                                                                                   
+                                                                                                                    
+                                                    
                 pretrained_positional = weights_arg is not sentinel
                 if pretrained_positional:
-                    # We put the pretrained argument under its legacy name in the keyword argument dictionary to have a
-                    # unified access to the value if the default value is a callable.
+                                                                                                                       
+                                                                                     
                     kwargs[pretrained_param] = pretrained_arg = kwargs.pop(weights_param)
                 else:
                     pretrained_arg = kwargs[pretrained_param]

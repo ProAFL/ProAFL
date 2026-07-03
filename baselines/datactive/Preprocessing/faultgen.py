@@ -34,11 +34,11 @@ def getinstances(dataset='VOC', datatype='val'):
         print('images num:', len(val_dataset))
 
         for images, targets in tqdm(val_dataloader, desc='getinstances'):
-            # get image size
+                            
             images = list(image for image in images)
-            image_size = [images[0].shape[2], images[0].shape[1]]  # it is converted to [width, height]
+            image_size = [images[0].shape[2], images[0].shape[1]]                                      
 
-            # split into instances
+                                  
             for i in range(len(targets[0]['labels'])):
                 instance = {
                     'image_name': targets[0]['image_name'],
@@ -67,10 +67,10 @@ def getinstances(dataset='VOC', datatype='val'):
             dataset = json.load(f)
         print('image num',len(dataset))
         for id, image in enumerate(dataset):
-            # progress bar
+                          
             print('\r', 'getinstances: ', id, '/', len(dataset), end='')
             img = Image.open(image_path + image['image_name'])
-            # [width, height]
+                             
             image_size = [img.size[0], img.size[1]]
 
             for i in range(len(image['categories'])):
@@ -105,38 +105,38 @@ def genmixedfault(dataset='VOC', datatype='val'):
     class_falut_index, location_falut_index, redundancy_falut_index, missing_falut_index = None, None, None, None
     if dataset == 'VOC' or dataset == 'COCO' or dataset == 'KITTI':
         class_falut_index = random.sample([i for i in range(num)], int(num * params.fault_ratio))
-        # get location_falut_index except class_falut_index
+                                                           
         location_falut_index = random.sample([i for i in range(num) if i not in class_falut_index],
                                              int(num * params.fault_ratio))
-        # get redundancy_falut_index except class_falut_index and location_falut_index
+                                                                                      
         redundancy_falut_index = random.sample(
             [i for i in range(num) if i not in class_falut_index and i not in location_falut_index],
             int(num * params.fault_ratio))
-        # get missing_falut_index except class_falut_index and location_falut_index and redundancy_falut_index
+                                                                                                              
         missing_falut_index = random.sample([i for i in range(num) if
                                              i not in class_falut_index and i not in location_falut_index and i not in redundancy_falut_index],
                                             int(num * params.fault_ratio))
 
-    if dataset == 'VisDrone':  # improve the fault generation efficiency
+    if dataset == 'VisDrone':                                           
         idx_set = {i for i in range(num)}
         class_falut_index = random.sample(list(idx_set), int(num * params.fault_ratio))
         print('class_falut_index finished with idx_set len {}, and class_falut_index len {}'.format(len(idx_set),
                                                                                                     len(class_falut_index)))
         idx_set = idx_set - set(class_falut_index)
-        # get location_falut_index except class_falut_index
+                                                           
         location_falut_index = random.sample(list(idx_set),
                                              int(num * params.fault_ratio))
 
         print('location_falut_index finished with idx_set len {}, and location_falut_index len {}'.format(len(idx_set),
                                                                                                           len(location_falut_index)))
         idx_set = idx_set - set(location_falut_index)
-        # get redundancy_falut_index except class_falut_index and location_falut_index
+                                                                                      
         redundancy_falut_index = random.sample(list(idx_set), int(num * params.fault_ratio))
         print('redundancy_falut_index finished with idx_set len {}, and redundancy_falut_index len {}'.format(
             len(idx_set),
             len(redundancy_falut_index)))
         idx_set = idx_set - set(redundancy_falut_index)
-        # get missing_falut_index except class_falut_index and location_falut_index and redundancy_falut_index
+                                                                                                              
         missing_falut_index = random.sample(list(idx_set), int(num * params.fault_ratio))
 
         print('missing_falut_index finished with idx_set len {}, and missing_falut_index len {}'.format(len(idx_set),
@@ -154,35 +154,35 @@ def genmixedfault(dataset='VOC', datatype='val'):
         class_list = params.coco_class
 
     for index in tqdm(class_falut_index, desc='genclassfault'):
-        # random choose a class except background and the original class
+                                                                        
         if dataset == 'COCO':
             instances[index]['labels'] = random.sample(class_list, 1)[0]
         else:
-            instances[index]['labels'] = \
+            instances[index]['labels'] =\
                 random.sample([i for i in range(1, class_num) if i != instances[index]['labels']], 1)[0]
         instances[index]['fault_type'] = falut_type['class fault']
 
     for index in tqdm(location_falut_index, desc='genlocationfault'):
-        # generate a random location with IoU in [0.1, 0.5] with the original location
+                                                                                      
 
-        # get the original location
+                                   
         ori_x1, ori_y1, ori_x2, ori_y2 = instances[index]['boxes']
 
-        # get the image size
+                            
         image_size = instances[index]['image_size']
 
-        # generate a random location while the IoU is in [0.1, 0.5]
+                                                                   
         while True:
             new_x1 = random.randint(int(max(0, ori_x1 - (ori_x2 - ori_x1) / 2)), int((ori_x1 + ori_x2) / 2))
             new_y1 = random.randint(int(max(0, ori_y1 - (ori_y2 - ori_y1) / 2)), int((ori_y1 + ori_y2) / 2))
             new_x2 = random.randint(int((ori_x1 + ori_x2) / 2), int(min(image_size[0], ori_x2 + (ori_x2 - ori_x1) / 2)))
             new_y2 = random.randint(int((ori_y1 + ori_y2) / 2), int(min(image_size[1], ori_y2 + (ori_y2 - ori_y1) / 2)))
 
-            # garantee the width and height are not equal to 0
+                                                              
             if new_x1 >= new_x2 or new_y1 >= new_y2:
                 continue
 
-            # calculate the IoU
+                               
             IoU = cal_IoU([ori_x1, ori_y1, ori_x2, ori_y2], [new_x1, new_y1, new_x2, new_y2]).item()
             if 0.1 <= IoU <= 0.5:
                 break
@@ -191,15 +191,15 @@ def genmixedfault(dataset='VOC', datatype='val'):
         instances[index]['fault_type'] = falut_type['location fault']
 
     for index in tqdm(missing_falut_index, desc='genmissingfault'):
-        # delete the instance
+                             
         instances[index]['fault_type'] = falut_type['missing fault']
 
     for index in tqdm(redundancy_falut_index, desc='genredundancyfault'):
-        # generate a new random instance and insert it into the instances list
-        # get the image size
+                                                                              
+                            
         image_size = instances[index]['image_size']
 
-        # generate a random location
+                                    
         new_x1, new_y1, new_x2, new_y2 = None, None, None, None
         while True:
             new_x1 = random.randint(0, image_size[0])
@@ -207,18 +207,18 @@ def genmixedfault(dataset='VOC', datatype='val'):
             new_x2 = random.randint(new_x1, image_size[0])
             new_y2 = random.randint(new_y1, image_size[1])
 
-            # garantee the width and height are not equal to 0
+                                                              
             if new_x1 >= new_x2 or new_y1 >= new_y2:
                 continue
             break
 
-        # generate a random class
+                                 
         if dataset == 'COCO':
             new_class = random.sample(class_list, 1)[0]
         else:
             new_class = random.randint(1, class_num - 1)
 
-        # generate a new instance
+                                 
         new_instance = {
             'image_name': instances[index]['image_name'],
             'image_size': image_size,
@@ -230,7 +230,7 @@ def genmixedfault(dataset='VOC', datatype='val'):
             'fault_type': falut_type['redundancy fault'],
         }
 
-        # insert the new instance into the instances list
+                                                         
         instances.insert(index, new_instance)
 
     print('fault instances num:',
@@ -239,16 +239,16 @@ def genmixedfault(dataset='VOC', datatype='val'):
     print('fault ratio:', (len(class_falut_index) + len(location_falut_index) + len(missing_falut_index) + len(
         redundancy_falut_index)) / num)
 
-    # json_str = json.dumps(instances, indent=4)
-    # with open('../data/fault_annotations/' + dataset + datatype + '_mixedfault' + str(params.fault_ratio) + '.json',
-    #           'w') as json_file:
-    #     json_file.write(json_str)
+                                                
+                                                                                                                      
+                                  
+                                   
 
 
 if __name__ == '__main__':
-    # genclassfault(dataset='VOC')
-    # genlocationfault(dataset='VOC')
-    # genredundancyfalut(dataset='VOC')
-    # genmissingfault(dataset='VOC')
+                                  
+                                     
+                                       
+                                    
 
     genmixedfault(dataset='KITTI', datatype='test')

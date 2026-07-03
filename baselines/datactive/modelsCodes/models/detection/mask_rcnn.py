@@ -163,12 +163,12 @@ class MaskRCNN(FasterRCNN):
         self,
         backbone,
         num_classes=None,
-        # transform parameters
+                              
         min_size=800,
         max_size=1333,
         image_mean=None,
         image_std=None,
-        # RPN parameters
+                        
         rpn_anchor_generator=None,
         rpn_head=None,
         rpn_pre_nms_top_n_train=2000,
@@ -181,7 +181,7 @@ class MaskRCNN(FasterRCNN):
         rpn_batch_size_per_image=256,
         rpn_positive_fraction=0.5,
         rpn_score_thresh=0.0,
-        # Box parameters
+                        
         box_roi_pool=None,
         box_head=None,
         box_predictor=None,
@@ -193,7 +193,7 @@ class MaskRCNN(FasterRCNN):
         box_batch_size_per_image=512,
         box_positive_fraction=0.25,
         bbox_reg_weights=None,
-        # Mask parameters
+                         
         mask_roi_pool=None,
         mask_head=None,
         mask_predictor=None,
@@ -220,19 +220,19 @@ class MaskRCNN(FasterRCNN):
             mask_head = MaskRCNNHeads(out_channels, mask_layers, mask_dilation)
 
         if mask_predictor is None:
-            mask_predictor_in_channels = 256  # == mask_layers[-1]
+            mask_predictor_in_channels = 256                      
             mask_dim_reduced = 256
             mask_predictor = MaskRCNNPredictor(mask_predictor_in_channels, mask_dim_reduced, num_classes)
 
         super().__init__(
             backbone,
             num_classes,
-            # transform parameters
+                                  
             min_size,
             max_size,
             image_mean,
             image_std,
-            # RPN-specific parameters
+                                     
             rpn_anchor_generator,
             rpn_head,
             rpn_pre_nms_top_n_train,
@@ -245,7 +245,7 @@ class MaskRCNN(FasterRCNN):
             rpn_batch_size_per_image,
             rpn_positive_fraction,
             rpn_score_thresh,
-            # Box parameters
+                            
             box_roi_pool,
             box_head,
             box_predictor,
@@ -346,8 +346,8 @@ class MaskRCNNPredictor(nn.Sequential):
         for name, param in self.named_parameters():
             if "weight" in name:
                 nn.init.kaiming_normal_(param, mode="fan_out", nonlinearity="relu")
-            # elif "bias" in name:
-            #     nn.init.constant_(param, 0)
+                                  
+                                             
 
 
 _COMMON_META = {
@@ -577,7 +577,7 @@ def maskrcnn_resnet50_fpn_v2(
     return model
 
 
-# The dictionary below is internal implementation detail and will be removed in v0.15
+                                                                                     
 from .._utils import _ModelURLs
 
 

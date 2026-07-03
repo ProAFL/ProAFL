@@ -29,7 +29,7 @@ def get_dimensions(img: Tensor) -> List[int]:
 
 
 def get_image_size(img: Tensor) -> List[int]:
-    # Returns (w, h) of tensor image
+                                    
     _assert_image_tensor(img)
     return [img.shape[-1], img.shape[-2]]
 
@@ -71,22 +71,22 @@ def convert_image_dtype(image: torch.Tensor, dtype: torch.dtype = torch.float) -
 
     if image.is_floating_point():
 
-        # TODO: replace with dtype.is_floating_point when torchscript supports it
+                                                                                 
         if torch.tensor(0, dtype=dtype).is_floating_point():
             return image.to(dtype)
 
-        # float to int
+                      
         if (image.dtype == torch.float32 and dtype in (torch.int32, torch.int64)) or (
             image.dtype == torch.float64 and dtype == torch.int64
         ):
             msg = f"The cast from {image.dtype} to {dtype} cannot be performed safely."
             raise RuntimeError(msg)
 
-        # https://github.com/pytorch/vision/pull/2078#issuecomment-612045321
-        # For data in the range 0-1, (float * 255).to(uint) is only 255
-        # when float is exactly 1.0.
-        # `max + 1 - epsilon` provides more evenly distributed mapping of
-        # ranges of floats to ints.
+                                                                            
+                                                                       
+                                    
+                                                                         
+                                   
         eps = 1e-3
         max_val = float(_max_value(dtype))
         result = image.mul(max_val + 1.0 - eps)
@@ -94,24 +94,24 @@ def convert_image_dtype(image: torch.Tensor, dtype: torch.dtype = torch.float) -
     else:
         input_max = float(_max_value(image.dtype))
 
-        # int to float
-        # TODO: replace with dtype.is_floating_point when torchscript supports it
+                      
+                                                                                 
         if torch.tensor(0, dtype=dtype).is_floating_point():
             image = image.to(dtype)
             return image / input_max
 
         output_max = float(_max_value(dtype))
 
-        # int to int
+                    
         if input_max > output_max:
-            # factor should be forced to int for torch jit script
-            # otherwise factor is a float and image // factor can produce different results
+                                                                 
+                                                                                           
             factor = int((input_max + 1) // (output_max + 1))
             image = torch.div(image, factor, rounding_mode="floor")
             return image.to(dtype)
         else:
-            # factor should be forced to int for torch jit script
-            # otherwise factor is a float and image * factor can produce different results
+                                                                 
+                                                                                          
             factor = int((output_max + 1) // (input_max + 1))
             image = image.to(dtype)
             return image * factor
@@ -151,8 +151,8 @@ def rgb_to_grayscale(img: Tensor, num_output_channels: int = 1) -> Tensor:
         raise ValueError("num_output_channels should be either 1 or 3")
 
     r, g, b = img.unbind(dim=-3)
-    # This implementation closely follows the TF one:
-    # https://github.com/tensorflow/tensorflow/blob/v2.3.0/tensorflow/python/ops/image_ops_impl.py#L2105-L2138
+                                                     
+                                                                                                              
     l_img = (0.2989 * r + 0.587 * g + 0.114 * b).to(img.dtype)
     l_img = l_img.unsqueeze(dim=-3)
 
@@ -200,7 +200,7 @@ def adjust_hue(img: Tensor, hue_factor: float) -> Tensor:
     _assert_image_tensor(img)
 
     _assert_channels(img, [1, 3])
-    if get_dimensions(img)[0] == 1:  # Match PIL behaviour
+    if get_dimensions(img)[0] == 1:                       
         return img
 
     orig_dtype = img.dtype
@@ -227,7 +227,7 @@ def adjust_saturation(img: Tensor, saturation_factor: float) -> Tensor:
 
     _assert_channels(img, [1, 3])
 
-    if get_dimensions(img)[0] == 1:  # Match PIL behaviour
+    if get_dimensions(img)[0] == 1:                       
         return img
 
     return _blend(img, rgb_to_grayscale(img), saturation_factor)
@@ -262,29 +262,29 @@ def _blend(img1: Tensor, img2: Tensor, ratio: float) -> Tensor:
 def _rgb2hsv(img: Tensor) -> Tensor:
     r, g, b = img.unbind(dim=-3)
 
-    # Implementation is based on https://github.com/python-pillow/Pillow/blob/4174d4267616897df3746d315d5a2d0f82c656ee/
-    # src/libImaging/Convert.c#L330
+                                                                                                                       
+                                   
     maxc = torch.max(img, dim=-3).values
     minc = torch.min(img, dim=-3).values
 
-    # The algorithm erases S and H channel where `maxc = minc`. This avoids NaN
-    # from happening in the results, because
-    #   + S channel has division by `maxc`, which is zero only if `maxc = minc`
-    #   + H channel has division by `(maxc - minc)`.
-    #
-    # Instead of overwriting NaN afterwards, we just prevent it from occuring so
-    # we don't need to deal with it in case we save the NaN in a buffer in
-    # backprop, if it is ever supported, but it doesn't hurt to do so.
+                                                                               
+                                            
+                                                                               
+                                                    
+     
+                                                                                
+                                                                          
+                                                                      
     eqc = maxc == minc
 
     cr = maxc - minc
-    # Since `eqc => cr = 0`, replacing denominator with 1 when `eqc` is fine.
+                                                                             
     ones = torch.ones_like(maxc)
     s = cr / torch.where(eqc, ones, maxc)
-    # Note that `eqc => maxc = minc = r = g = b`. So the following calculation
-    # of `h` would reduce to `bc - gc + 2 + rc - bc + 4 + rc - bc = 6` so it
-    # would not matter what values `rc`, `gc`, and `bc` have here, and thus
-    # replacing denominator with 1 when `eqc` is fine.
+                                                                              
+                                                                            
+                                                                           
+                                                      
     cr_divisor = torch.where(eqc, ones, cr)
     rc = (maxc - r) / cr_divisor
     gc = (maxc - g) / cr_divisor
@@ -320,9 +320,9 @@ def _hsv2rgb(img: Tensor) -> Tensor:
 
 
 def _pad_symmetric(img: Tensor, padding: List[int]) -> Tensor:
-    # padding is left, right, top, bottom
+                                         
 
-    # crop if needed
+                    
     if padding[0] < 0 or padding[1] < 0 or padding[2] < 0 or padding[3] < 0:
         neg_min_padding = [-min(x, 0) for x in padding]
         crop_left, crop_right, crop_top, crop_bottom = neg_min_padding
@@ -331,9 +331,9 @@ def _pad_symmetric(img: Tensor, padding: List[int]) -> Tensor:
 
     in_sizes = img.size()
 
-    _x_indices = [i for i in range(in_sizes[-1])]  # [0, 1, 2, 3, ...]
-    left_indices = [i for i in range(padding[0] - 1, -1, -1)]  # e.g. [3, 2, 1, 0]
-    right_indices = [-(i + 1) for i in range(padding[1])]  # e.g. [-1, -2, -3]
+    _x_indices = [i for i in range(in_sizes[-1])]                     
+    left_indices = [i for i in range(padding[0] - 1, -1, -1)]                     
+    right_indices = [-(i + 1) for i in range(padding[1])]                     
     x_indices = torch.tensor(left_indices + _x_indices + right_indices, device=img.device)
 
     _y_indices = [i for i in range(in_sizes[-2])]
@@ -353,7 +353,7 @@ def _pad_symmetric(img: Tensor, padding: List[int]) -> Tensor:
 def _parse_pad_padding(padding: List[int]) -> List[int]:
     if isinstance(padding, int):
         if torch.jit.is_scripting():
-            # This maybe unreachable
+                                    
             raise ValueError("padding can't be an int while torchscripting, set it as a list [value, ]")
         pad_left = pad_right = pad_top = pad_bottom = padding
     elif len(padding) == 1:
@@ -392,10 +392,10 @@ def pad(img: Tensor, padding: List[int], fill: int = 0, padding_mode: str = "con
     p = _parse_pad_padding(padding)
 
     if padding_mode == "edge":
-        # remap padding_mode str
+                                
         padding_mode = "replicate"
     elif padding_mode == "symmetric":
-        # route to another implementation
+                                         
         return _pad_symmetric(img, p)
 
     need_squeeze = False
@@ -406,9 +406,9 @@ def pad(img: Tensor, padding: List[int], fill: int = 0, padding_mode: str = "con
     out_dtype = img.dtype
     need_cast = False
     if (padding_mode != "constant") and img.dtype not in (torch.float32, torch.float64):
-        # Here we temporary cast input tensor to float
-        # until pytorch issue is resolved :
-        # https://github.com/pytorch/pytorch/issues/40763
+                                                      
+                                           
+                                                         
         need_cast = True
         img = img.to(torch.float32)
 
@@ -465,7 +465,7 @@ def resize(
 
     _, h, w = get_dimensions(img)
 
-    if isinstance(size, int) or len(size) == 1:  # specified size only for the smallest edge
+    if isinstance(size, int) or len(size) == 1:                                             
         short, long = (w, h) if w <= h else (h, w)
         requested_new_short = size if isinstance(size, int) else size[0]
 
@@ -485,12 +485,12 @@ def resize(
         if (w, h) == (new_w, new_h):
             return img
 
-    else:  # specified both h and w
+    else:                          
         new_w, new_h = size[1], size[0]
 
     img, need_cast, need_squeeze, out_dtype = _cast_squeeze_in(img, [torch.float32, torch.float64])
 
-    # Define align_corners to avoid warnings
+                                            
     align_corners = False if interpolation in ["bilinear", "bicubic"] else None
 
     img = interpolate(img, size=[new_h, new_w], mode=interpolation, align_corners=align_corners, antialias=antialias)
@@ -529,7 +529,7 @@ def _assert_grid_transform_inputs(
     if fill is not None and not isinstance(fill, (int, float, tuple, list)):
         warnings.warn("Argument fill should be either int, float, tuple or list")
 
-    # Check fill
+                
     num_channels = get_dimensions(img)[0]
     if isinstance(fill, (tuple, list)) and (len(fill) > 1 and len(fill) != num_channels):
         msg = (
@@ -544,7 +544,7 @@ def _assert_grid_transform_inputs(
 
 def _cast_squeeze_in(img: Tensor, req_dtypes: List[torch.dtype]) -> Tuple[Tensor, bool, bool, torch.dtype]:
     need_squeeze = False
-    # make image NCHW
+                     
     if img.ndim < 4:
         img = img.unsqueeze(dim=0)
         need_squeeze = True
@@ -564,7 +564,7 @@ def _cast_squeeze_out(img: Tensor, need_cast: bool, need_squeeze: bool, out_dtyp
 
     if need_cast:
         if out_dtype in (torch.uint8, torch.int8, torch.int16, torch.int32, torch.int64):
-            # it is better to round before cast
+                                               
             img = torch.round(img)
         img = img.to(out_dtype)
 
@@ -576,27 +576,27 @@ def _apply_grid_transform(img: Tensor, grid: Tensor, mode: str, fill: Optional[L
     img, need_cast, need_squeeze, out_dtype = _cast_squeeze_in(img, [grid.dtype])
 
     if img.shape[0] > 1:
-        # Apply same grid to a batch of images
+                                              
         grid = grid.expand(img.shape[0], grid.shape[1], grid.shape[2], grid.shape[3])
 
-    # Append a dummy mask for customized fill colors, should be faster than grid_sample() twice
+                                                                                               
     if fill is not None:
         dummy = torch.ones((img.shape[0], 1, img.shape[2], img.shape[3]), dtype=img.dtype, device=img.device)
         img = torch.cat((img, dummy), dim=1)
 
     img = grid_sample(img, grid, mode=mode, padding_mode="zeros", align_corners=False)
 
-    # Fill with required color
+                              
     if fill is not None:
-        mask = img[:, -1:, :, :]  # N * 1 * H * W
-        img = img[:, :-1, :, :]  # N * C * H * W
+        mask = img[:, -1:, :, :]                 
+        img = img[:, :-1, :, :]                 
         mask = mask.expand_as(img)
         len_fill = len(fill) if isinstance(fill, (tuple, list)) else 1
         fill_img = torch.tensor(fill, dtype=img.dtype, device=img.device).view(1, len_fill, 1, 1).expand_as(img)
         if mode == "nearest":
             mask = mask < 0.5
             img[mask] = fill_img[mask]
-        else:  # 'bilinear'
+        else:              
             img = img * mask + (1.0 - mask) * fill_img
 
     img = _cast_squeeze_out(img, need_cast, need_squeeze, out_dtype)
@@ -610,11 +610,11 @@ def _gen_affine_grid(
     ow: int,
     oh: int,
 ) -> Tensor:
-    # https://github.com/pytorch/pytorch/blob/74b65c32be68b15dc7c9e8bb62459efbfbde33d8/aten/src/ATen/native/
-    # AffineGridGenerator.cpp#L18
-    # Difference with AffineGridGenerator is that:
-    # 1) we normalize grid values after applying theta
-    # 2) we can normalize by other image size, such that it covers "extend" option like in PIL.Image.rotate
+                                                                                                            
+                                 
+                                                  
+                                                      
+                                                                                                           
 
     d = 0.5
     base_grid = torch.empty(1, oh, ow, 3, dtype=theta.dtype, device=theta.device)
@@ -637,19 +637,19 @@ def affine(
     dtype = img.dtype if torch.is_floating_point(img) else torch.float32
     theta = torch.tensor(matrix, dtype=dtype, device=img.device).reshape(1, 2, 3)
     shape = img.shape
-    # grid will be generated on the same device as theta and img
+                                                                
     grid = _gen_affine_grid(theta, w=shape[-1], h=shape[-2], ow=shape[-1], oh=shape[-2])
     return _apply_grid_transform(img, grid, interpolation, fill=fill)
 
 
 def _compute_output_size(matrix: List[float], w: int, h: int) -> Tuple[int, int]:
 
-    # Inspired of PIL implementation:
-    # https://github.com/python-pillow/Pillow/blob/11de3318867e4398057373ee9f12dcb33db7335c/src/PIL/Image.py#L2054
+                                     
+                                                                                                                  
 
-    # pts are Top-Left, Top-Right, Bottom-Left, Bottom-Right points.
-    # Points are shifted due to affine matrix torch convention about
-    # the center point. Center is (0, 0) for image center pivot point (w * 0.5, h * 0.5)
+                                                                    
+                                                                    
+                                                                                        
     pts = torch.tensor(
         [
             [-0.5 * w, -0.5 * h, 1.0],
@@ -663,11 +663,11 @@ def _compute_output_size(matrix: List[float], w: int, h: int) -> Tuple[int, int]
     min_vals, _ = new_pts.min(dim=0)
     max_vals, _ = new_pts.max(dim=0)
 
-    # shift points to [0, w] and [0, h] interval to match PIL results
+                                                                     
     min_vals += torch.tensor((w * 0.5, h * 0.5))
     max_vals += torch.tensor((w * 0.5, h * 0.5))
 
-    # Truncate precision to 1e-4 to avoid ceil of Xe-15 to 1.0
+                                                              
     tol = 1e-4
     cmax = torch.ceil((max_vals / tol).trunc_() * tol)
     cmin = torch.floor((min_vals / tol).trunc_() * tol)
@@ -687,20 +687,20 @@ def rotate(
     ow, oh = _compute_output_size(matrix, w, h) if expand else (w, h)
     dtype = img.dtype if torch.is_floating_point(img) else torch.float32
     theta = torch.tensor(matrix, dtype=dtype, device=img.device).reshape(1, 2, 3)
-    # grid will be generated on the same device as theta and img
+                                                                
     grid = _gen_affine_grid(theta, w=w, h=h, ow=ow, oh=oh)
 
     return _apply_grid_transform(img, grid, interpolation, fill=fill)
 
 
 def _perspective_grid(coeffs: List[float], ow: int, oh: int, dtype: torch.dtype, device: torch.device) -> Tensor:
-    # https://github.com/python-pillow/Pillow/blob/4634eafe3c695a014267eefdce830b4a825beed7/
-    # src/libImaging/Geometry.c#L394
+                                                                                            
+                                    
 
-    #
-    # x_out = (coeffs[0] * x + coeffs[1] * y + coeffs[2]) / (coeffs[6] * x + coeffs[7] * y + 1)
-    # y_out = (coeffs[3] * x + coeffs[4] * y + coeffs[5]) / (coeffs[6] * x + coeffs[7] * y + 1)
-    #
+     
+                                                                                               
+                                                                                               
+     
     theta1 = torch.tensor(
         [[[coeffs[0], coeffs[1], coeffs[2]], [coeffs[3], coeffs[4], coeffs[5]]]], dtype=dtype, device=device
     )
@@ -781,7 +781,7 @@ def gaussian_blur(img: Tensor, kernel_size: List[int], sigma: List[float]) -> Te
         ],
     )
 
-    # padding = (left, right, top, bottom)
+                                          
     padding = [kernel_size[0] // 2, kernel_size[0] // 2, kernel_size[1] // 2, kernel_size[1] // 2]
     img = torch_pad(img, padding, mode="reflect")
     img = conv2d(img, kernel, groups=img.shape[-3])
@@ -813,7 +813,7 @@ def posterize(img: Tensor, bits: int) -> Tensor:
         raise TypeError(f"Only torch.uint8 image tensors are supported, but found {img.dtype}")
 
     _assert_channels(img, [1, 3])
-    mask = -int(2 ** (8 - bits))  # JIT-friendly for: ~(2 ** (8 - bits) - 1)
+    mask = -int(2 ** (8 - bits))                                            
     return img & mask
 
 
@@ -892,10 +892,10 @@ def autocontrast(img: Tensor) -> Tensor:
 
 
 def _scale_channel(img_chan: Tensor) -> Tensor:
-    # TODO: we should expect bincount to always be faster than histc, but this
-    # isn't always the case. Once
-    # https://github.com/pytorch/pytorch/issues/53194 is fixed, remove the if
-    # block and only use bincount.
+                                                                              
+                                 
+                                                                             
+                                  
     if img_chan.is_cuda:
         hist = torch.histc(img_chan.to(torch.float32), bins=256, min=0, max=255)
     else:

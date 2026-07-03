@@ -71,22 +71,22 @@ def make_grid(
         )
         value_range = kwargs["range"]
 
-    # if list of tensors, convert to a 4D mini-batch Tensor
+                                                           
     if isinstance(tensor, list):
         tensor = torch.stack(tensor, dim=0)
 
-    if tensor.dim() == 2:  # single image H x W
+    if tensor.dim() == 2:                      
         tensor = tensor.unsqueeze(0)
-    if tensor.dim() == 3:  # single image
-        if tensor.size(0) == 1:  # if single-channel, convert to 3-channel
+    if tensor.dim() == 3:                
+        if tensor.size(0) == 1:                                           
             tensor = torch.cat((tensor, tensor, tensor), 0)
         tensor = tensor.unsqueeze(0)
 
-    if tensor.dim() == 4 and tensor.size(1) == 1:  # single-channel images
+    if tensor.dim() == 4 and tensor.size(1) == 1:                         
         tensor = torch.cat((tensor, tensor, tensor), 1)
 
     if normalize is True:
-        tensor = tensor.clone()  # avoid modifying tensor in-place
+        tensor = tensor.clone()                                   
         if value_range is not None and not isinstance(value_range, tuple):
             raise TypeError("value_range has to be a tuple (min, max) if specified. min and max are numbers")
 
@@ -101,7 +101,7 @@ def make_grid(
                 norm_ip(t, float(t.min()), float(t.max()))
 
         if scale_each is True:
-            for t in tensor:  # loop over mini-batch dimension
+            for t in tensor:                                  
                 norm_range(t, value_range)
         else:
             norm_range(tensor, value_range)
@@ -111,7 +111,7 @@ def make_grid(
     if tensor.size(0) == 1:
         return tensor.squeeze(0)
 
-    # make the mini-batch of images into a grid
+                                               
     nmaps = tensor.size(0)
     xmaps = min(nrow, nmaps)
     ymaps = int(math.ceil(float(nmaps) / xmaps))
@@ -123,9 +123,9 @@ def make_grid(
         for x in range(xmaps):
             if k >= nmaps:
                 break
-            # Tensor.copy_() is a valid method but seems to be missing from the stubs
-            # https://pytorch.org/docs/stable/tensors.html#torch.Tensor.copy_
-            grid.narrow(1, y * height + padding, height - padding).narrow(  # type: ignore[attr-defined]
+                                                                                     
+                                                                             
+            grid.narrow(1, y * height + padding, height - padding).narrow(                              
                 2, x * width + padding, width - padding
             ).copy_(tensor[k])
             k = k + 1
@@ -154,7 +154,7 @@ def save_image(
     if not torch.jit.is_scripting() and not torch.jit.is_tracing():
         _log_api_usage_once(save_image)
     grid = make_grid(tensor, **kwargs)
-    # Add 0.5 after unnormalizing to [0, 255] to round to nearest integer
+                                                                         
     ndarr = grid.mul(255).add_(0.5).clamp_(0, 255).permute(1, 2, 0).to("cpu", torch.uint8).numpy()
     im = Image.fromarray(ndarr)
     im.save(fp, format=format)
@@ -216,7 +216,7 @@ def draw_bounding_boxes(
         return image
 
     if labels is None:
-        labels: Union[List[str], List[None]] = [None] * num_boxes  # type: ignore[no-redef]
+        labels: Union[List[str], List[None]] = [None] * num_boxes                          
     elif len(labels) != num_boxes:
         raise ValueError(
             f"Number of boxes ({num_boxes}) and labels ({len(labels)}) mismatch. Please specify labels for each box."
@@ -227,7 +227,7 @@ def draw_bounding_boxes(
     elif isinstance(colors, list):
         if len(colors) < num_boxes:
             raise ValueError(f"Number of colors ({len(colors)}) is less than number of boxes ({num_boxes}). ")
-    else:  # colors specifies a single color for all boxes
+    else:                                                 
         colors = [colors] * num_boxes
 
     colors = [(ImageColor.getrgb(color) if isinstance(color, str) else color) for color in colors]
@@ -239,7 +239,7 @@ def draw_bounding_boxes(
     else:
         txt_font = ImageFont.truetype(font=font, size=font_size or 10)
 
-    # Handle Grayscale images
+                             
     if image.size(0) == 1:
         image = torch.tile(image, (3, 1, 1))
 
@@ -252,7 +252,7 @@ def draw_bounding_boxes(
     else:
         draw = ImageDraw.Draw(img_to_draw)
 
-    for bbox, color, label in zip(img_boxes, colors, labels):  # type: ignore[arg-type]
+    for bbox, color, label in zip(img_boxes, colors, labels):                          
         if fill:
             fill_color = color + (100,)
             draw.rectangle(bbox, width=width, outline=color, fill=fill_color)
@@ -338,7 +338,7 @@ def draw_segmentation_masks(
         colors_.append(torch.tensor(color, dtype=out_dtype))
 
     img_to_draw = image.detach().clone()
-    # TODO: There might be a way to vectorize this
+                                                  
     for mask, color in zip(masks, colors_):
         img_to_draw[:, mask] = color[:, None]
 
@@ -418,7 +418,7 @@ def draw_keypoints(
     return torch.from_numpy(np.array(img_to_draw)).permute(2, 0, 1).to(dtype=torch.uint8)
 
 
-# Flow visualization code adapted from https://github.com/tomrunia/OpticalFlow_Visualization
+                                                                                            
 @torch.no_grad()
 def flow_to_image(flow: torch.Tensor) -> torch.Tensor:
 
@@ -438,7 +438,7 @@ def flow_to_image(flow: torch.Tensor) -> torch.Tensor:
 
     orig_shape = flow.shape
     if flow.ndim == 3:
-        flow = flow[None]  # Add batch dim
+        flow = flow[None]                 
 
     if flow.ndim != 4 or flow.shape[1] != 2:
         raise ValueError(f"Input flow should have shape (2, H, W) or (N, 2, H, W), got {orig_shape}.")
@@ -449,7 +449,7 @@ def flow_to_image(flow: torch.Tensor) -> torch.Tensor:
     img = _normalized_flow_to_image(normalized_flow)
 
     if len(orig_shape) == 3:
-        img = img[0]  # Remove batch dim
+        img = img[0]                    
     return img
 
 
@@ -468,7 +468,7 @@ def _normalized_flow_to_image(normalized_flow: torch.Tensor) -> torch.Tensor:
     N, _, H, W = normalized_flow.shape
     device = normalized_flow.device
     flow_image = torch.zeros((N, 3, H, W), dtype=torch.uint8, device=device)
-    colorwheel = _make_colorwheel().to(device)  # shape [55x3]
+    colorwheel = _make_colorwheel().to(device)                
     num_cols = colorwheel.shape[0]
     norm = torch.sum(normalized_flow ** 2, dim=1).sqrt()
     a = torch.atan2(-normalized_flow[:, 1, :, :], -normalized_flow[:, 0, :, :]) / torch.pi
@@ -509,27 +509,27 @@ def _make_colorwheel() -> torch.Tensor:
     colorwheel = torch.zeros((ncols, 3))
     col = 0
 
-    # RY
+        
     colorwheel[0:RY, 0] = 255
     colorwheel[0:RY, 1] = torch.floor(255 * torch.arange(0, RY) / RY)
     col = col + RY
-    # YG
+        
     colorwheel[col : col + YG, 0] = 255 - torch.floor(255 * torch.arange(0, YG) / YG)
     colorwheel[col : col + YG, 1] = 255
     col = col + YG
-    # GC
+        
     colorwheel[col : col + GC, 1] = 255
     colorwheel[col : col + GC, 2] = torch.floor(255 * torch.arange(0, GC) / GC)
     col = col + GC
-    # CB
+        
     colorwheel[col : col + CB, 1] = 255 - torch.floor(255 * torch.arange(CB) / CB)
     colorwheel[col : col + CB, 2] = 255
     col = col + CB
-    # BM
+        
     colorwheel[col : col + BM, 2] = 255
     colorwheel[col : col + BM, 0] = torch.floor(255 * torch.arange(0, BM) / BM)
     col = col + BM
-    # MR
+        
     colorwheel[col : col + MR, 2] = 255 - torch.floor(255 * torch.arange(MR) / MR)
     colorwheel[col : col + MR, 0] = 255
     return colorwheel

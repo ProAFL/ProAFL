@@ -8,11 +8,11 @@ from utils.google_utils import attempt_download
 
 
 class CrossConv(nn.Module):
-    # Cross Convolution Downsample
+                                  
     def __init__(self, c1, c2, k=3, s=1, g=1, e=1.0, shortcut=False):
-        # ch_in, ch_out, kernel, stride, groups, expansion, shortcut
+                                                                    
         super(CrossConv, self).__init__()
-        c_ = int(c2 * e)  # hidden channels
+        c_ = int(c2 * e)                   
         self.cv1 = Conv(c1, c_, (1, k), (1, s))
         self.cv2 = Conv(c_, c2, (k, 1), (s, 1), g=g)
         self.add = shortcut and c1 == c2
@@ -22,16 +22,16 @@ class CrossConv(nn.Module):
 
 
 class Sum(nn.Module):
-    # Weighted sum of 2 or more layers https://arxiv.org/abs/1911.09070
-    def __init__(self, n, weight=False):  # n: number of inputs
+                                                                       
+    def __init__(self, n, weight=False):                       
         super(Sum, self).__init__()
-        self.weight = weight  # apply weights boolean
-        self.iter = range(n - 1)  # iter object
+        self.weight = weight                         
+        self.iter = range(n - 1)               
         if weight:
-            self.w = nn.Parameter(-torch.arange(1., n) / 2, requires_grad=True)  # layer weights
+            self.w = nn.Parameter(-torch.arange(1., n) / 2, requires_grad=True)                 
 
     def forward(self, x):
-        y = x[0]  # no weight
+        y = x[0]             
         if self.weight:
             w = torch.sigmoid(self.w) * 2
             for i in self.iter:
@@ -43,20 +43,20 @@ class Sum(nn.Module):
 
 
 class MixConv2d(nn.Module):
-    # Mixed Depthwise Conv https://arxiv.org/abs/1907.09595
+                                                           
     def __init__(self, c1, c2, k=(1, 3), s=1, equal_ch=True):
         super(MixConv2d, self).__init__()
         groups = len(k)
-        if equal_ch:  # equal c_ per group
-            i = torch.linspace(0, groups - 1E-6, c2).floor()  # c2 indices
-            c_ = [(i == g).sum() for g in range(groups)]  # intermediate channels
-        else:  # equal weight.numel() per group
+        if equal_ch:                      
+            i = torch.linspace(0, groups - 1E-6, c2).floor()              
+            c_ = [(i == g).sum() for g in range(groups)]                         
+        else:                                  
             b = [c2] + [0] * groups
             a = np.eye(groups + 1, groups, k=-1)
             a -= np.roll(a, 1, axis=1)
             a *= np.array(k) ** 2
             a[0] = 1
-            c_ = np.linalg.lstsq(a, b, rcond=None)[0].round()  # solve for equal weight indices, ax = b
+            c_ = np.linalg.lstsq(a, b, rcond=None)[0].round()                                          
 
         self.m = nn.ModuleList([nn.Conv2d(c1, int(c_[g]), k[g], s, k[g] // 2, bias=False) for g in range(groups)])
         self.bn = nn.BatchNorm2d(c2)
@@ -67,7 +67,7 @@ class MixConv2d(nn.Module):
 
 
 class Ensemble(nn.ModuleList):
-    # Ensemble of models
+                        
     def __init__(self):
         super(Ensemble, self).__init__()
 
@@ -75,10 +75,10 @@ class Ensemble(nn.ModuleList):
         y = []
         for module in self:
             y.append(module(x, augment)[0])
-        # y = torch.stack(y).max(0)[0]  # max ensemble
-        # y = torch.stack(y).mean(0)  # mean ensemble
-        y = torch.cat(y, 1)  # nms ensemble
-        return y, None  # inference, train output
+                                                      
+                                                     
+        y = torch.cat(y, 1)                
+        return y, None                           
 
 
 
@@ -164,7 +164,7 @@ class ONNX_ORT(nn.Module):
         self.max_obj = torch.tensor([max_obj]).to(device)
         self.iou_threshold = torch.tensor([iou_thres]).to(device)
         self.score_threshold = torch.tensor([score_thres]).to(device)
-        self.max_wh = max_wh # if max_wh != 0 : non-agnostic else : agnostic
+        self.max_wh = max_wh                                                
         self.convert_matrix = torch.tensor([[1, 0, 1, 0], [0, 1, 0, 1], [-0.5, 0, 0.5, 0], [0, -0.5, 0, 0.5]],
                                            dtype=torch.float32,
                                            device=self.device)
@@ -175,10 +175,10 @@ class ONNX_ORT(nn.Module):
         conf = x[:, :, 4:5]
         scores = x[:, :, 5:]
         if self.n_classes == 1:
-            scores = conf # for models with one class, cls_loss is 0 and cls_conf is always 0.5,
-                                 # so there is no need to multiplicate.
+            scores = conf                                                                       
+                                                                       
         else:
-            scores *= conf  # conf = obj_conf * cls_conf
+            scores *= conf                              
         boxes @= self.convert_matrix
         max_score, category_id = scores.max(2, keepdim=True)
         dis = category_id.float() * self.max_wh
@@ -212,10 +212,10 @@ class ONNX_TRT(nn.Module):
         conf = x[:, :, 4:5]
         scores = x[:, :, 5:]
         if self.n_classes == 1:
-            scores = conf # for models with one class, cls_loss is 0 and cls_conf is always 0.5,
-                                 # so there is no need to multiplicate.
+            scores = conf                                                                       
+                                                                       
         else:
-            scores *= conf  # conf = obj_conf * cls_conf
+            scores *= conf                              
         num_det, det_boxes, det_scores, det_classes = TRT_NMS.apply(boxes, scores, self.background_class, self.box_coding,
                                                                     self.iou_threshold, self.max_obj,
                                                                     self.plugin_version, self.score_activation,
@@ -245,28 +245,28 @@ class End2End(nn.Module):
 
 
 def attempt_load(weights, map_location=None):
-    # Loads an ensemble of models weights=[a,b,c] or a single model weights=[a] or weights=a
+                                                                                            
     model = Ensemble()
     for w in weights if isinstance(weights, list) else [weights]:
         attempt_download(w)
-        ckpt = torch.load(w, map_location=map_location,weights_only=False)  # load
-        model.append(ckpt['ema' if ckpt.get('ema') else 'model'].float().fuse().eval())  # FP32 model
+        ckpt = torch.load(w, map_location=map_location,weights_only=False)        
+        model.append(ckpt['ema' if ckpt.get('ema') else 'model'].float().fuse().eval())              
     
-    # Compatibility updates
+                           
     for m in model.modules():
         if type(m) in [nn.Hardswish, nn.LeakyReLU, nn.ReLU, nn.ReLU6, nn.SiLU]:
-            m.inplace = True  # pytorch 1.7.0 compatibility
+            m.inplace = True                               
         elif type(m) is nn.Upsample:
-            m.recompute_scale_factor = None  # torch 1.11.0 compatibility
+            m.recompute_scale_factor = None                              
         elif type(m) is Conv:
-            m._non_persistent_buffers_set = set()  # pytorch 1.6.0 compatibility
+            m._non_persistent_buffers_set = set()                               
     
     if len(model) == 1:
-        return model[-1]  # return model
+        return model[-1]                
     else:
         print('Ensemble created with %s\n' % weights)
         for k in ['names', 'stride']:
             setattr(model, k, getattr(model[-1], k))
-        return model  # return ensemble
+        return model                   
 
 

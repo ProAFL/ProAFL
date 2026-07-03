@@ -9,7 +9,7 @@ WANDB_ARTIFACT_PREFIX = 'wandb-artifact://'
 
 def create_dataset_artifact(opt):
     with open(opt.data) as f:
-        data = yaml.load(f, Loader=yaml.SafeLoader)  # data dict
+        data = yaml.load(f, Loader=yaml.SafeLoader)             
     logger = WandbLogger(opt, '', None, data, job_type='Dataset Creation')
 
 
@@ -19,6 +19,6 @@ if __name__ == '__main__':
     parser.add_argument('--single-cls', action='store_true', help='train as single-class dataset')
     parser.add_argument('--project', type=str, default='YOLOR', help='name of W&B Project')
     opt = parser.parse_args()
-    opt.resume = False  # Explicitly disallow resume check for dataset upload job
+    opt.resume = False                                                           
 
     create_dataset_artifact(opt)

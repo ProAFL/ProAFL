@@ -1,5 +1,5 @@
 '''
-为了修复后的retrain, 我们将trainset split 为 train and val
+For retraining after repair, split the train set into train and val.
 '''
 import os
 from pathlib import Path
@@ -25,30 +25,30 @@ def extract_labels():
             label_name_list.append(label_name)
         extract_ops(label_name_list,source_labels_dir,target_labels_dir)
 
-    print("抽取train labels...")
+    print("Extracting train labels...")
     extract_labels_help(splitted_train_imgs_dir,source_labels_dir,splitted_train_labels_dir)
-    print("抽取val labels...")
+    print("Extracting val labels...")
     extract_labels_help(splitted_val_imgs_dir,source_labels_dir,splitted_val_labels_dir)
 
 
 if __name__ == "__main__":
     config = read_yaml("config.yaml")
-    # Only yolov7 model
+                       
     exp_root_dir = config["exp_data_dir"]
-    dataset_name = "voc" # voc|kitti|visdrone
+    dataset_name = "voc"                     
 
     splitted_train_imgs_dir = os.path.join(exp_root_dir, "retrain_dataset_split", dataset_name, 
                                          "images", "split", "train")
     splitted_val_imgs_dir = os.path.join(exp_root_dir, "retrain_dataset_split", dataset_name, 
                                        "images", "split", "val")
     
-    # 2.抽取 splitted label
-    method_name = "ours" # ours|datactive|entropy|loss|deepgini|margin|objectlab|
+                           
+    method_name = "ours"                                                         
 
     if method_name == "ours":
         source_labels_dir = os.path.join(exp_root_dir,"ours",dataset_name,"yolov7","repair","yolo_format","labels")
         splitted_train_labels_dir = os.path.join(exp_root_dir,"ours",dataset_name,"yolov7","retrain/splitted_labels/train")
-        # 切出的val labels dir
+                                    
         splitted_val_labels_dir = os.path.join(exp_root_dir,"ours",dataset_name,"yolov7","retrain/splitted_labels/val")
     elif method_name in config["baselines"]:
         if method_name == "datactive":

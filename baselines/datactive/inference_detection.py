@@ -38,7 +38,7 @@ elif datatype == 'KITTI':
     layer_num = 8
 
 
-# load model
+            
 modelState = torch.load(model_path, map_location="cpu")
 if modeltype == 'ssd300':
     model = ssd300_vgg16(num_classes=layer_num)
@@ -58,7 +58,7 @@ val_dataloader = torch.utils.data.DataLoader(val_dataset, batch_size=1, shuffle=
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 model.to(device)
 
-# inference
+           
 
 results = []
 model.eval()
@@ -71,7 +71,7 @@ with torch.no_grad():
         image = list(img.to(device) for img in image)
 
         outputs = model(image)
-        # instances results
+                           
         for i, prediction in enumerate(outputs):
             cat_ids = prediction["labels"].cpu()
             bboxs = prediction["boxes"].cpu().numpy().tolist()
@@ -97,14 +97,14 @@ with torch.no_grad():
     with open(results_save_path, 'w') as json_file:
         json_file.write(json_str)
 
-# load results
+              
 
 with open(results_save_path, 'r') as f:
     results = json.load(f)
 
-# check max(full_score) == score
-# for i in range(len(results)):
-#     print(results[i]["score"],max(results[i]["full_scores"][1:]))
-# assert results[i]["score"] == max(results[i]["full_scores"][1:]), "score != max(full_score)"
+                                
+                               
+                                                                   
+                                                                                              
 
 cal_voc_map(model, results, val_dataset)

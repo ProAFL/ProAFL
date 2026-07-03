@@ -39,9 +39,9 @@ class QuantizableBasicConv2d(inception_module.BasicConv2d):
 
 
 class QuantizableInceptionA(inception_module.InceptionA):
-    # TODO https://github.com/pytorch/vision/pull/4232#pullrequestreview-730461659
+                                                                                  
     def __init__(self, *args: Any, **kwargs: Any) -> None:
-        super().__init__(conv_block=QuantizableBasicConv2d, *args, **kwargs)  # type: ignore[misc]
+        super().__init__(conv_block=QuantizableBasicConv2d, *args, **kwargs)                      
         self.myop = nn.quantized.FloatFunctional()
 
     def forward(self, x: Tensor) -> Tensor:
@@ -50,9 +50,9 @@ class QuantizableInceptionA(inception_module.InceptionA):
 
 
 class QuantizableInceptionB(inception_module.InceptionB):
-    # TODO https://github.com/pytorch/vision/pull/4232#pullrequestreview-730461659
+                                                                                  
     def __init__(self, *args: Any, **kwargs: Any) -> None:
-        super().__init__(conv_block=QuantizableBasicConv2d, *args, **kwargs)  # type: ignore[misc]
+        super().__init__(conv_block=QuantizableBasicConv2d, *args, **kwargs)                      
         self.myop = nn.quantized.FloatFunctional()
 
     def forward(self, x: Tensor) -> Tensor:
@@ -61,9 +61,9 @@ class QuantizableInceptionB(inception_module.InceptionB):
 
 
 class QuantizableInceptionC(inception_module.InceptionC):
-    # TODO https://github.com/pytorch/vision/pull/4232#pullrequestreview-730461659
+                                                                                  
     def __init__(self, *args: Any, **kwargs: Any) -> None:
-        super().__init__(conv_block=QuantizableBasicConv2d, *args, **kwargs)  # type: ignore[misc]
+        super().__init__(conv_block=QuantizableBasicConv2d, *args, **kwargs)                      
         self.myop = nn.quantized.FloatFunctional()
 
     def forward(self, x: Tensor) -> Tensor:
@@ -72,9 +72,9 @@ class QuantizableInceptionC(inception_module.InceptionC):
 
 
 class QuantizableInceptionD(inception_module.InceptionD):
-    # TODO https://github.com/pytorch/vision/pull/4232#pullrequestreview-730461659
+                                                                                  
     def __init__(self, *args: Any, **kwargs: Any) -> None:
-        super().__init__(conv_block=QuantizableBasicConv2d, *args, **kwargs)  # type: ignore[misc]
+        super().__init__(conv_block=QuantizableBasicConv2d, *args, **kwargs)                      
         self.myop = nn.quantized.FloatFunctional()
 
     def forward(self, x: Tensor) -> Tensor:
@@ -83,9 +83,9 @@ class QuantizableInceptionD(inception_module.InceptionD):
 
 
 class QuantizableInceptionE(inception_module.InceptionE):
-    # TODO https://github.com/pytorch/vision/pull/4232#pullrequestreview-730461659
+                                                                                  
     def __init__(self, *args: Any, **kwargs: Any) -> None:
-        super().__init__(conv_block=QuantizableBasicConv2d, *args, **kwargs)  # type: ignore[misc]
+        super().__init__(conv_block=QuantizableBasicConv2d, *args, **kwargs)                      
         self.myop1 = nn.quantized.FloatFunctional()
         self.myop2 = nn.quantized.FloatFunctional()
         self.myop3 = nn.quantized.FloatFunctional()
@@ -117,9 +117,9 @@ class QuantizableInceptionE(inception_module.InceptionE):
 
 
 class QuantizableInceptionAux(inception_module.InceptionAux):
-    # TODO https://github.com/pytorch/vision/pull/4232#pullrequestreview-730461659
+                                                                                  
     def __init__(self, *args: Any, **kwargs: Any) -> None:
-        super().__init__(conv_block=QuantizableBasicConv2d, *args, **kwargs)  # type: ignore[misc]
+        super().__init__(conv_block=QuantizableBasicConv2d, *args, **kwargs)                      
 
 
 class QuantizableInception3(inception_module.Inception3):
@@ -276,14 +276,14 @@ def inception_v3(
     return model
 
 
-# The dictionary below is internal implementation detail and will be removed in v0.15
+                                                                                     
 from .._utils import _ModelURLs
-from ..inception import model_urls  # noqa: F401
+from ..inception import model_urls              
 
 
 quant_model_urls = _ModelURLs(
     {
-        # fp32 weights ported from TensorFlow, quantized in PyTorch
+                                                                   
         "inception_v3_google_fbgemm": Inception_V3_QuantizedWeights.IMAGENET1K_FBGEMM_V1.url,
     }
 )

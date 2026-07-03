@@ -1,5 +1,5 @@
 '''
-分析DataDetective的rank
+textDataDetectivetextrank
 '''
 import os
 import json
@@ -34,7 +34,7 @@ def get_error_ann_id_set(coco:COCO):
     anns = coco.loadAnns(coco.getAnnIds())
     error_ann_id_set = set()
     for ann in anns:
-        if ann["fault_type"] in [1,2,3]: # cls,loc,red
+        if ann["fault_type"] in [1,2,3]:              
             error_ann_id_set.add(ann["id"])
     return error_ann_id_set
 
@@ -48,7 +48,7 @@ def look_annid_rank(ranked_gid_list:list[int], all_errored_g_box_id_set:set[int]
         else:
             error_flag_list.append(0)
     draw_rank_hot(error_flag_list,pic_save_path)
-    print(f"图片保存在：{pic_save_path}")
+    print(f"Image saved at:{pic_save_path}")
 
 
 def vis_rank(rank_res,errored_annoid_set, miss_img_set, pic_save_path):
@@ -59,7 +59,7 @@ def vis_rank(rank_res,errored_annoid_set, miss_img_set, pic_save_path):
             ranked_image_name_list.append(idd)
         else:
             ranked_annoid_list.append(idd)
-    assert len(ranked_annoid_list) + len(ranked_image_name_list) == len(rank_res), "数量不对"
+    assert len(ranked_annoid_list) + len(ranked_image_name_list) == len(rank_res), "Invalid count"
     look_total_rank(rank_res,errored_annoid_set,miss_img_set,pic_save_path)
 
 def main():
@@ -67,7 +67,7 @@ def main():
     catIds = coco.getCatIds()
     bg_id = catIds[-1]+1
     converted_rank_list = conver_datactive_rank(ranked_list,bg_id)
-    print(f"rank list 长度:{len(converted_rank_list)}")
+    print(f"rank list text:{len(converted_rank_list)}")
     ranked_annid_list = []
     ranked_img_name_list = []
     for idd in converted_rank_list:
@@ -80,12 +80,12 @@ def main():
     with open(annotations_with_miss_json_path,'r') as f:
         annotations_with_miss_json = json.load(f)
     missed_img_name_set =  get_missed_img_name_set(annotations_with_miss_json)
-    # look_annid_rank(ranked_annid_list, error_ann_id_set)
-    # look_img_rank(ranked_img_name_list, missed_img_name_set)
-    # look_total_rank(converted_rank_list,error_ann_id_set,missed_img_name_set)
+                                                          
+                                                              
+                                                                               
     total_error_set = error_ann_id_set | missed_img_name_set
 
-    # 计算APFD,FPR和FNR
+                                  
     APFD = compute_apfd(total_error_set, converted_rank_list)
     FPR,FNR,F1 =calc_fpr_fnr_f1(converted_rank_list, total_error_set, cut_off=0.5)
     print(f"APFD:{APFD},FPR:{FPR},FNR:{FNR},F1:{F1}")
@@ -95,26 +95,26 @@ def main():
     top1 = calc_top1(annos_with_miss_json,converted_rank_list,error_idd_set,error_imgset)
     exam=calc_exam(annos_with_miss_json,converted_rank_list)
     print(f"top1:{top1},exam:{exam}")
-    # 可视化全排序
-    # pic_save_dir = os.path.join(exp_data_root_dir,"temp","total_rank")
-    # os.makedirs(pic_save_dir,exist_ok=True)
-    # pic_save_file_name = "datactive.png"
-    # pic_save_path = os.path.join(pic_save_dir,pic_save_file_name)
+                                
+                                                                        
+                                             
+                                          
+                                                                   
 
-    # vis_rank(converted_rank_list,error_ann_id_set, missed_img_name_set, pic_save_path)
+                                                                                        
 
 
 
 def xiufu_rank_res():
     '''
-    这是个一次性方法
+    text
     '''
     coco = COCO(anno_coco_error_json_path)
     catIds = coco.getCatIds()
     bg_id = catIds[-1]+1
     converted_rank = conver_datactive_rank(ranked_list, bg_id)
-    # assert 129286 in converted_rank, "不通过"
-    assert 61921 in converted_rank, "不通过"
+                                               
+    assert 61921 in converted_rank, "failed"
     removed_idx_list = []
     for idx, instance in enumerate(ranked_list):
         if instance["anno_id"] == 129286:
@@ -123,17 +123,17 @@ def xiufu_rank_res():
             removed_idx_list.append(idx)
     for idx in removed_idx_list:
         del ranked_list[idx]
-    # joblib.dump(ranked_list,f"{exp_data_root_dir}/Results/datactive/{dataset_name}/YOLOv7/{exp_id}/rank/rank_new.joblib")
+                                                                                                                           
 
 if __name__ == "__main__":
-    dataset_name = "VisDrone" # VOC2012|KITTI_8|VisDrone
+    dataset_name = "VisDrone"                           
     exp_id = "exp_02"
-    # datactive 排序的idd
+                              
     ranked_list = joblib.load(f"{exp_data_root_dir}/Results/datactive/{dataset_name}/YOLOv7/{exp_id}/rank/rank.joblib")
     anno_coco_error_json_path = get_error_ann_file_path(dataset_name)
     annotations_with_miss_json_path =get_annotations_with_miss_json_path(dataset_name)
     main()
-    # xiufu_rank_res()
+                      
 
 
 

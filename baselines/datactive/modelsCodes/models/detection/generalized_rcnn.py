@@ -32,25 +32,25 @@ class GeneralizedRCNN(nn.Module):
         self.backbone = backbone
         self.rpn = rpn
         self.roi_heads = roi_heads
-        # used only on torchscript mode
+                                       
         self._has_warned = False
 
     @torch.jit.unused
     def eager_outputs(self, losses, detections):
-        # type: (Dict[str, Tensor], List[Dict[str, Tensor]]) -> Union[Dict[str, Tensor], List[Dict[str, Tensor]]]
+                                                                                                                 
         if self.training:
             return losses
 
-        #previous version
+                         
         return detections
 
-        #changed version
+                        
         '''
         return detections,losses
         '''
 
     def forward(self, images, targets=None):
-        # type: (List[Tensor], Optional[List[Dict[str, Tensor]]]) -> Tuple[Dict[str, Tensor], List[Dict[str, Tensor]]]
+                                                                                                                      
         """
         Args:
             images (list[Tensor]): images to be processed
@@ -88,14 +88,14 @@ class GeneralizedRCNN(nn.Module):
 
         images, targets = self.transform(images, targets)
 
-        # Check for degenerate boxes
-        # TODO: Move this to a function
+                                    
+                                       
         if targets is not None:
             for target_idx, target in enumerate(targets):
                 boxes = target["boxes"]
                 degenerate_boxes = boxes[:, 2:] <= boxes[:, :2]
                 if degenerate_boxes.any():
-                    # print the first degenerate box
+                                                    
                     bb_idx = torch.where(degenerate_boxes.any(dim=1))[0][0]
                     degen_bb: List[float] = boxes[bb_idx].tolist()
                     torch._assert(
@@ -109,7 +109,7 @@ class GeneralizedRCNN(nn.Module):
             features = OrderedDict([("0", features)])
         proposals, proposal_losses = self.rpn(images, features, targets)
         detections, detector_losses = self.roi_heads(features, proposals, images.image_sizes, targets)
-        detections = self.transform.postprocess(detections, images.image_sizes, original_image_sizes)  # type: ignore[operator]
+        detections = self.transform.postprocess(detections, images.image_sizes, original_image_sizes)                          
 
         losses = {}
         losses.update(detector_losses)

@@ -3,7 +3,7 @@ import openpyxl
 
 class WRITE_EXCEL():
     def __init__(self, filepath):
-        # open excel to write(add version) not change the original file
+                                                                       
         self.filename = filepath
         self.wb = openpyxl.load_workbook(self.filename)
         self.ws = self.wb.active
@@ -17,7 +17,7 @@ class WRITE_EXCEL():
             self.write(4 + line_offset[i], 1 + col_offset, results['missing fault'])
             self.write(5 + line_offset[i], 1 + col_offset, results['any fault'])
 
-        # end of write
+                      
 
         self.save()
         self.close()

@@ -5,7 +5,7 @@ import torch
 import torchvision.models
 from torch.utils.data import DataLoader
 
-from UTILS.mydataset import inference_VOCGt_classificationDataSet, inference_VOCinf_classificationDataSet, \
+from UTILS.mydataset import inference_VOCGt_classificationDataSet, inference_VOCinf_classificationDataSet,\
     inference_VOCgtfault_classificationDataSet
 from torchvision import transforms
 
@@ -16,7 +16,7 @@ def inference_VOCclassification(dataloader, inference_type, modelpath='', dataty
     loss_func = torch.nn.CrossEntropyLoss()
     model_path = modelpath
 
-    # load model
+                
     modelState = torch.load(model_path, map_location="cpu")
     model = torchvision.models.resnet50()
     if datatype == 'VOC':
@@ -38,19 +38,19 @@ def inference_VOCclassification(dataloader, inference_type, modelpath='', dataty
             images, targets = data
 
             outputs = model(images.to(device))
-            # softmax outputs
+                             
             labels = targets['category_id'].to(device)
             outputs = torch.nn.functional.softmax(outputs, dim=1)
 
-            # print(label,labels)
+                                 
             loss = loss_func(outputs, labels).item()
-            # print(loss)
+                         
             _, predicted = torch.max(outputs.data, 1)
 
-            # progress bar
+                          
             print("\rInference: {}/{}".format(i + 1, len(dataloader)), end="")
 
-            # save softmax outputs image_name category_id boxes
+                                                               
             for j in range(len(predicted)):
                 if inference_type == "gt":
                     content_dic = {
@@ -69,7 +69,7 @@ def inference_VOCclassification(dataloader, inference_type, modelpath='', dataty
                     }
                     results.append(content_dic)
 
-                # inference_type == 'class fault' or 'location fault' or 'redundancy fault' or 'missing fault'
+                                                                                                              
                 else:
                     content_dic = {
                         "image_name": targets["image_name"][j],
@@ -87,7 +87,7 @@ def inference_VOCclassification(dataloader, inference_type, modelpath='', dataty
 
 params = parameters()
 if __name__ == '__main__':
-    # params
+            
     inference_type = 'mixed fault'
     datatype = 'KITTI'
     modeltype = 'frcnn'
@@ -99,7 +99,7 @@ if __name__ == '__main__':
     dirty_path = './data/fault_annotations/' + datatype + runtype + '_mixedfault0.1.json'
     modelpath = './autodl-tmp/models/crop_dirty_LNL_resnet50_kitti_epoch_13_bs=32.pth'
 
-    #############################
+                                 
     if datatype == 'VOC':
         root_path = './autodl-tmp/dataset/VOCdevkit/VOC2012'
     elif datatype == 'VisDrone':
@@ -109,13 +109,13 @@ if __name__ == '__main__':
     elif datatype == 'KITTI':
         root_path = './autodl-tmp/dataset/KITTI'
     print(root_path)
-    # if mask_type == 'mask others':
-    #     results_save_path = './data/classification_results/mask_others_classification_VOCgtmixedfault'+str(faultratio)+'_inferences.json'
-    # elif mask_type == 'mask all':
-    #     results_save_path = './data/classification_results/mask_all_classification_VOCgtmixedfault'+str(faultratio)+'_inferences.json'
-    # elif mask_type == 'crop':
-    #     results_save_path = './data/classification_results/crop_classification_VOCgtmixedfault'+str(faultratio)+'_inferences.json'
-    #####################
+                                    
+                                                                                                                                           
+                                   
+                                                                                                                                        
+                               
+                                                                                                                                    
+                         
 
     detection_results = {
         "ssd": "./data/detection_results/ssd_VOCval_inferences.json",

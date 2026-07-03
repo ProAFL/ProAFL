@@ -26,8 +26,8 @@ __all__ = [
 ]
 
 
-# Paper suggests 0.9997 momentum, for TensorFlow. Equivalent PyTorch momentum is
-# 1.0 - tensorflow.
+                                                                                
+                   
 _BN_MOMENTUM = 1 - 0.9997
 
 
@@ -43,15 +43,15 @@ class _InvertedResidual(nn.Module):
         mid_ch = in_ch * expansion_factor
         self.apply_residual = in_ch == out_ch and stride == 1
         self.layers = nn.Sequential(
-            # Pointwise
+                       
             nn.Conv2d(in_ch, mid_ch, 1, bias=False),
             nn.BatchNorm2d(mid_ch, momentum=bn_momentum),
             nn.ReLU(inplace=True),
-            # Depthwise
+                       
             nn.Conv2d(mid_ch, mid_ch, kernel_size, padding=kernel_size // 2, stride=stride, groups=mid_ch, bias=False),
             nn.BatchNorm2d(mid_ch, momentum=bn_momentum),
             nn.ReLU(inplace=True),
-            # Linear pointwise. Note that there's no activation.
+                                                                
             nn.Conv2d(mid_ch, out_ch, 1, bias=False),
             nn.BatchNorm2d(out_ch, momentum=bn_momentum),
         )
@@ -69,7 +69,7 @@ def _stack(
     """Creates a stack of inverted residuals."""
     if repeats < 1:
         raise ValueError(f"repeats should be >= 1, instead got {repeats}")
-    # First one has no skip, because feature map size changes.
+                                                              
     first = _InvertedResidual(in_ch, out_ch, kernel_size, stride, exp_factor, bn_momentum=bn_momentum)
     remaining = []
     for _ in range(1, repeats):
@@ -106,7 +106,7 @@ class MNASNet(torch.nn.Module):
     1000
     """
 
-    # Version 2 adds depth scaling in the initial stages of the network.
+                                                                        
     _version = 2
 
     def __init__(self, alpha: float, num_classes: int = 1000, dropout: float = 0.2) -> None:
@@ -118,24 +118,24 @@ class MNASNet(torch.nn.Module):
         self.num_classes = num_classes
         depths = _get_depths(alpha)
         layers = [
-            # First layer: regular conv.
+                                        
             nn.Conv2d(3, depths[0], 3, padding=1, stride=2, bias=False),
             nn.BatchNorm2d(depths[0], momentum=_BN_MOMENTUM),
             nn.ReLU(inplace=True),
-            # Depthwise separable, no skip.
+                                           
             nn.Conv2d(depths[0], depths[0], 3, padding=1, stride=1, groups=depths[0], bias=False),
             nn.BatchNorm2d(depths[0], momentum=_BN_MOMENTUM),
             nn.ReLU(inplace=True),
             nn.Conv2d(depths[0], depths[1], 1, padding=0, stride=1, bias=False),
             nn.BatchNorm2d(depths[1], momentum=_BN_MOMENTUM),
-            # MNASNet blocks: stacks of inverted residuals.
+                                                           
             _stack(depths[1], depths[2], 3, 2, 3, 3, _BN_MOMENTUM),
             _stack(depths[2], depths[3], 5, 2, 3, 3, _BN_MOMENTUM),
             _stack(depths[3], depths[4], 5, 2, 6, 3, _BN_MOMENTUM),
             _stack(depths[4], depths[5], 3, 1, 6, 2, _BN_MOMENTUM),
             _stack(depths[5], depths[6], 5, 2, 6, 4, _BN_MOMENTUM),
             _stack(depths[6], depths[7], 3, 1, 6, 1, _BN_MOMENTUM),
-            # Final mapping to classifier input.
+                                                
             nn.Conv2d(depths[7], 1280, 1, padding=0, stride=1, bias=False),
             nn.BatchNorm2d(1280, momentum=_BN_MOMENTUM),
             nn.ReLU(inplace=True),
@@ -157,7 +157,7 @@ class MNASNet(torch.nn.Module):
 
     def forward(self, x: Tensor) -> Tensor:
         x = self.layers(x)
-        # Equivalent to global avgpool and removing H and W dimensions.
+                                                                       
         x = x.mean([2, 3])
         return self.classifier(x)
 
@@ -176,10 +176,10 @@ class MNASNet(torch.nn.Module):
             raise ValueError(f"version shluld be set to 1 or 2 instead of {version}")
 
         if version == 1 and not self.alpha == 1.0:
-            # In the initial version of the model (v1), stem was fixed-size.
-            # All other layer configurations were the same. This will patch
-            # the model so that it's identical to v1. Model with alpha 1.0 is
-            # unaffected.
+                                                                            
+                                                                           
+                                                                             
+                         
             depths = _get_depths(self.alpha)
             v1_stem = [
                 nn.Conv2d(3, 32, 3, padding=1, stride=2, bias=False),
@@ -195,7 +195,7 @@ class MNASNet(torch.nn.Module):
             for idx, layer in enumerate(v1_stem):
                 self.layers[idx] = layer
 
-            # The model is now identical to v1, and must be saved as such.
+                                                                          
             self._version = 1
             warnings.warn(
                 "A new version of MNASNet model has been implemented. "

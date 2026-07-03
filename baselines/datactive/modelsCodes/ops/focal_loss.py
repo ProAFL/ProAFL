@@ -31,7 +31,7 @@ def sigmoid_focal_loss(
     Returns:
         Loss tensor with the reduction option applied.
     """
-    # Original implementation from https://github.com/facebookresearch/fvcore/blob/master/fvcore/nn/focal_loss.py
+                                                                                                                 
     if not torch.jit.is_scripting() and not torch.jit.is_tracing():
         _log_api_usage_once(sigmoid_focal_loss)
     p = torch.sigmoid(inputs)

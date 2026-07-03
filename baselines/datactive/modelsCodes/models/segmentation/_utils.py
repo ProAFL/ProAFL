@@ -19,7 +19,7 @@ class _SimpleSegmentationModel(nn.Module):
 
     def forward(self, x: Tensor) -> Dict[str, Tensor]:
         input_shape = x.shape[-2:]
-        # contract: features is a dict of tensors
+                                                 
         features = self.backbone(x)
 
         result = OrderedDict()

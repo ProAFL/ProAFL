@@ -51,8 +51,8 @@ class FrozenBatchNorm2d(torch.nn.Module):
         )
 
     def forward(self, x: Tensor) -> Tensor:
-        # move reshapes to the beginning
-        # to make it fuser-friendly
+                                        
+                                   
         w = self.weight.reshape(1, -1, 1, 1)
         b = self.bias.reshape(1, -1, 1, 1)
         rv = self.running_var.reshape(1, -1, 1, 1)
@@ -277,8 +277,8 @@ class MLP(torch.nn.Sequential):
         bias: bool = True,
         dropout: float = 0.0,
     ):
-        # The addition of `norm_layer` is inspired from the implementation of TorchMultimodal:
-        # https://github.com/facebookresearch/multimodal/blob/5dec8a/torchmultimodal/modules/layers/mlp.py
+                                                                                              
+                                                                                                          
         params = {} if inplace is None else {"inplace": inplace}
 
         layers = []

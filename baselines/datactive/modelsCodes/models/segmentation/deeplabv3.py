@@ -201,12 +201,12 @@ def _deeplabv3_mobilenetv3(
     aux: Optional[bool],
 ) -> DeepLabV3:
     backbone = backbone.features
-    # Gather the indices of blocks which are strided. These are the locations of C1, ..., Cn-1 blocks.
-    # The first and last blocks are always included because they are the C0 (conv1) and Cn.
+                                                                                                      
+                                                                                           
     stage_indices = [0] + [i for i, b in enumerate(backbone) if getattr(b, "_is_cn", False)] + [len(backbone) - 1]
-    out_pos = stage_indices[-1]  # use C5 which has output_stride = 16
+    out_pos = stage_indices[-1]                                       
     out_inplanes = backbone[out_pos].out_channels
-    aux_pos = stage_indices[-4]  # use C2 here which has output_stride = 8
+    aux_pos = stage_indices[-4]                                           
     aux_inplanes = backbone[aux_pos].out_channels
     return_layers = {str(out_pos): "out"}
     if aux:
@@ -381,7 +381,7 @@ def deeplabv3_mobilenet_v3_large(
     return model
 
 
-# The dictionary below is internal implementation detail and will be removed in v0.15
+                                                                                     
 from .._utils import _ModelURLs
 
 

@@ -60,7 +60,7 @@ class _MBConvConfig:
 
 
 class MBConvConfig(_MBConvConfig):
-    # Stores information listed at Table 1 of the EfficientNet paper & Table 4 of the EfficientNetV2 paper
+                                                                                                          
     def __init__(
         self,
         expand_ratio: float,
@@ -86,7 +86,7 @@ class MBConvConfig(_MBConvConfig):
 
 
 class FusedMBConvConfig(_MBConvConfig):
-    # Stores information listed at Table 4 of the EfficientNetV2 paper
+                                                                      
     def __init__(
         self,
         expand_ratio: float,
@@ -120,7 +120,7 @@ class MBConv(nn.Module):
         layers: List[nn.Module] = []
         activation_layer = nn.SiLU
 
-        # expand
+                
         expanded_channels = cnf.adjust_channels(cnf.input_channels, cnf.expand_ratio)
         if expanded_channels != cnf.input_channels:
             layers.append(
@@ -133,7 +133,7 @@ class MBConv(nn.Module):
                 )
             )
 
-        # depthwise
+                   
         layers.append(
             Conv2dNormActivation(
                 expanded_channels,
@@ -146,11 +146,11 @@ class MBConv(nn.Module):
             )
         )
 
-        # squeeze and excitation
+                                
         squeeze_channels = max(1, cnf.input_channels // 4)
         layers.append(se_layer(expanded_channels, squeeze_channels, activation=partial(nn.SiLU, inplace=True)))
 
-        # project
+                 
         layers.append(
             Conv2dNormActivation(
                 expanded_channels, cnf.out_channels, kernel_size=1, norm_layer=norm_layer, activation_layer=None
@@ -188,7 +188,7 @@ class FusedMBConv(nn.Module):
 
         expanded_channels = cnf.adjust_channels(cnf.input_channels, cnf.expand_ratio)
         if expanded_channels != cnf.input_channels:
-            # fused expand
+                          
             layers.append(
                 Conv2dNormActivation(
                     cnf.input_channels,
@@ -200,7 +200,7 @@ class FusedMBConv(nn.Module):
                 )
             )
 
-            # project
+                     
             layers.append(
                 Conv2dNormActivation(
                     expanded_channels, cnf.out_channels, kernel_size=1, norm_layer=norm_layer, activation_layer=None
@@ -278,7 +278,7 @@ class EfficientNet(nn.Module):
 
         layers: List[nn.Module] = []
 
-        # building first layer
+                              
         firstconv_output_channels = inverted_residual_setting[0].input_channels
         layers.append(
             Conv2dNormActivation(
@@ -286,21 +286,21 @@ class EfficientNet(nn.Module):
             )
         )
 
-        # building inverted residual blocks
+                                           
         total_stage_blocks = sum(cnf.num_layers for cnf in inverted_residual_setting)
         stage_block_id = 0
         for cnf in inverted_residual_setting:
             stage: List[nn.Module] = []
             for _ in range(cnf.num_layers):
-                # copy to avoid modifications. shallow copy is enough
+                                                                     
                 block_cnf = copy.copy(cnf)
 
-                # overwrite info if not the first conv in the stage
+                                                                   
                 if stage:
                     block_cnf.input_channels = block_cnf.out_channels
                     block_cnf.stride = 1
 
-                # adjust stochastic depth probability based on the depth of the stage block
+                                                                                           
                 sd_prob = stochastic_depth_prob * float(stage_block_id) / total_stage_blocks
 
                 stage.append(block_cnf.block(block_cnf, sd_prob, norm_layer))
@@ -308,7 +308,7 @@ class EfficientNet(nn.Module):
 
             layers.append(nn.Sequential(*stage))
 
-        # building last several layers
+                                      
         lastconv_input_channels = inverted_residual_setting[-1].out_channels
         lastconv_output_channels = last_channel if last_channel is not None else 4 * lastconv_input_channels
         layers.append(
@@ -450,7 +450,7 @@ _COMMON_META_V2 = {
 
 class EfficientNet_B0_Weights(WeightsEnum):
     IMAGENET1K_V1 = Weights(
-        # Weights ported from https://github.com/rwightman/pytorch-image-models/
+                                                                                
         url="https://download.pytorch.org/models/efficientnet_b0_rwightman-3dd342df.pth",
         transforms=partial(
             ImageClassification, crop_size=224, resize_size=256, interpolation=InterpolationMode.BICUBIC
@@ -472,7 +472,7 @@ class EfficientNet_B0_Weights(WeightsEnum):
 
 class EfficientNet_B1_Weights(WeightsEnum):
     IMAGENET1K_V1 = Weights(
-        # Weights ported from https://github.com/rwightman/pytorch-image-models/
+                                                                                
         url="https://download.pytorch.org/models/efficientnet_b1_rwightman-533bc792.pth",
         transforms=partial(
             ImageClassification, crop_size=240, resize_size=256, interpolation=InterpolationMode.BICUBIC
@@ -516,7 +516,7 @@ class EfficientNet_B1_Weights(WeightsEnum):
 
 class EfficientNet_B2_Weights(WeightsEnum):
     IMAGENET1K_V1 = Weights(
-        # Weights ported from https://github.com/rwightman/pytorch-image-models/
+                                                                                
         url="https://download.pytorch.org/models/efficientnet_b2_rwightman-bcdf34b7.pth",
         transforms=partial(
             ImageClassification, crop_size=288, resize_size=288, interpolation=InterpolationMode.BICUBIC
@@ -538,7 +538,7 @@ class EfficientNet_B2_Weights(WeightsEnum):
 
 class EfficientNet_B3_Weights(WeightsEnum):
     IMAGENET1K_V1 = Weights(
-        # Weights ported from https://github.com/rwightman/pytorch-image-models/
+                                                                                
         url="https://download.pytorch.org/models/efficientnet_b3_rwightman-cf984f9c.pth",
         transforms=partial(
             ImageClassification, crop_size=300, resize_size=320, interpolation=InterpolationMode.BICUBIC
@@ -560,7 +560,7 @@ class EfficientNet_B3_Weights(WeightsEnum):
 
 class EfficientNet_B4_Weights(WeightsEnum):
     IMAGENET1K_V1 = Weights(
-        # Weights ported from https://github.com/rwightman/pytorch-image-models/
+                                                                                
         url="https://download.pytorch.org/models/efficientnet_b4_rwightman-7eb33cd5.pth",
         transforms=partial(
             ImageClassification, crop_size=380, resize_size=384, interpolation=InterpolationMode.BICUBIC
@@ -582,7 +582,7 @@ class EfficientNet_B4_Weights(WeightsEnum):
 
 class EfficientNet_B5_Weights(WeightsEnum):
     IMAGENET1K_V1 = Weights(
-        # Weights ported from https://github.com/lukemelas/EfficientNet-PyTorch/
+                                                                                
         url="https://download.pytorch.org/models/efficientnet_b5_lukemelas-b6417697.pth",
         transforms=partial(
             ImageClassification, crop_size=456, resize_size=456, interpolation=InterpolationMode.BICUBIC
@@ -604,7 +604,7 @@ class EfficientNet_B5_Weights(WeightsEnum):
 
 class EfficientNet_B6_Weights(WeightsEnum):
     IMAGENET1K_V1 = Weights(
-        # Weights ported from https://github.com/lukemelas/EfficientNet-PyTorch/
+                                                                                
         url="https://download.pytorch.org/models/efficientnet_b6_lukemelas-c76e70fd.pth",
         transforms=partial(
             ImageClassification, crop_size=528, resize_size=528, interpolation=InterpolationMode.BICUBIC
@@ -626,7 +626,7 @@ class EfficientNet_B6_Weights(WeightsEnum):
 
 class EfficientNet_B7_Weights(WeightsEnum):
     IMAGENET1K_V1 = Weights(
-        # Weights ported from https://github.com/lukemelas/EfficientNet-PyTorch/
+                                                                                
         url="https://download.pytorch.org/models/efficientnet_b7_lukemelas-dcc49843.pth",
         transforms=partial(
             ImageClassification, crop_size=600, resize_size=600, interpolation=InterpolationMode.BICUBIC
@@ -703,7 +703,7 @@ class EfficientNet_V2_M_Weights(WeightsEnum):
 
 
 class EfficientNet_V2_L_Weights(WeightsEnum):
-    # Weights ported from https://github.com/google/automl/tree/master/efficientnetv2
+                                                                                     
     IMAGENET1K_V1 = Weights(
         url="https://download.pytorch.org/models/efficientnet_v2_l-59c71312.pth",
         transforms=partial(
@@ -1088,7 +1088,7 @@ def efficientnet_v2_l(
     )
 
 
-# The dictionary below is internal implementation detail and will be removed in v0.15
+                                                                                     
 from ._utils import _ModelURLs
 
 

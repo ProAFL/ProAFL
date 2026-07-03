@@ -17,7 +17,7 @@ from ._utils import handle_legacy_interface, _ovewrite_named_param, _make_divisi
 __all__ = ["MobileNetV2", "MobileNet_V2_Weights", "mobilenet_v2"]
 
 
-# necessary for backwards compatibility
+                                       
 class _DeprecatedConvBNAct(Conv2dNormActivation):
     def __init__(self, *args, **kwargs):
         warnings.warn(
@@ -53,13 +53,13 @@ class InvertedResidual(nn.Module):
 
         layers: List[nn.Module] = []
         if expand_ratio != 1:
-            # pw
+                
             layers.append(
                 Conv2dNormActivation(inp, hidden_dim, kernel_size=1, norm_layer=norm_layer, activation_layer=nn.ReLU6)
             )
         layers.extend(
             [
-                # dw
+                    
                 Conv2dNormActivation(
                     hidden_dim,
                     hidden_dim,
@@ -68,7 +68,7 @@ class InvertedResidual(nn.Module):
                     norm_layer=norm_layer,
                     activation_layer=nn.ReLU6,
                 ),
-                # pw-linear
+                           
                 nn.Conv2d(hidden_dim, oup, 1, 1, 0, bias=False),
                 norm_layer(oup),
             ]
@@ -123,7 +123,7 @@ class MobileNetV2(nn.Module):
 
         if inverted_residual_setting is None:
             inverted_residual_setting = [
-                # t, c, n, s
+                            
                 [1, 16, 1, 1],
                 [6, 24, 2, 2],
                 [6, 32, 3, 2],
@@ -133,41 +133,41 @@ class MobileNetV2(nn.Module):
                 [6, 320, 1, 1],
             ]
 
-        # only check the first element, assuming user knows t,c,n,s are required
+                                                                                
         if len(inverted_residual_setting) == 0 or len(inverted_residual_setting[0]) != 4:
             raise ValueError(
                 f"inverted_residual_setting should be non-empty or a 4-element list, got {inverted_residual_setting}"
             )
 
-        # building first layer
+                              
         input_channel = _make_divisible(input_channel * width_mult, round_nearest)
         self.last_channel = _make_divisible(last_channel * max(1.0, width_mult), round_nearest)
         features: List[nn.Module] = [
             Conv2dNormActivation(3, input_channel, stride=2, norm_layer=norm_layer, activation_layer=nn.ReLU6)
         ]
-        # building inverted residual blocks
+                                           
         for t, c, n, s in inverted_residual_setting:
             output_channel = _make_divisible(c * width_mult, round_nearest)
             for i in range(n):
                 stride = s if i == 0 else 1
                 features.append(block(input_channel, output_channel, stride, expand_ratio=t, norm_layer=norm_layer))
                 input_channel = output_channel
-        # building last several layers
+                                      
         features.append(
             Conv2dNormActivation(
                 input_channel, self.last_channel, kernel_size=1, norm_layer=norm_layer, activation_layer=nn.ReLU6
             )
         )
-        # make it nn.Sequential
+                               
         self.features = nn.Sequential(*features)
 
-        # building classifier
+                             
         self.classifier = nn.Sequential(
             nn.Dropout(p=dropout),
             nn.Linear(self.last_channel, num_classes),
         )
 
-        # weight initialization
+                               
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
                 nn.init.kaiming_normal_(m.weight, mode="fan_out")
@@ -181,10 +181,10 @@ class MobileNetV2(nn.Module):
                 nn.init.zeros_(m.bias)
 
     def _forward_impl(self, x: Tensor) -> Tensor:
-        # This exists since TorchScript doesn't support inheritance, so the superclass method
-        # (this one) needs to have a name other than `forward` that can be accessed in a subclass
+                                                                                             
+                                                                                                 
         x = self.features(x)
-        # Cannot use "squeeze" as batch-size can be 1
+                                                     
         x = nn.functional.adaptive_avg_pool2d(x, (1, 1))
         x = torch.flatten(x, 1)
         x = self.classifier(x)
@@ -275,7 +275,7 @@ def mobilenet_v2(
     return model
 
 
-# The dictionary below is internal implementation detail and will be removed in v0.15
+                                                                                     
 from ._utils import _ModelURLs
 
 

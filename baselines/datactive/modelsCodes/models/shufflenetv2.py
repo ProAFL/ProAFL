@@ -29,12 +29,12 @@ def channel_shuffle(x: Tensor, groups: int) -> Tensor:
     batchsize, num_channels, height, width = x.size()
     channels_per_group = num_channels // groups
 
-    # reshape
+             
     x = x.view(batchsize, groups, channels_per_group, height, width)
 
     x = torch.transpose(x, 1, 2).contiguous()
 
-    # flatten
+             
     x = x.view(batchsize, -1, height, width)
 
     return x
@@ -129,7 +129,7 @@ class ShuffleNetV2(nn.Module):
 
         self.maxpool = nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
 
-        # Static annotations for mypy
+                                     
         self.stage2: nn.Sequential
         self.stage3: nn.Sequential
         self.stage4: nn.Sequential
@@ -151,14 +151,14 @@ class ShuffleNetV2(nn.Module):
         self.fc = nn.Linear(output_channels, num_classes)
 
     def _forward_impl(self, x: Tensor) -> Tensor:
-        # See note [TorchScript super()]
+                                        
         x = self.conv1(x)
         x = self.maxpool(x)
         x = self.stage2(x)
         x = self.stage3(x)
         x = self.stage4(x)
         x = self.conv5(x)
-        x = x.mean([2, 3])  # globalpool
+        x = x.mean([2, 3])              
         x = self.fc(x)
         return x
 
@@ -192,7 +192,7 @@ _COMMON_META = {
 
 class ShuffleNet_V2_X0_5_Weights(WeightsEnum):
     IMAGENET1K_V1 = Weights(
-        # Weights ported from https://github.com/ericsun99/Shufflenet-v2-Pytorch
+                                                                                
         url="https://download.pytorch.org/models/shufflenetv2_x0.5-f707e7126e.pth",
         transforms=partial(ImageClassification, crop_size=224),
         meta={
@@ -212,7 +212,7 @@ class ShuffleNet_V2_X0_5_Weights(WeightsEnum):
 
 class ShuffleNet_V2_X1_0_Weights(WeightsEnum):
     IMAGENET1K_V1 = Weights(
-        # Weights ported from https://github.com/ericsun99/Shufflenet-v2-Pytorch
+                                                                                
         url="https://download.pytorch.org/models/shufflenetv2_x1-5666bf0f80.pth",
         transforms=partial(ImageClassification, crop_size=224),
         meta={
@@ -396,7 +396,7 @@ def shufflenet_v2_x2_0(
     return _shufflenetv2(weights, progress, [4, 8, 4], [24, 244, 488, 976, 2048], **kwargs)
 
 
-# The dictionary below is internal implementation detail and will be removed in v0.15
+                                                                                     
 from ._utils import _ModelURLs
 
 

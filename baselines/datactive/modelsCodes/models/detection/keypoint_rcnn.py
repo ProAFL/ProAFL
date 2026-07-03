@@ -163,12 +163,12 @@ class KeypointRCNN(FasterRCNN):
         self,
         backbone,
         num_classes=None,
-        # transform parameters
+                              
         min_size=None,
         max_size=1333,
         image_mean=None,
         image_std=None,
-        # RPN parameters
+                        
         rpn_anchor_generator=None,
         rpn_head=None,
         rpn_pre_nms_top_n_train=2000,
@@ -181,7 +181,7 @@ class KeypointRCNN(FasterRCNN):
         rpn_batch_size_per_image=256,
         rpn_positive_fraction=0.5,
         rpn_score_thresh=0.0,
-        # Box parameters
+                        
         box_roi_pool=None,
         box_head=None,
         box_predictor=None,
@@ -193,7 +193,7 @@ class KeypointRCNN(FasterRCNN):
         box_batch_size_per_image=512,
         box_positive_fraction=0.25,
         bbox_reg_weights=None,
-        # keypoint parameters
+                             
         keypoint_roi_pool=None,
         keypoint_head=None,
         keypoint_predictor=None,
@@ -224,18 +224,18 @@ class KeypointRCNN(FasterRCNN):
             keypoint_head = KeypointRCNNHeads(out_channels, keypoint_layers)
 
         if keypoint_predictor is None:
-            keypoint_dim_reduced = 512  # == keypoint_layers[-1]
+            keypoint_dim_reduced = 512                          
             keypoint_predictor = KeypointRCNNPredictor(keypoint_dim_reduced, num_keypoints)
 
         super().__init__(
             backbone,
             num_classes,
-            # transform parameters
+                                  
             min_size,
             max_size,
             image_mean,
             image_std,
-            # RPN-specific parameters
+                                     
             rpn_anchor_generator,
             rpn_head,
             rpn_pre_nms_top_n_train,
@@ -248,7 +248,7 @@ class KeypointRCNN(FasterRCNN):
             rpn_batch_size_per_image,
             rpn_positive_fraction,
             rpn_score_thresh,
-            # Box parameters
+                            
             box_roi_pool,
             box_head,
             box_predictor,
@@ -467,13 +467,13 @@ def keypointrcnn_resnet50_fpn(
     return model
 
 
-# The dictionary below is internal implementation detail and will be removed in v0.15
+                                                                                     
 from .._utils import _ModelURLs
 
 
 model_urls = _ModelURLs(
     {
-        # legacy model for BC reasons, see https://github.com/pytorch/vision/issues/1606
+                                                                                        
         "keypointrcnn_resnet50_fpn_coco_legacy": KeypointRCNN_ResNet50_FPN_Weights.COCO_LEGACY.url,
         "keypointrcnn_resnet50_fpn_coco": KeypointRCNN_ResNet50_FPN_Weights.COCO_V1.url,
     }

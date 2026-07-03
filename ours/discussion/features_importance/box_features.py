@@ -1,5 +1,5 @@
 '''
-对排序使用的features进行讨论
+Discuss features used for ranking
 '''
 import os
 import csv
@@ -43,16 +43,16 @@ def build_gid_feature(all_gids:list[int],g_box_id_to_metric:dict, K:float=0.2) -
         epochs = len(conf_list)
         W_e = int(K*epochs)
         W_l = int(K*epochs)
-        # 早期置信度均值，越小越可疑
+                                                              
         early_conf_mean = np.mean(conf_list[0:W_e])
-        # 后期置信度均值，越小越可疑
+                                                             
         lastly_conf_mean = np.mean(conf_list[-W_l:])
-        # 早期iou均值，越小越可疑
+                                                       
         early_iou_mean = np.mean(iou_list[0:W_e])
-        # 后期iou均值，越小越可疑
+                                                      
         lastly_iou_mean = np.mean(iou_list[-W_l:])
 
-        # 全局均值，越小越可疑
+                                                    
         conf_mean = np.mean(conf_list)
         iou_mean = np.mean(iou_list)
 
@@ -69,29 +69,29 @@ def build_gid_feature(all_gids:list[int],g_box_id_to_metric:dict, K:float=0.2) -
             if iou_list[e] > iou_threshold:
                 min_e_iou = e
                 break
-        # 起量延迟（显式刻画“涨得晚”）
-        # 越大越可疑
+                                                       
+                                      
         D_conf = min_e_conf / epochs
         D_iou = min_e_iou / epochs
 
         g_id_to_features[g_id] = {
-            "early_conf_mean":early_conf_mean, # 早期conf mean, 越小越可疑 -> topsis分数越高 -> -1
-            "early_iou_mean":early_iou_mean, # 早期iou mean, 越小越可疑 -> topsis分数越高 -> -1
-            "lastly_conf_mean":lastly_conf_mean, # 后期conf mean, 越小越可疑 -> topsis分数越高 -> -1
-            "lastly_iou_mean":lastly_iou_mean, # 后期iou mean, 越小越可疑 -> topsis分数越高 -> -1
-            "conf_mean":conf_mean, # 全期conf mean, 越小越可疑 -> topsis分数越高 -> -1
-            "iou_mean":iou_mean, # 全期iou mean, 越小越可疑 -> topsis分数越高 -> -1
-            "D_conf":D_conf, # 起量延迟 conf，越大越可疑 -> topsis分数越高 -> 1
-            "D_iou":D_iou, # 起量延迟 iou，越大越可疑 -> topsis分数越高 -> 1
+            "early_conf_mean":early_conf_mean,                                                                           
+            "early_iou_mean":early_iou_mean,                                                                          
+            "lastly_conf_mean":lastly_conf_mean,                                                                           
+            "lastly_iou_mean":lastly_iou_mean,                                                                          
+            "conf_mean":conf_mean,                                                                           
+            "iou_mean":iou_mean,                                                                          
+            "D_conf":D_conf,                                                                    
+            "D_iou":D_iou,                                                                   
         }
     feature_name_to_sign = FEATURE_NAME_TO_SIGN.copy()
 
-    print(f"all gbox数量:{len(all_gids)}")
-    print(f"matched gbox数量:{len(g_id_to_features)}")
+    print(f"all gboxCount:{len(all_gids)}")
+    print(f"matched gboxCount:{len(g_id_to_features)}")
     
     for g_id in all_gids:
         if g_id not in g_id_to_features:
-            # 没有匹配上的gid都是最可疑的
+                                                    
             g_id_to_features[g_id] = {
                 "early_conf_mean":0,
                 "early_iou_mean":0,
@@ -107,40 +107,40 @@ def build_gid_feature(all_gids:list[int],g_box_id_to_metric:dict, K:float=0.2) -
 def hypothesis_testing(list_1:list[float],list_2:list[float],alternative:str="two-sided"):
     def mannwhitneyu_effect_size(u_stat, n1, n2):
         """
-        计算Mann-Whitney U检验的效应量r（正确版本）
-        参数：
-            u_stat: mannwhitneyu返回的U统计量
-            n1: 第一组数据的样本量
-            n2: 第二组数据的样本量
-        返回：
-            效应量r（绝对值），越大表示差异越明显
+        Calculate effect size r for the Mann-Whitney U test (correct version)
+        Parameters:
+            u_stat: mannwhitneyureturned U statistic
+            n1: sample size of the first group
+            n2: sample size of the second group
+        Returns:
+            effect size r (absolute value); larger means a clearer difference
         """
-        # 步骤1：计算U统计量的均值（零假设下的期望U值）
+                                                                                                 
         mean_u = (n1 * n2) / 2
-        # 步骤2：计算U统计量的标准差
+                                                                     
         std_u = np.sqrt((n1 * n2 * (n1 + n2 + 1)) / 12)
-        # 步骤3：将U值转换为Z分数（标准化）
+                                                     
         z = (u_stat - mean_u) / std_u
-        # 步骤4：计算效应量r（Cohen's r）
+                                                     
         r = abs(z) / np.sqrt(n1 + n2)
         return r
     
     u_stat, u_p = stats.mannwhitneyu(list_1, list_2, alternative=alternative)
     
-    print(f"Mann-Whitney U检验：U值={u_stat:.3f}, p值={u_p:.3f}")
-    # 计算效应量r
+    print(f"Mann-Whitney Utest: U value={u_stat:.3f}, ptext={u_p:.3f}")
+                             
     r = mannwhitneyu_effect_size(u_stat, len(list_1), len(list_2))
-    print(f"效应量r：{r:.3f}")
+    print(f"Effect size r:{r:.3f}")
 
 def visualization(correct_list,error_list,save_file_name:str):
-    # 可视化
+                   
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 5))
-    # 箱线图
+              
     ax1.boxplot([correct_list, error_list], labels=['correct', 'error'])
     ax1.set_title('Box plot: Data distribution comparison')
     ax1.set_ylabel('Numerical value')
-    # 直方图+核密度估计（KDE）
-    # 1. 可视化：箱线图（看分布位置、离散程度）+ 直方图（看分布形态）
+                                             
+                                                                                                                      
 
     sns.histplot(correct_list, kde=True, ax=ax2, label='correct', alpha=0.5)
     sns.histplot(error_list, kde=True, ax=ax2, label='error', alpha=0.5)
@@ -150,15 +150,15 @@ def visualization(correct_list,error_list,save_file_name:str):
 
 def plot_roc_auc(g_id_to_features, feature_name_to_sign, correct_gid_set, error_gid_set, save_file_name:str="roc_auc"):
     """
-    把所有 feature 各自的 ROC 以及 topsis 综合 score 的 ROC 画在同一张图上。
+    text feature text ROC text topsis text score text ROC text.
     label: error=1, correct=0
-    feature score: 把 feature 转成"越大越可疑"。sign==1 直接用；sign==-1 取相反数。
-    topsis score: 所有 feature 一起传入 topsis 得到的综合分数（越大越可疑）。
+    feature score: text feature text"larger means more suspicious".sign==1 text;sign==-1 text.
+    topsis score: text feature text topsis text(larger means more suspicious).
     """
     plt.figure(figsize=(8, 7))
     name_to_auc = {}
 
-    # 各个 feature 的 ROC
+                           
     for feature_name, sign in feature_name_to_sign.items():
         y_true = []
         y_score = []
@@ -173,7 +173,7 @@ def plot_roc_auc(g_id_to_features, feature_name_to_sign, correct_gid_set, error_
         name_to_auc[feature_name] = roc_auc
         plt.plot(fpr, tpr, lw=1.5, label=f"{feature_name} (AUC={roc_auc:.3f})")
 
-    # topsis 综合 score 的 ROC
+                                
     g_id_list = sorted(g_id_to_features.keys())
     gid_to_idx = {gid: i for i, gid in enumerate(g_id_list)}
     feature_names = list(feature_name_to_sign.keys())
@@ -204,7 +204,7 @@ def plot_roc_auc(g_id_to_features, feature_name_to_sign, correct_gid_set, error_
     plt.close()
 
     print("="*60)
-    print("AUC 排名:")
+    print("AUC text:")
     for fn, a in sorted(name_to_auc.items(), key=lambda x: -x[1]):
         print(f"  {fn:20s}  AUC={a:.4f}")
     return name_to_auc
@@ -226,8 +226,8 @@ def _entropy_from_counts(counts):
 
 def _discretize_by_quantile(values, n_bins=10):
     """
-    用分位数离散化连续特征，便于计算信息熵/互信息。
-    重复取值很多时，实际 bin 数可能小于 n_bins。
+    Discretize continuous features by quantiles to calculate entropy and mutual information.
+    When many duplicate values exist, the actual bin count may be smaller than n_bins.
     """
     values = np.asarray(values, dtype=float)
     unique_values = np.unique(values)
@@ -409,12 +409,12 @@ def get_feature_names_from_df(df:pd.DataFrame):
     required_columns = {"is_matched", "is_error"}
     missing_columns = sorted(required_columns - set(df.columns))
     if missing_columns:
-        raise ValueError(f"CSV缺少必要列: {missing_columns}")
+        raise ValueError(f"CSVMissing required columns: {missing_columns}")
 
     feature_names = [fn for fn in FEATURE_NAME_TO_SIGN.keys() if fn in df.columns]
     if len(feature_names) != len(FEATURE_NAME_TO_SIGN):
         missing_features = sorted(set(FEATURE_NAME_TO_SIGN.keys()) - set(feature_names))
-        raise ValueError(f"CSV缺少过程特征列: {missing_features}")
+        raise ValueError(f"CSVMissing process feature columns: {missing_features}")
 
     missing_sign_columns = [
         f"{feature_name}_sign"
@@ -422,24 +422,24 @@ def get_feature_names_from_df(df:pd.DataFrame):
         if f"{feature_name}_sign" not in df.columns
     ]
     if missing_sign_columns:
-        raise ValueError(f"CSV缺少feature sign列: {missing_sign_columns}")
+        raise ValueError(f"CSVMissing feature sign columns: {missing_sign_columns}")
     return feature_names
 
 def run_feature_importance_analysis(df:pd.DataFrame):
     feature_names = get_feature_names_from_df(df)
     result_dir = RESULT_DIR
     output_prefix = f"box_feature_importance_{dataset_name}_{model_name}"
-    # all gid set / matched gid set
+                                   
     subsets = {
         "all": df,
         "matched_only": df[_series_to_bool(df["is_matched"])],
     }
-    all_corr_rows = [] # 相关性
-    all_mi_rows = [] # 互信息
+    all_corr_rows = []              
+    all_mi_rows = []                     
     for subset_name, subset_df in subsets.items():
         labels = _series_to_bool(subset_df["is_error"]).astype(int)
         if len(labels) == 0 or len(np.unique(labels)) < 2:
-            print(f"[skip] {subset_name}: 样本为空或只包含单一类别，无法计算重要性。")
+            print(f"[skip] {subset_name}: The sample is empty or contains only one class, so importance cannot be calculated.")
             continue
         corr_rows = correlation_importance_analysis(subset_df, feature_names, subset_name)
         mi_rows = mutual_information_importance_analysis(subset_df, feature_names, subset_name)
@@ -447,12 +447,12 @@ def run_feature_importance_analysis(df:pd.DataFrame):
         all_mi_rows.extend(mi_rows)
 
         print_importance_rows(
-            f"相关性重要性排名 ({subset_name}, 按 |Spearman r|)",
+            f"correlationtext ({subset_name}, text |Spearman r|)",
             corr_rows,
             "abs_spearman_r",
         )
         print_importance_rows(
-            f"信息熵/互信息重要性排名 ({subset_name}, 按 MI/H(label))",
+            f"text/mutual informationtext ({subset_name}, text MI/H(label))",
             mi_rows,
             "mi_over_h_label",
         )
@@ -482,23 +482,23 @@ def run_feature_importance_analysis(df:pd.DataFrame):
 
 def get_csv_table_for_feature(save_file_name=None):
     """
-    导出 gid 级 feature 表。
-    每行是一个 gid，列包括 8 个过程特征、是否 matched、以及 correct/error。
+    Export gid-level feature table.
+    Each row is a gid; columns include eight process features, matched status, and correct/error.
     """
-    # 加载gt box的json数据
+                           
     gt_json = read_json(gt_json_path)
-    # 得到所有的gids
+                  
     all_gids = get_all_gids(gt_json)
-    # 得到被matched gid的conf/iou list
+                                         
     gid_to_metric = get_g_id_to_metric(g_box_metrics_json_path)
-    # 得到每个gid的features和每个feature的sign
+                                                 
     g_id_to_features,feature_name_to_sign = build_gid_feature(all_gids,gid_to_metric,K=0.2)
-    # correct/error gid set
+                           
     correct_gid_set,error_gid_set = split_gid_clean_error(gt_json)
-    # 单独拎出来 matched gid set
+                                        
     matched_gid_set = set(gid_to_metric.keys())
 
-    # csv 保存路径
+                   
     if save_file_name is None:
         save_file_name = f"box_feature_table_{dataset_name}_{model_name}.csv"
     output_path = os.path.join(RESULT_DIR, save_file_name)
@@ -528,7 +528,7 @@ def get_csv_table_for_feature(save_file_name=None):
     return output_path
 
 def main():
-    mode = 0 # 0:全程贯通,1:基于csv进行特征重要性分析
+    mode = 0                                                                   
     if mode == 0: 
         csv_path = get_csv_table_for_feature()
     if mode == 0 or mode == 1:
@@ -540,7 +540,7 @@ def main():
 
 if __name__ == "__main__":
     RESULT_DIR = "/data/mml/data_debugging_data/discussion/"
-    dataset_name = "VisDrone" # VOC2012|KITTI_8|VisDrone
+    dataset_name = "VisDrone"                           
     model_name = "YOLOv7"
     gt_json_path = get_collected_gt_box_json_path(dataset_name)
     g_box_metrics_json_path = os.path.join(exp_data_root_dir,"collection_bbox_level",

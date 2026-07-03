@@ -40,7 +40,7 @@ def complete_box_iou_loss(
 
     """
 
-    # Original Implementation from https://github.com/facebookresearch/detectron2/blob/main/detectron2/layers/losses.py
+                                                                                                                       
 
     if not torch.jit.is_scripting() and not torch.jit.is_tracing():
         _log_api_usage_once(complete_box_iou_loss)
@@ -53,7 +53,7 @@ def complete_box_iou_loss(
     x1, y1, x2, y2 = boxes1.unbind(dim=-1)
     x1g, y1g, x2g, y2g = boxes2.unbind(dim=-1)
 
-    # width and height of boxes
+                               
     w_pred = x2 - x1
     h_pred = y2 - y1
     w_gt = x2g - x1g

@@ -121,7 +121,7 @@ def _resnet_fpn_extractor(
     norm_layer: Optional[Callable[..., nn.Module]] = None,
 ) -> BackboneWithFPN:
 
-    # select layers that wont be frozen
+                                       
     if trainable_layers < 0 or trainable_layers > 5:
         raise ValueError(f"Trainable layers should be in the range [0,5], got {trainable_layers}")
     layers_to_train = ["layer4", "layer3", "layer2", "layer1", "conv1"][:trainable_layers]
@@ -154,7 +154,7 @@ def _validate_trainable_layers(
     max_value: int,
     default_value: int,
 ) -> int:
-    # don't freeze any layers if pretrained model or backbone is not used
+                                                                         
     if not is_trained:
         if trainable_backbone_layers is not None:
             warnings.warn(
@@ -164,7 +164,7 @@ def _validate_trainable_layers(
             )
         trainable_backbone_layers = max_value
 
-    # by default freeze first blocks
+                                    
     if trainable_backbone_layers is None:
         trainable_backbone_layers = default_value
     if trainable_backbone_layers < 0 or trainable_backbone_layers > max_value:
@@ -203,12 +203,12 @@ def _mobilenet_extractor(
     norm_layer: Optional[Callable[..., nn.Module]] = None,
 ) -> nn.Module:
     backbone = backbone.features
-    # Gather the indices of blocks which are strided. These are the locations of C1, ..., Cn-1 blocks.
-    # The first and last blocks are always included because they are the C0 (conv1) and Cn.
+                                                                                                      
+                                                                                           
     stage_indices = [0] + [i for i, b in enumerate(backbone) if getattr(b, "_is_cn", False)] + [len(backbone) - 1]
     num_stages = len(stage_indices)
 
-    # find the index of the layer from which we wont freeze
+                                                           
     if trainable_layers < 0 or trainable_layers > num_stages:
         raise ValueError(f"Trainable layers should be in the range [0,{num_stages}], got {trainable_layers} ")
     freeze_before = len(backbone) if trainable_layers == 0 else stage_indices[num_stages - trainable_layers]
@@ -235,8 +235,8 @@ def _mobilenet_extractor(
     else:
         m = nn.Sequential(
             backbone,
-            # depthwise linear combination of channels to reduce their size
+                                                                           
             nn.Conv2d(backbone[-1].out_channels, out_channels, 1),
         )
-        m.out_channels = out_channels  # type: ignore[assignment]
+        m.out_channels = out_channels                            
         return m

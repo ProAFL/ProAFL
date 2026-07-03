@@ -1,5 +1,5 @@
 '''
-对排序使用的features进行讨论
+Discuss features used for ranking
 '''
 import os
 import csv
@@ -84,10 +84,10 @@ def epoch_freq(boxes,last_epoch):
 
 
 def get_cluster_feaure(cluster,last_epoch):
-    conf = conf_score(cluster) # [0,1] 
-    stab = stability_pairwise_mean_iou(cluster) # [0,1]
-    cls_consis = cls_consis_score(cluster) # [0,1]
-    e_freq = epoch_freq(cluster,last_epoch) # [0,1]
+    conf = conf_score(cluster)         
+    stab = stability_pairwise_mean_iou(cluster)        
+    cls_consis = cls_consis_score(cluster)        
+    e_freq = epoch_freq(cluster,last_epoch)        
     sign = [1,1,1,1]
     feature = [conf,stab,cls_consis,e_freq]
     return feature, sign
@@ -101,11 +101,11 @@ def get_all_img_name(imgs_dir:str) -> list[str]:
     return img_name_list
 
 def get_epoch_to_matched_p_boxs(gt_match_dict):
-    # 每个epoch中所有被匹配上的p_box
+                                       
     epoch_to_match_info = {}
-    # 遍历所有的g_box
+                         
     for g_box_id in gt_match_dict.keys():
-        # 当前g_box的匹配信息
+                                                
         match_info_list = gt_match_dict[g_box_id]
         for match_info in match_info_list:
             epoch = match_info["epoch"]
@@ -119,10 +119,10 @@ def get_epoch_to_matched_p_boxs(gt_match_dict):
 
 def add_path_value(d:dict, keys:list, value):
     '''
-    多层级字典，最后指向[]
+    Nested dictionary whose final value is [].
     '''
     cur = d
-    # 遍历所有层级的key
+                                     
     for k in keys[:-1]:
         cur = cur.setdefault(k, {})
     cur.setdefault(keys[-1], []).append(value)
@@ -130,18 +130,18 @@ def add_path_value(d:dict, keys:list, value):
 def get_img_name_to_epoch_to_unmatched_p_boxs(epoch_to_matched_p_ids:dict,
                                               last_epoch: int=5, conf_threshold: float=0.6):
     '''
-    得到图像在后面几个epoch中未得到匹配的高置信度p_box
-    参数：
+    Get high-confidence unmatched p_boxes in later epochs for each image.
+    Parameters:
     ---
     epoch_to_matched_p_ids : dict
-        每个epoch下的被匹配的p_ids
+        matched p_ids under each epoch
     last_epoch : int, default=5
     conf_threshold: float, default=0.6
 
-    返回：
+    Returns:
     ---
     img_name_to_epoch_to_no_match_p_boxs : dict
-        数据结构示例：
+        Data structure example:
         {
             img_name:{
                 epoch:[p_box1,p_box2],
@@ -151,27 +151,27 @@ def get_img_name_to_epoch_to_unmatched_p_boxs(epoch_to_matched_p_ids:dict,
         }
     '''
     img_name_to_no_match_p = {}
-    # 只关心最后5个epoch的预测情况
+                                                    
     for epoch in range(epochs-last_epoch,epochs):
-        # 加载当前epoch的预测结果
+                                                      
         predicted_epoch_json_path = os.path.join(predicted_bboxs_dir, f"epoch_{epoch}_predicted_bboxs.json")
         with open(predicted_epoch_json_path,mode="r") as f:
             predicted_epoch_dict = json.load(f)
-        # 统计所有图像中没被gt_box匹配到的高置信度预测box
+                                                                                     
         for img_name in sorted(predicted_epoch_dict.keys()):
-            # img_name在该epoch下的所有预测框
+                                                          
             p_box_list = predicted_epoch_dict[img_name]["predicted_bboxs"]
-            # 遍历预测框
+                                     
             for p_box in p_box_list:
                 p_id = p_box["predicted_box_id"]
-                # 没被匹配的和conf大于一定阈值的pid
+                                                                      
                 if p_id not in epoch_to_matched_p_ids[epoch] and p_box["conf"] > conf_threshold:
                     add_path_value(img_name_to_no_match_p,keys=[img_name,epoch],value=p_box)
     return img_name_to_no_match_p
 
 def get_img_name_to_no_matched_p_boxs(img_name_to_epoch_to_no_match_p_boxs:dict) -> dict:
     '''
-    展平img_name to no matched_p_boxs
+    Flatten img_name to unmatched p_boxs
     '''
     img_to_p_boxs = defaultdict(list)
     for img_name in img_name_to_epoch_to_no_match_p_boxs.keys():
@@ -201,16 +201,16 @@ def union(a, b, parent, rank):
 
 def clusing(box_list:list,iou_thre:float=0.6) -> list[list[int]]:
     '''
-    使用并查集对这些box进行分簇
+    Use union-find to cluster these boxes
     box_list : list
-        数据结构示例:
+        Data structure example:
         [box_1,box_2,...]
     iou_thre : float, default = 0.6
-        元素归并的条件阈值
-    返回:
+        threshold condition for merging elements
+    Returns:
     ---
     cluster_list : list[list[int]]
-        数据结构示例
+        Data structure example
         [[loc_idx1,loc_idx3,...],...]
     '''
     N = len(box_list)
@@ -232,19 +232,19 @@ def clusing(box_list:list,iou_thre:float=0.6) -> list[list[int]]:
 
 def get_img_to_clusters(img_to_p_boxs:dict,iou_thre:float=0.6):
     '''
-    构建img_name -> p_box的分簇
-    参数
+    Build img_name -> p_boxclusters
+    Parameters
     ---
     img_to_p_boxs : dict
-        数据格式：
+        Data format:
         {image_name:[p_box1,p_box2]}
     iou_thre : float,default=0.6
-        分簇的iou条件
+        IoU condition for clustering
     
-    返回：
+    Returns:
     ---
     img_to_clusters : dict
-        数据格式示例：
+        Data format example:
         {
             img_name:[[p_box1,p_box2,...],...],
             ...
@@ -252,7 +252,7 @@ def get_img_to_clusters(img_to_p_boxs:dict,iou_thre:float=0.6):
     '''
     img_to_clusters = defaultdict(list)
     for img_name,p_box_list in img_to_p_boxs.items():
-        # [[loc_id1,loc_id2...],...]
+                                    
         cluster_list = clusing(p_box_list,iou_thre)
         for cluster in cluster_list:
             cur_cluster_p_box_list = []
@@ -267,38 +267,38 @@ def get_img_to_clusters(img_to_p_boxs:dict,iou_thre:float=0.6):
 def get_img_to_feature(img_to_clusters: dict, last_epoch: int,
                        persist_freq_threshold: float = 0.4):
     '''
-    计算图像级特征并用 TOPSIS 排序。
+    text TOPSIS ranking.
 
-    思路：先用 get_img_to_scoreAndFeature 获得各簇的 TOPSIS 分（best_cluster_topsis），
-    再在图像粒度聚合多个判别力更强的指标，最终对图像级特征再跑一次 TOPSIS。
+    text:text get_img_to_scoreAndFeature text TOPSIS text(best_cluster_topsis),
+    text,text TOPSIS.
 
-    图像级特征（全部 sign=+1，越大越可疑）：
-    ┌─────────────────────────────┬──────────────────────────────────────────────────────┐
-    │ num_clusters                │ 未匹配高置信度簇总数，越多说明可疑区域越多           │
-    │ persistent_cluster_count    │ epoch_freq ≥ threshold 的簇数，最直接的判别信号      │
-    │ max_epoch_freq              │ 最持久簇的跨 epoch 覆盖率，真实漏标对象接近 1.0      │
-    │ max_conf                    │ 置信度最高的簇的均值置信度                           │
-    │ max_cluster_size_ratio      │ max(len(cluster)/last_epoch)，越大越稳定             │
-    │ best_cluster_topsis         │ 单簇 TOPSIS 分最大值（来自 get_img_to_scoreAndFeature）│
-    └─────────────────────────────┴──────────────────────────────────────────────────────┘
+    text(text sign=+1,larger means more suspicious):
+    ┌-----------------------------┬------------------------------------------------------┐
+    │ num_clusters                │ text,text           │
+    │ persistent_cluster_count    │ epoch_freq ≥ threshold text,text      │
+    │ max_epoch_freq              │ text epoch text,text 1.0      │
+    │ max_conf                    │ text                           │
+    │ max_cluster_size_ratio      │ max(len(cluster)/last_epoch),text             │
+    │ best_cluster_topsis         │ text TOPSIS text(text get_img_to_scoreAndFeature)│
+    └-----------------------------┴------------------------------------------------------┘
 
-    参数：
+    Parameters:
     ---
     img_to_clusters : dict  {img_name: [[pbox,...], ...]}
     last_epoch : int
     persist_freq_threshold : float, default=0.4
 
-    返回：
+    Returns:
     ---
     img_name_to_feature : dict
         {img_name: {"topsis_score": float, "img_features": {feature_name: value}}}
     feature_names : list[str]
     img_level_signs : list[int]
     '''
-    # ── Step 1: 复用 get_img_to_scoreAndFeature 获取单簇 TOPSIS 分 ────────
+                                                                          
     img_name_to_cluster_score = get_img_to_scoreAndFeature(img_to_clusters, last_epoch)
 
-    # ── Step 2: 图像级特征聚合 ────────────────────────────────────────────
+                                                                  
     feature_names = [
         "num_clusters",
         "max_clusterConfi",
@@ -320,9 +320,9 @@ def get_img_to_feature(img_to_clusters: dict, last_epoch: int,
 
     for img_name in img_names_ordered:
         clusters = img_to_clusters[img_name]
-        e_freqs     = [epoch_freq(c, last_epoch) for c in clusters] # 每个cluster的epoch跨度(归一了)
-        confs       = [conf_score(c)             for c in clusters] # 每个cluster的平均conf
-        cluster_size_list = [len(c) for c in clusters] # 每个cluster中包含的p_box的数量
+        e_freqs     = [epoch_freq(c, last_epoch) for c in clusters]                                 
+        confs       = [conf_score(c)             for c in clusters]                      
+        cluster_size_list = [len(c) for c in clusters]                                
         max_clusterTopsis = img_name_to_cluster_score[img_name]["max_score"]
         min_clusterTopsis = img_name_to_cluster_score[img_name]["min_score"]
 
@@ -337,28 +337,28 @@ def get_img_to_feature(img_to_clusters: dict, last_epoch: int,
                     minConfi = p_box["conf"]
         
         img_level_feature_list.append([
-            len(clusters),# num_clusters
-            max(confs), # max_clusterConfi
-            min(confs), # min_clusterConfi
-            maxConfi, # maxConfi
-            minConfi, # minConfi
-            max(cluster_size_list), # max_clusterSize
-            min(cluster_size_list), # min_clusterSize
-            max_clusterTopsis, # max_clusterTopsis
-            min_clusterTopsis, # min_clusterTopsis
-            max(e_freqs), # max_epoch_cross
-            min(e_freqs), # min_epoch_cross
-            sum(1 for ef in e_freqs if ef >= persist_freq_threshold)  # persistent_cluster_count
+            len(clusters),              
+            max(confs),                   
+            min(confs),                   
+            maxConfi,           
+            minConfi,           
+            max(cluster_size_list),                  
+            min(cluster_size_list),                  
+            max_clusterTopsis,                    
+            min_clusterTopsis,                    
+            max(e_freqs),                  
+            min(e_freqs),                  
+            sum(1 for ef in e_freqs if ef >= persist_freq_threshold)                            
         ])
 
-    # ── Step 3: 图像级 TOPSIS ────────────────────────────────────────────
+                                                                         
     img_data_array = np.array(img_level_feature_list)
     n_img_feats = img_data_array.shape[1]
     img_weights = np.ones(n_img_feats) / n_img_feats
     _, img_score_array = tp.topsis(img_data_array, img_weights, img_level_signs)
     img_score_array = np.nan_to_num(img_score_array, nan=0.0, posinf=1.0, neginf=0.0)
 
-    # ── Step 4: 构建返回结果 ──────────────────────────────────────────────
+                                                                               
     img_name_to_feature = {}
     for idx, img_name in enumerate(img_names_ordered):
         feats = img_level_feature_list[idx]
@@ -371,47 +371,47 @@ def get_img_to_feature(img_to_clusters: dict, last_epoch: int,
 
 def get_img_to_scoreAndFeature(img_to_clusters:dict,last_epoch:int):
     '''
-    获得img_name -> topsis score
+    Get img_name -> topsis score
     
-    参数：
+    Parameters:
     ---
     img_to_clusters : dict
-        数据格式
+        Data format
         {img_name:[[pbox1,pbox3],...]}
     last_epoch : int
     '''
-    # 存放每个cluster的features
+                                     
     clusters_features = []
-    # 存放features对应的政府指标符号
+                                   
     features_signs = []
 
-    # 存放每个img对应的cluster的idx list
+                                             
     img_name_to_cluster_ids = defaultdict(list)
 
-    # 追踪每个cluster的索引
+                                     
     cluster_idx = 0
-    # 遍历每个图像与其对应的簇群
+                                         
     for img_name,clusters in img_to_clusters.items():
-        # 遍历该图像的所有簇
+                                            
         for cluster in clusters:
-            # 得到该簇的特征数据和特征对应的正负符号
+                                                                           
             features,signs = get_cluster_feaure(cluster,last_epoch)
             clusters_features.append(features)
             features_signs = signs
             img_name_to_cluster_ids[img_name].append(cluster_idx)
             cluster_idx += 1
 
-    # 构建特征数据集
+                           
     data_array = np.array(clusters_features)
     n_features = data_array.shape[1]
-    assert data_array.shape[1] == len(features_signs), "数据有误"
+    assert data_array.shape[1] == len(features_signs), "Invalid data"
     weights = np.ones(n_features) / n_features
-    # 基于topsis获得clusters的score
+                                        
     best_cluster_id, score_array = tp.topsis(data_array, weights, features_signs)
     score_array = np.nan_to_num(score_array, nan=0.0, posinf=1.0, neginf=0.0)
-    # 从大到小排序并返回索引
-    # sorted_cluster_id = np.argsort(score_array)[::-1]
-    # 将img_name中得分最高的cluster的得分作为该img的score
+                                        
+                                                       
+                                                                   
     img_name_to_scoreAndFeature = {}
     for img_name,cluster_ids in img_name_to_cluster_ids.items():
         img_name_to_scoreAndFeature[img_name] = {
@@ -448,22 +448,22 @@ def get_img_to_no_matched_pboxs(all_img_name_list, gt_match_json:dict)->dict:
     last_epoch_nums = 5
     conf_threshold = 0.6
     epoch_to_matched_p_ids = get_epoch_to_matched_p_boxs(gt_match_json)
-    # 获得每张图像在后面几个epoch中没被g_box匹配的高置信度p_box
+                                                                                        
     img_name_to_epoch_to_no_match_p_boxs = get_img_name_to_epoch_to_unmatched_p_boxs(
         epoch_to_matched_p_ids,last_epoch_nums,conf_threshold)
-    # 划分出带有miss fault的img set和不带有miss fault的img set
+                                                         
     with_miss_fault_img_set,no_miss_fault_img_set = split_img_miss_no_miss(imgs_dir,annos_with_miss_json_path)
-    # 展平epoch key
+                        
     img_to_p_boxs = {}
 
     for img_name in all_img_name_list:
         img_to_p_boxs[img_name] = {}
         if img_name in with_miss_fault_img_set:
-            img_to_p_boxs[img_name]["with_miss_fault_flag"] = 1 # 记录该imgname包含miss fault标识
+            img_to_p_boxs[img_name]["with_miss_fault_flag"] = 1                                
         else:
-            img_to_p_boxs[img_name]["with_miss_fault_flag"] = 0 # 记录该imgname不含miss fault标识
+            img_to_p_boxs[img_name]["with_miss_fault_flag"] = 0                                
 
-        img_to_p_boxs[img_name]["No_matched_p_box_list"] = [] # 记录该imgname中没有得到匹配的预测box list（conf>0.6 and last 5 epochs）
+        img_to_p_boxs[img_name]["No_matched_p_box_list"] = []                                                      
         if img_name in img_name_to_epoch_to_no_match_p_boxs.keys():
             for epoch in img_name_to_epoch_to_no_match_p_boxs[img_name].keys():
                 for p_box in img_name_to_epoch_to_no_match_p_boxs[img_name][epoch]:
@@ -475,17 +475,17 @@ def get_img_to_no_matched_pboxs(all_img_name_list, gt_match_json:dict)->dict:
 def build_img_feature(all_img_name_list:list[str], gt_match_json:dict, last_epoch=5, conf_threshold=0.6):
     epoch_to_matched_p_ids = get_epoch_to_matched_p_boxs(gt_match_json)
 
-    # 获得每张图像在后面几个epoch中没被g_box匹配的高置信度p_box
+                                                                                        
     img_name_to_epoch_no_match_p_boxs = get_img_name_to_epoch_to_unmatched_p_boxs(
         epoch_to_matched_p_ids,last_epoch,conf_threshold)
 
     img_name_to_no_matched_p_boxs  = get_img_name_to_no_matched_p_boxs(img_name_to_epoch_no_match_p_boxs)
 
-    # 采用并查集算法将该img这些高置信度未匹配p_box进行分簇，一个簇其实就是一个统一的p_box
+                                                                                                                         
     img_to_clusters = get_img_to_clusters(img_name_to_no_matched_p_boxs,iou_thre=0.6)
     img_name_to_feature, feature_names, img_level_signs = get_img_to_feature(img_to_clusters, last_epoch)
     no_clusters_image_name_set = sorted(set(all_img_name_list) - set(img_name_to_feature.keys()))
-    print(f"没有预测簇的图像数量:{len(no_clusters_image_name_set)}")
+    print(f"Number of images without predicted clusters:{len(no_clusters_image_name_set)}")
     for img_name in no_clusters_image_name_set:
         img_name_to_feature[img_name] = {
             "topsis_score": 0.0,
@@ -497,40 +497,40 @@ def build_img_feature(all_img_name_list:list[str], gt_match_json:dict, last_epoc
 def hypothesis_testing(list_1:list[float],list_2:list[float],alternative:str="two-sided"):
     def mannwhitneyu_effect_size(u_stat, n1, n2):
         """
-        计算Mann-Whitney U检验的效应量r（正确版本）
-        参数：
-            u_stat: mannwhitneyu返回的U统计量
-            n1: 第一组数据的样本量
-            n2: 第二组数据的样本量
-        返回：
-            效应量r（绝对值），越大表示差异越明显
+        Calculate effect size r for the Mann-Whitney U test (correct version)
+        Parameters:
+            u_stat: mannwhitneyureturned U statistic
+            n1: sample size of the first group
+            n2: sample size of the second group
+        Returns:
+            effect size r (absolute value); larger means a clearer difference
         """
-        # 步骤1：计算U统计量的均值（零假设下的期望U值）
+                                                                                                 
         mean_u = (n1 * n2) / 2
-        # 步骤2：计算U统计量的标准差
+                                                                     
         std_u = np.sqrt((n1 * n2 * (n1 + n2 + 1)) / 12)
-        # 步骤3：将U值转换为Z分数（标准化）
+                                                     
         z = (u_stat - mean_u) / std_u
-        # 步骤4：计算效应量r（Cohen's r）
+                                                     
         r = abs(z) / np.sqrt(n1 + n2)
         return r
     
     u_stat, u_p = stats.mannwhitneyu(list_1, list_2, alternative=alternative)
     
-    print(f"Mann-Whitney U检验：U值={u_stat:.3f}, p值={u_p:.3f}")
-    # 计算效应量r
+    print(f"Mann-Whitney Utest: U value={u_stat:.3f}, ptext={u_p:.3f}")
+                             
     r = mannwhitneyu_effect_size(u_stat, len(list_1), len(list_2))
-    print(f"效应量r：{r:.3f}")
+    print(f"Effect size r:{r:.3f}")
 
 def visualization(correct_list,error_list,save_file_name:str):
-    # 可视化
+                   
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 5))
-    # 箱线图
+              
     ax1.boxplot([correct_list, error_list], labels=['correct', 'error'])
     ax1.set_title('Box plot: Data distribution comparison')
     ax1.set_ylabel('Numerical value')
-    # 直方图+核密度估计（KDE）
-    # 1. 可视化：箱线图（看分布位置、离散程度）+ 直方图（看分布形态）
+                                             
+                                                                                                                      
     
     sns.histplot(correct_list, kde=True, ax=ax2, label='correct', alpha=0.5)
     sns.histplot(error_list, kde=True, ax=ax2, label='error', alpha=0.5)
@@ -542,20 +542,20 @@ def visualization(correct_list,error_list,save_file_name:str):
 def main():
     all_img_name_list = get_all_img_name(imgs_dir)
     gt_match_json = read_json(match_json_path)
-    '''得到ours方法的img的排序'''
+    '''Get image ranking of our method'''
     img_to_feature,feature_to_sign = build_img_feature(all_img_name_list, gt_match_json)
     with_miss_fault_img_set,no_miss_fault_img_set = split_img_miss_no_miss(imgs_dir,annos_with_miss_json_path)
 
-    # correct_data_list = []
-    # error_data_list = []
-    # for img_name in no_miss_fault_img_set:
-    #     correct_data_list.append(img_to_feature[img_name]["topsis_score"])
-    # for img_name in with_miss_fault_img_set:
-    #     error_data_list.append(img_to_feature[img_name]["topsis_score"])
+                            
+                          
+                                            
+                                                                            
+                                              
+                                                                          
     
-    # # visualization(correct_data_list,error_data_list,"topsis_score")
+                                                                       
     
-    # hypothesis_testing(correct_data_list,error_data_list,"less")
+                                                                  
     
     for feature_name,sign in feature_to_sign.items():
 
@@ -568,10 +568,10 @@ def main():
         for img_name in with_miss_fault_img_set:
             error_data_list.append(img_to_feature[img_name]["img_features"][feature_name])
         
-        # visualization(correct_data_list,error_data_list,feature_name)
+                                                                       
         if feature_to_sign[feature_name] == 1:
-            # 我们直觉认为 error data list > correct data list, 因为sign == -1, 说明越小越可疑，排名越靠前。
-            # 单侧检验是否 correct < error
+                                                                                                               
+                                  
             hypothesis_testing(correct_data_list,error_data_list,"less")
 
 
@@ -579,7 +579,7 @@ def main_2():
     all_img_name_list = get_all_img_name(imgs_dir)
     gt_match_json = read_json(match_json_path)
     with_miss_fault_img_set,no_miss_fault_img_set = split_img_miss_no_miss(imgs_dir,annos_with_miss_json_path)
-    mode = 0 # 0:全程贯通,1:基于csv进行特征重要性分析
+    mode = 0                                                                   
     if mode == 0: 
         csv_path = build_feature_csv(all_img_name_list, gt_match_json, with_miss_fault_img_set, last_epoch=5, conf_threshold=0.6)
     if mode == 0 or mode == 1:
@@ -590,22 +590,22 @@ def main_2():
 
 def build_feature_csv(all_img_name_list:list[str], gt_match_json:dict, missfaultimg_set:dict, last_epoch=5, conf_threshold=0.6):
     '''
-    构建出每个img的4个feature
+    textimgtext4textfeature
     '''
     epoch_to_matched_p_ids = get_epoch_to_matched_p_boxs(gt_match_json)
 
-    # 获得每张图像在后面几个epoch中没被g_box匹配的高置信度p_box
+                                                                                        
     img_name_to_epoch_no_match_p_boxs = get_img_name_to_epoch_to_unmatched_p_boxs(
         epoch_to_matched_p_ids,last_epoch,conf_threshold)
 
     img_name_to_no_matched_p_boxs  = get_img_name_to_no_matched_p_boxs(img_name_to_epoch_no_match_p_boxs)
 
-    # 采用并查集算法将该img这些高置信度未匹配p_box进行分簇，一个簇其实就是一个统一的p_box
+                                                                                                                         
     img_to_clusters = get_img_to_clusters(img_name_to_no_matched_p_boxs,iou_thre=0.6)
     img_name_to_scoreAndFeature = get_img_to_scoreAndFeature(img_to_clusters, last_epoch)
-    # 没有可疑预测簇的图像
+          
     no_clusters_image_name_set = sorted(set(all_img_name_list) - set(img_name_to_scoreAndFeature.keys()))
-    print(f"没有预测簇的图像数量:{len(no_clusters_image_name_set)}")
+    print(f"Number of images without predicted clusters:{len(no_clusters_image_name_set)}")
 
     rows = []
     for img_name in img_name_to_scoreAndFeature.keys():
@@ -621,7 +621,7 @@ def build_feature_csv(all_img_name_list:list[str], gt_match_json:dict, missfault
             "img_name":img_name,
             "conf":conf,
             "stab":stab,
-            "cls":cls, # 做多数量类的占比（类的一致性）
+            "cls":cls,                      
             "epoch_cross":epoch_cross,
             "conf_sign":1,
             "stab_sign":1,
@@ -648,7 +648,7 @@ def build_feature_csv(all_img_name_list:list[str], gt_match_json:dict, missfault
             "hasCluster":False
         })
 
-    # csv 保存路径
+                   
     save_file_name = f"img_feature_table_{dataset_name}_{model_name}.csv"
     output_path = os.path.join(RESULT_DIR, save_file_name)
     fieldnames = ["img_name","conf","stab","cls","epoch_cross","conf_sign","stab_sign","cls_sign","epoch_cross_sign", "is_missfault", "hasCluster"]
@@ -664,12 +664,12 @@ def get_feature_names_from_df(df:pd.DataFrame):
     required_columns = {"is_missfault"}
     missing_columns = sorted(required_columns - set(df.columns))
     if missing_columns:
-        raise ValueError(f"CSV缺少必要列: {missing_columns}")
+        raise ValueError(f"CSVMissing required columns: {missing_columns}")
 
     feature_names = [fn for fn in FEATURE_NAME_TO_SIGN.keys() if fn in df.columns]
     if len(feature_names) != len(FEATURE_NAME_TO_SIGN):
         missing_features = sorted(set(FEATURE_NAME_TO_SIGN.keys()) - set(feature_names))
-        raise ValueError(f"CSV缺少过程特征列: {missing_features}")
+        raise ValueError(f"CSVMissing process feature columns: {missing_features}")
 
     missing_sign_columns = [
         f"{feature_name}_sign"
@@ -677,7 +677,7 @@ def get_feature_names_from_df(df:pd.DataFrame):
         if f"{feature_name}_sign" not in df.columns
     ]
     if missing_sign_columns:
-        raise ValueError(f"CSV缺少feature sign列: {missing_sign_columns}")
+        raise ValueError(f"CSVMissing feature sign columns: {missing_sign_columns}")
     return feature_names
 
 def _series_to_bool(series):
@@ -722,8 +722,8 @@ def correlation_importance_analysis(df, feature_names):
 
 def _discretize_by_quantile(values, n_bins=10):
     """
-    用分位数离散化连续特征，便于计算信息熵/互信息。
-    重复取值很多时，实际 bin 数可能小于 n_bins。
+    Discretize continuous features by quantiles to calculate entropy and mutual information.
+    When many duplicate values exist, the actual bin count may be smaller than n_bins.
     """
     values = np.asarray(values, dtype=float)
     unique_values = np.unique(values)
@@ -879,24 +879,24 @@ def run_feature_importance_analysis(df:pd.DataFrame):
     result_dir = RESULT_DIR
     output_prefix = f"img_feature_importance_{dataset_name}_{model_name}"
     
-    all_corr_rows = [] # 相关性
-    all_mi_rows = [] # 互信息
+    all_corr_rows = []              
+    all_mi_rows = []                     
     
     labels = _series_to_bool(df["is_missfault"]).astype(int)
     if len(labels) == 0 or len(np.unique(labels)) < 2:
-        raise Exception("样本为空或只包含单一类别，无法计算重要性。")
+        raise Exception("The sample is empty or contains only one class, so importance cannot be calculated.")
     corr_rows = correlation_importance_analysis(df, feature_names)
     mi_rows = mutual_information_importance_analysis(df, feature_names)
     all_corr_rows.extend(corr_rows)
     all_mi_rows.extend(mi_rows)
 
     print_importance_rows(
-        f"相关性重要性排名 (按 |Spearman r|)",
+        f"correlationtext (text |Spearman r|)",
         corr_rows,
         "abs_spearman_r",
     )
     print_importance_rows(
-        f"信息熵/互信息重要性排名 (按 MI/H(label))",
+        f"text/mutual informationtext (text MI/H(label))",
         mi_rows,
         "mi_over_h_label",
     )
@@ -927,30 +927,30 @@ def run_feature_importance_analysis(df:pd.DataFrame):
 
 if __name__ == "__main__":
     
-    dataset_name = "VisDrone" # VOC2012|KITTI_8|VisDrone
-    model_name = "YOLOv7" # YOLOv7|FRCNN|SSD
+    dataset_name = "VisDrone"                           
+    model_name = "YOLOv7"                   
     epochs = 50
     gt_json_path = get_collected_gt_box_json_path(dataset_name)
 
-    # match json
+                
     match_json_path = os.path.join(exp_data_root_dir,"collection_bbox_level",dataset_name,model_name, "gp_box_match",
-                                   "match_v3.json") # v3!
+                                   "match_v3.json")      
     if not os.path.exists(match_json_path):
-        # 使用了新路径
+              
         match_json_path = os.path.join(exp_data_root_dir,"collection_bbox_level",dataset_name,model_name,
                                    "match.json")
-    # metric json
+                 
     g_box_metrics_json_path = os.path.join(exp_data_root_dir,"collection_bbox_level",dataset_name,model_name,"collection_metric",
-                                           "collection_metrics_v3.json") # v3!
+                                           "collection_metrics_v3.json")      
     if not os.path.exists(g_box_metrics_json_path):
-        # 使用了新路径
+              
         g_box_metrics_json_path = os.path.join(exp_data_root_dir,"collection_bbox_level",dataset_name,model_name,
                                             "metrics.json")
 
     annos_with_miss_json_path = get_annotations_with_miss_json_path(dataset_name)
     predicted_bboxs_dir = os.path.join(exp_data_root_dir,"collection_bbox_level",
                                     dataset_name,model_name,"collected_predicted_box","v2")
-    # 一定要是全量的trainset的imgsdir
+                                                
     imgs_dir = os.path.join(exp_data_root_dir,"retrain_dataset_split", dataset_name,
                              "images", "origin")
     
@@ -971,4 +971,4 @@ if __name__ == "__main__":
         "epoch_cross":1,
     }
     main_2()
-    # main()
+            

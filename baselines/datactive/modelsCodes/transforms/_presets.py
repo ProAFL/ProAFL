@@ -111,7 +111,7 @@ class VideoClassification(nn.Module):
         vid = F.normalize(vid, mean=self.mean, std=self.std)
         H, W = self.crop_size
         vid = vid.view(N, T, C, H, W)
-        vid = vid.permute(0, 2, 1, 3, 4)  # (N, T, C, H, W) => (N, C, T, H, W)
+        vid = vid.permute(0, 2, 1, 3, 4)                                      
 
         if need_squeeze:
             vid = vid.squeeze(dim=0)
@@ -189,7 +189,7 @@ class OpticalFlow(nn.Module):
         img1 = F.convert_image_dtype(img1, torch.float)
         img2 = F.convert_image_dtype(img2, torch.float)
 
-        # map [0, 1] into [-1, 1]
+                                 
         img1 = F.normalize(img1, mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5])
         img2 = F.normalize(img2, mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5])
 

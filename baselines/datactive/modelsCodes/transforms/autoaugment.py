@@ -14,12 +14,12 @@ def _apply_op(
     img: Tensor, op_name: str, magnitude: float, interpolation: InterpolationMode, fill: Optional[List[float]]
 ):
     if op_name == "ShearX":
-        # magnitude should be arctan(magnitude)
-        # official autoaug: (1, level, 0, 0, 1, 0)
-        # https://github.com/tensorflow/models/blob/dd02069717128186b88afa8d857ce57d17957f03/research/autoaugment/augmentation_transforms.py#L290
-        # compared to
-        # torchvision:      (1, tan(level), 0, 0, 1, 0)
-        # https://github.com/pytorch/vision/blob/0c2373d0bba3499e95776e7936e207d8a1676e65/torchvision/transforms/functional.py#L976
+                                               
+                                                  
+                                                                                                                                                 
+                     
+                                                       
+                                                                                                                                   
         img = F.affine(
             img,
             angle=0.0,
@@ -31,8 +31,8 @@ def _apply_op(
             center=[0, 0],
         )
     elif op_name == "ShearY":
-        # magnitude should be arctan(magnitude)
-        # See above
+                                               
+                   
         img = F.affine(
             img,
             angle=0.0,
@@ -100,7 +100,7 @@ class AutoAugmentPolicy(Enum):
     SVHN = "svhn"
 
 
-# FIXME: Eliminate copy-pasted code for fill standardization and _augmentation_space() by moving stuff on a base class
+                                                                                                                      
 class AutoAugment(torch.nn.Module):
     r"""AutoAugment data augmentation method based on
     `"AutoAugment: Learning Augmentation Strategies from Data" <https://arxiv.org/pdf/1805.09501.pdf>`_.
@@ -222,7 +222,7 @@ class AutoAugment(torch.nn.Module):
 
     def _augmentation_space(self, num_bins: int, image_size: Tuple[int, int]) -> Dict[str, Tuple[Tensor, bool]]:
         return {
-            # op_name: (magnitudes, signed)
+                                           
             "ShearX": (torch.linspace(0.0, 0.3, num_bins), True),
             "ShearY": (torch.linspace(0.0, 0.3, num_bins), True),
             "TranslateX": (torch.linspace(0.0, 150.0 / 331.0 * image_size[1], num_bins), True),
@@ -320,7 +320,7 @@ class RandAugment(torch.nn.Module):
 
     def _augmentation_space(self, num_bins: int, image_size: Tuple[int, int]) -> Dict[str, Tuple[Tensor, bool]]:
         return {
-            # op_name: (magnitudes, signed)
+                                           
             "Identity": (torch.tensor(0.0), False),
             "ShearX": (torch.linspace(0.0, 0.3, num_bins), True),
             "ShearY": (torch.linspace(0.0, 0.3, num_bins), True),
@@ -406,7 +406,7 @@ class TrivialAugmentWide(torch.nn.Module):
 
     def _augmentation_space(self, num_bins: int) -> Dict[str, Tuple[Tensor, bool]]:
         return {
-            # op_name: (magnitudes, signed)
+                                           
             "Identity": (torch.tensor(0.0), False),
             "ShearX": (torch.linspace(0.0, 0.99, num_bins), True),
             "ShearY": (torch.linspace(0.0, 0.99, num_bins), True),
@@ -508,7 +508,7 @@ class AugMix(torch.nn.Module):
 
     def _augmentation_space(self, num_bins: int, image_size: Tuple[int, int]) -> Dict[str, Tuple[Tensor, bool]]:
         s = {
-            # op_name: (magnitudes, signed)
+                                           
             "ShearX": (torch.linspace(0.0, 0.3, num_bins), True),
             "ShearY": (torch.linspace(0.0, 0.3, num_bins), True),
             "TranslateX": (torch.linspace(0.0, image_size[1] / 3.0, num_bins), True),
@@ -539,7 +539,7 @@ class AugMix(torch.nn.Module):
         return F.to_pil_image(img)
 
     def _sample_dirichlet(self, params: Tensor) -> Tensor:
-        # Must be on a separate method so that we can overwrite it in tests.
+                                                                            
         return torch._sample_dirichlet(params)
 
     def forward(self, orig_img: Tensor) -> Tensor:
@@ -566,13 +566,13 @@ class AugMix(torch.nn.Module):
         batch = img.view([1] * max(4 - img.ndim, 0) + orig_dims)
         batch_dims = [batch.size(0)] + [1] * (batch.ndim - 1)
 
-        # Sample the beta weights for combining the original and augmented image. To get Beta, we use a Dirichlet
-        # with 2 parameters. The 1st column stores the weights of the original and the 2nd the ones of augmented image.
+                                                                                                                 
+                                                                                                                       
         m = self._sample_dirichlet(
             torch.tensor([self.alpha, self.alpha], device=batch.device).expand(batch_dims[0], -1)
         )
 
-        # Sample the mixing weights and combine them with the ones sampled from Beta for the augmented images.
+                                                                                                              
         combined_weights = self._sample_dirichlet(
             torch.tensor([self.alpha] * self.mixture_width, device=batch.device).expand(batch_dims[0], -1)
         ) * m[:, 1].view([batch_dims[0], -1])

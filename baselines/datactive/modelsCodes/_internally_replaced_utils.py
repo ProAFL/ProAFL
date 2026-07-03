@@ -17,16 +17,16 @@ def _is_remote_location_available() -> bool:
 
 
 try:
-    from torch.hub import load_state_dict_from_url  # noqa: 401
+    from torch.hub import load_state_dict_from_url             
 except ImportError:
-    from torch.utils.model_zoo import load_url as load_state_dict_from_url  # noqa: 401
+    from torch.utils.model_zoo import load_url as load_state_dict_from_url             
 
 
 def _get_extension_path(lib_name):
 
     lib_dir = os.path.dirname(__file__)
     if os.name == "nt":
-        # Register the main torchvision library location on the default DLL path
+                                                                                
         import ctypes
         import sys
 

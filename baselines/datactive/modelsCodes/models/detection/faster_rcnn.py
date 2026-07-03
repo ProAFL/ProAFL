@@ -165,12 +165,12 @@ class FasterRCNN(GeneralizedRCNN):
         self,
         backbone,
         num_classes=None,
-        # transform parameters
+                              
         min_size=800,
         max_size=1333,
         image_mean=None,
         image_std=None,
-        # RPN parameters
+                        
         rpn_anchor_generator=None,
         rpn_head=None,
         rpn_pre_nms_top_n_train=2000,
@@ -183,7 +183,7 @@ class FasterRCNN(GeneralizedRCNN):
         rpn_batch_size_per_image=256,
         rpn_positive_fraction=0.5,
         rpn_score_thresh=0.0,
-        # Box parameters
+                        
         box_roi_pool=None,
         box_head=None,
         box_predictor=None,
@@ -257,7 +257,7 @@ class FasterRCNN(GeneralizedRCNN):
             box_predictor = FastRCNNPredictor(representation_size, num_classes)
 
         roi_heads = RoIHeads(
-            # Box
+                 
             box_roi_pool,
             box_head,
             box_predictor,
@@ -827,7 +827,7 @@ def fasterrcnn_mobilenet_v3_large_fpn(
     )
 
 
-# The dictionary below is internal implementation detail and will be removed in v0.15
+                                                                                     
 from .._utils import _ModelURLs
 
 

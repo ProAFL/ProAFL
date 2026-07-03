@@ -98,7 +98,7 @@ def reduce_dict(input_dict, average=True):
     with torch.inference_mode():
         names = []
         values = []
-        # sort the keys so that they are consistent across processes
+                                                                    
         for k in sorted(input_dict.keys()):
             names.append(k)
             values.append(input_dict[k])

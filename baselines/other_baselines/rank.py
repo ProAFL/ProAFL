@@ -43,7 +43,7 @@ def caclu_loss(p_list,g_label,p_loc,g_loc):
 
 def caclu_rank_score(baseline_name, p_list,g_label,p_loc,g_loc):
     '''
-    score 越大越可疑
+    score larger means more suspicious
     '''
     if baseline_name == "entropy":
         score = calcu_entropy(p_list)
@@ -61,10 +61,10 @@ def main(g_json_path,match_json_path,baseline_name:str):
     g_json = read_json(g_json_path)
     match_json = read_json(match_json_path)
     all_gids = get_all_gids(g_json)
-    priority_queue = PriorityQueue() # 越小优先级越高
-    matchid_gid_set = set() # 存储匹配到p_box的g_box的id
+    priority_queue = PriorityQueue()       
+    matchid_gid_set = set()                           
     for gid_str in match_json.keys():
-        # gid:'1'
+                 
         p_box = match_json[gid_str]["p_box"]
         g_box = match_json[gid_str]["g_box"]
         gid = g_box["box_id"]
@@ -72,25 +72,25 @@ def main(g_json_path,match_json_path,baseline_name:str):
         g_label = g_box["cls"]
         p_loc = p_box["bbox"]
         g_loc = g_box["gt_bbox"]
-        # 分数越大越可疑，优先级越高，越排在队头
+                                                    
         score = caclu_rank_score(baseline_name,p_list,g_label,p_loc,g_loc)
-        priority_queue.put((-score,gid))# entropy越大优先级越高
+        priority_queue.put((-score,gid))             
         matchid_gid_set.add(gid)
 
-    print(f"all gid数量:{len(all_gids)}")
-    print(f"匹配上的gid数量:{len(matchid_gid_set)}")
-    print(f"没匹配上的gid数量:{len(all_gids) - len(matchid_gid_set)}")
+    print(f"all gidCount:{len(all_gids)}")
+    print(f"textgidCount:{len(matchid_gid_set)}")
+    print(f"textgidCount:{len(all_gids) - len(matchid_gid_set)}")
     erro_gids = get_all_errored_g_box_id_set(g_json)
-    print(f"fault gid数量:{len(erro_gids)}")
+    print(f"fault gidCount:{len(erro_gids)}")
     no_matched_gid_set = set(all_gids) - matchid_gid_set
     bad_gid_set = set(erro_gids) & no_matched_gid_set
-    print(f"没匹配上的gid中的错误数量:{len(bad_gid_set)}/{len(erro_gids)}")
+    print(f"textgidtextCount:{len(bad_gid_set)}/{len(erro_gids)}")
 
     for g_id in all_gids:
         if g_id not in matchid_gid_set:
             priority_queue.put((-100,g_id))
 
-    # 获取并弹出优先级最高的元素
+          
     gid_rank = []
     while not priority_queue.empty():
         priority, g_id = priority_queue.get()
@@ -103,7 +103,7 @@ def main(g_json_path,match_json_path,baseline_name:str):
     
     for idd in rank[-len(all_img_name_list):]:
         if type(idd) is int:
-            raise Exception("图片位置放错了")
+            raise Exception("Image path is incorrect")
     
     return rank
 
@@ -113,9 +113,9 @@ if __name__ == "__main__":
     PID = os.getpid()
     print("PID:",PID)
     exp_root_dir = config["exp_data_dir"]
-    dataset_name = "voc" # voc|kitti|visdrone
-    model_name = "yolov7" # yolov7|frcnn|rtdetr
-    baseline_name = "entropy" # entropy|loss|deepgini|margin|
+    dataset_name = "voc"                     
+    model_name = "yolov7"                      
+    baseline_name = "entropy"                                
     g_json_path = get_collected_gt_box_json_path(dataset_name)
     
     match_json_path = os.path.join(exp_root_dir, "collection_process_info",
@@ -124,12 +124,12 @@ if __name__ == "__main__":
     rank = main(g_json_path,match_json_path,baseline_name)
     annos_with_miss_json_path = get_annotations_with_miss_json_path(dataset_name)
 
-    # 保存rank数据
+                  
     save_dir = os.path.join(exp_root_dir,"baselines",baseline_name,
                             dataset_name,model_name,"rank")
     os.makedirs(save_dir,exist_ok=True)
     save_file_name = "rank.joblib"
     save_path = os.path.join(save_dir,save_file_name)
     joblib.dump(rank,save_path)
-    print(f"rank长度为:{len(rank)}")
-    print(f'rank结果保存在:{save_path}')
+    print(f"ranktext:{len(rank)}")
+    print(f'rankResult saved at:{save_path}')

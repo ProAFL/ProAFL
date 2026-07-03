@@ -11,7 +11,7 @@ def _flip_coco_person_keypoints(kps, width):
     flip_inds = [0, 2, 1, 4, 3, 6, 5, 8, 7, 10, 9, 12, 11, 14, 13, 16, 15]
     flipped_data = kps[:, flip_inds]
     flipped_data[..., 0] = width - flipped_data[..., 0]
-    # Maintain COCO convention that if visibility == 0, then x, y = 0
+                                                                     
     inds = flipped_data[..., 2] == 0
     flipped_data[inds] = 0
     return flipped_data
@@ -76,7 +76,7 @@ class RandomIoUCrop(nn.Module):
         trials: int = 40,
     ):
         super().__init__()
-        # Configuration similar to https://github.com/weiliu89/caffe/blob/ssd/examples/ssd/ssd_coco.py#L89-L174
+                                                                                                               
         self.min_scale = min_scale
         self.max_scale = max_scale
         self.min_aspect_ratio = min_aspect_ratio
@@ -101,14 +101,14 @@ class RandomIoUCrop(nn.Module):
         _, orig_h, orig_w = F.get_dimensions(image)
 
         while True:
-            # sample an option
+                              
             idx = int(torch.randint(low=0, high=len(self.options), size=(1,)))
             min_jaccard_overlap = self.options[idx]
-            if min_jaccard_overlap >= 1.0:  # a value larger than 1 encodes the leave as-is option
+            if min_jaccard_overlap >= 1.0:                                                        
                 return image, target
 
             for _ in range(self.trials):
-                # check the aspect ratio limitations
+                                                    
                 r = self.min_scale + (self.max_scale - self.min_scale) * torch.rand(2)
                 new_w = int(orig_w * r[0])
                 new_h = int(orig_h * r[1])
@@ -116,7 +116,7 @@ class RandomIoUCrop(nn.Module):
                 if not (self.min_aspect_ratio <= aspect_ratio <= self.max_aspect_ratio):
                     continue
 
-                # check for 0 area crops
+                                        
                 r = torch.rand(2)
                 left = int((orig_w - new_w) * r[0])
                 top = int((orig_h - new_h) * r[1])
@@ -125,14 +125,14 @@ class RandomIoUCrop(nn.Module):
                 if left == right or top == bottom:
                     continue
 
-                # check for any valid boxes with centers within the crop area
+                                                                             
                 cx = 0.5 * (target["boxes"][:, 0] + target["boxes"][:, 2])
                 cy = 0.5 * (target["boxes"][:, 1] + target["boxes"][:, 3])
                 is_within_crop_area = (left < cx) & (cx < right) & (top < cy) & (cy < bottom)
                 if not is_within_crop_area.any():
                     continue
 
-                # check at least 1 box with jaccard limitations
+                                                               
                 boxes = target["boxes"][is_within_crop_area]
                 ious = torchvision.ops.boxes.box_iou(
                     boxes, torch.tensor([[left, top, right, bottom]], dtype=boxes.dtype, device=boxes.device)
@@ -140,7 +140,7 @@ class RandomIoUCrop(nn.Module):
                 if ious.max() < min_jaccard_overlap:
                     continue
 
-                # keep only valid boxes and perform cropping
+                                                            
                 target["boxes"] = boxes
                 target["labels"] = target["labels"][is_within_crop_area]
                 target["boxes"][:, 0::2] -= left
@@ -167,8 +167,8 @@ class RandomZoomOut(nn.Module):
 
     @torch.jit.unused
     def _get_fill_value(self, is_pil):
-        # type: (bool) -> int
-        # We fake the type to make it work on JIT
+                             
+                                                 
         return tuple(int(x) for x in self.fill) if is_pil else 0
 
     def forward(
@@ -202,7 +202,7 @@ class RandomZoomOut(nn.Module):
 
         image = F.pad(image, [left, top, right, bottom], fill=fill)
         if isinstance(image, torch.Tensor):
-            # PyTorch's pad supports only integers on fill. So we need to overwrite the colour
+                                                                                              
             v = torch.tensor(self.fill, device=image.device, dtype=image.dtype).view(-1, 1, 1)
             image[..., :top, :] = image[..., :, :left] = image[..., (top + orig_h) :, :] = image[
                 ..., :, (left + orig_w) :
@@ -333,11 +333,11 @@ class FixedSizeCrop(nn.Module):
         size = tuple(T._setup_size(size, error_msg="Please provide only two dimensions (h, w) for size."))
         self.crop_height = size[0]
         self.crop_width = size[1]
-        self.fill = fill  # TODO: Fill is currently respected only on PIL. Apply tensor patch.
+        self.fill = fill                                                                      
         self.padding_mode = padding_mode
 
     def _pad(self, img, target, padding):
-        # Taken from the functional_tensor.py pad
+                                                 
         if isinstance(padding, int):
             pad_left = pad_right = pad_top = pad_bottom = padding
         elif len(padding) == 1:
@@ -447,15 +447,15 @@ def _copy_paste(
     resize_interpolation: F.InterpolationMode = F.InterpolationMode.BILINEAR,
 ) -> Tuple[torch.Tensor, Dict[str, Tensor]]:
 
-    # Random paste targets selection:
+                                     
     num_masks = len(paste_target["masks"])
 
     if num_masks < 1:
-        # Such degerante case with num_masks=0 can happen with LSJ
-        # Let's just return (image, target)
+                                                                  
+                                           
         return image, target
 
-    # We have to please torch script by explicitly specifying dtype as torch.long
+                                                                                 
     random_selection = torch.randint(0, num_masks, (num_masks,), device=paste_image.device)
     random_selection = torch.unique(random_selection).to(torch.long)
 
@@ -465,15 +465,15 @@ def _copy_paste(
 
     masks = target["masks"]
 
-    # We resize source and paste data if they have different sizes
-    # This is something we introduced here as originally the algorithm works
-    # on equal-sized data (for example, coming from LSJ data augmentations)
+                                                                  
+                                                                            
+                                                                           
     size1 = image.shape[-2:]
     size2 = paste_image.shape[-2:]
     if size1 != size2:
         paste_image = F.resize(paste_image, size1, interpolation=resize_interpolation)
         paste_masks = F.resize(paste_masks, size1, interpolation=F.InterpolationMode.NEAREST)
-        # resize bboxes:
+                        
         ratios = torch.tensor((size1[1] / size2[1], size1[0] / size2[0]), device=paste_boxes.device)
         paste_boxes = paste_boxes.view(-1, 2, 2).mul(ratios).view(paste_boxes.shape)
 
@@ -488,40 +488,40 @@ def _copy_paste(
             ],
         )
 
-    # Copy-paste images:
+                        
     image = (image * (~paste_alpha_mask)) + (paste_image * paste_alpha_mask)
 
-    # Copy-paste masks:
+                       
     masks = masks * (~paste_alpha_mask)
     non_all_zero_masks = masks.sum((-1, -2)) > 0
     masks = masks[non_all_zero_masks]
 
-    # Do a shallow copy of the target dict
+                                          
     out_target = {k: v for k, v in target.items()}
 
     out_target["masks"] = torch.cat([masks, paste_masks])
 
-    # Copy-paste boxes and labels
+                                 
     boxes = ops.masks_to_boxes(masks)
     out_target["boxes"] = torch.cat([boxes, paste_boxes])
 
     labels = target["labels"][non_all_zero_masks]
     out_target["labels"] = torch.cat([labels, paste_labels])
 
-    # Update additional optional keys: area and iscrowd if exist
+                                                                
     if "area" in target:
         out_target["area"] = out_target["masks"].sum((-1, -2)).to(torch.float32)
 
     if "iscrowd" in target and "iscrowd" in paste_target:
-        # target['iscrowd'] size can be differ from mask size (non_all_zero_masks)
-        # For example, if previous transforms geometrically modifies masks/boxes/labels but
-        # does not update "iscrowd"
+                                                                                  
+                                                                                           
+                                   
         if len(target["iscrowd"]) == len(non_all_zero_masks):
             iscrowd = target["iscrowd"][non_all_zero_masks]
             paste_iscrowd = paste_target["iscrowd"][random_selection]
             out_target["iscrowd"] = torch.cat([iscrowd, paste_iscrowd])
 
-    # Check for degenerated boxes and remove them
+                                                 
     boxes = out_target["boxes"]
     degenerate_boxes = boxes[:, 2:] <= boxes[:, :2]
     if degenerate_boxes.any():
@@ -557,16 +557,16 @@ class SimpleCopyPaste(torch.nn.Module):
             "targets should be a list of the same size as images",
         )
         for target in targets:
-            # Can not check for instance type dict with inside torch.jit.script
-            # torch._assert(isinstance(target, dict), "targets item should be a dict")
+                                                                               
+                                                                                      
             for k in ["masks", "boxes", "labels"]:
                 torch._assert(k in target, f"Key {k} should be present in targets")
                 torch._assert(isinstance(target[k], torch.Tensor), f"Value for the key {k} should be a tensor")
 
-        # images = [t1, t2, ..., tN]
-        # Let's define paste_images as shifted list of input images
-        # paste_images = [t2, t3, ..., tN, t1]
-        # FYI: in TF they mix data on the dataset level
+                                    
+                                                                   
+                                              
+                                                       
         images_rolled = images[-1:] + images[:-1]
         targets_rolled = targets[-1:] + targets[:-1]
 

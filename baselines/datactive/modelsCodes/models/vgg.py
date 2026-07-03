@@ -202,7 +202,7 @@ class VGG16_Weights(WeightsEnum):
         },
     )
     IMAGENET1K_FEATURES = Weights(
-        # Weights ported from https://github.com/amdegroot/ssd.pytorch/
+                                                                       
         url="https://download.pytorch.org/models/vgg16_features-amdegroot-88682ab5.pth",
         transforms=partial(
             ImageClassification,
@@ -485,7 +485,7 @@ def vgg19_bn(*, weights: Optional[VGG19_BN_Weights] = None, progress: bool = Tru
     return _vgg("E", True, weights, progress, **kwargs)
 
 
-# The dictionary below is internal implementation detail and will be removed in v0.15
+                                                                                     
 from ._utils import _ModelURLs
 
 

@@ -11,10 +11,10 @@ from ..utils import _log_api_usage_once
 from .roi_align import roi_align
 
 
-# copying result_idx_in_level to a specific index in result[]
-# is not supported by ONNX tracing yet.
-# _onnx_merge_levels() is an implementation supported by ONNX
-# that merges the levels to the right indices
+                                                             
+                                       
+                                                             
+                                             
 @torch.jit.unused
 def _onnx_merge_levels(levels: Tensor, unmerged_results: List[Tensor]) -> Tensor:
     first_result = unmerged_results[0]
@@ -34,7 +34,7 @@ def _onnx_merge_levels(levels: Tensor, unmerged_results: List[Tensor]) -> Tensor
     return res
 
 
-# TODO: (eellison) T54974082 https://github.com/pytorch/pytorch/issues/26744/pytorch/issues/26744
+                                                                                                 
 def initLevelMapper(
     k_min: int,
     k_max: int,
@@ -76,10 +76,10 @@ class LevelMapper:
         Args:
             boxlists (list[BoxList])
         """
-        # Compute level ids
+                           
         s = torch.sqrt(torch.cat([box_area(boxlist) for boxlist in boxlists]))
 
-        # Eqn.(1) in FPN paper
+                              
         target_lvls = torch.floor(self.lvl0 + torch.log2(s / self.s0) + torch.tensor(self.eps, dtype=s.dtype))
         target_lvls = torch.clamp(target_lvls, min=self.k_min, max=self.k_max)
         return (target_lvls.to(torch.int64) - self.k_min).to(torch.int64)
@@ -97,7 +97,7 @@ def _convert_to_roi_format(boxes: List[Tensor]) -> Tensor:
 
 
 def _infer_scale(feature: Tensor, original_size: List[int]) -> float:
-    # assumption: the scale is of the form 2 ** (-k), with k integer
+                                                                    
     size = feature.shape[-2:]
     possible_scales: List[float] = []
     for s1, s2 in zip(size, original_size):
@@ -121,8 +121,8 @@ def _setup_scales(
     original_input_shape = (max_x, max_y)
 
     scales = [_infer_scale(feat, original_input_shape) for feat in features]
-    # get the levels in the feature map by leveraging the fact that the network always
-    # downsamples by a factor of 2 at each level.
+                                                                                      
+                                                 
     lvl_min = -torch.log2(torch.tensor(scales[0], dtype=torch.float32)).item()
     lvl_max = -torch.log2(torch.tensor(scales[-1], dtype=torch.float32)).item()
 
@@ -213,13 +213,13 @@ def _multiscale_roi_align(
         if torchvision._is_tracing():
             tracing_results.append(result_idx_in_level.to(dtype))
         else:
-            # result and result_idx_in_level's dtypes are based on dtypes of different
-            # elements in x_filtered.  x_filtered contains tensors output by different
-            # layers.  When autocast is active, it may choose different dtypes for
-            # different layers' outputs.  Therefore, we defensively match result's dtype
-            # before copying elements from result_idx_in_level in the following op.
-            # We need to cast manually (can't rely on autocast to cast for us) because
-            # the op acts on result in-place, and autocast only affects out-of-place ops.
+                                                                                      
+                                                                                      
+                                                                                  
+                                                                                        
+                                                                                   
+                                                                                      
+                                                                                         
             result[idx_in_level] = result_idx_in_level.to(result.dtype)
 
     if torchvision._is_tracing():

@@ -1,6 +1,6 @@
 
 '''
-负责将排序进行统一转换成coco中的annoid/imgname
+textrankingtextcocotextannoid/imgname
 '''
 import os
 
@@ -22,7 +22,7 @@ def convert_ours():
         anno_error_json_path = get_error_ann_file_path(dataset_name)
         anno_error_json = read_json(anno_error_json_path)
         for model_name in model_name_list:
-            print(f"{dataset_name}|{model_name}|OURS 转换中...")
+            print(f"{dataset_name}|{model_name}|OURS converting...")
             rank_path = os.path.join(exp_data_root_dir,"Results","ours",dataset_name,model_name,
                                                     "exp_01","rank","rank.joblib")
             rank_res = joblib.load(rank_path)
@@ -39,8 +39,8 @@ def convert_otherbaselines():
         anno_error_json_path = get_error_ann_file_path(dataset_name)
         anno_error_json = read_json(anno_error_json_path)
         for model_name in ["YOLOv7","FRCNN","rtdetr"]:
-            for baseline_name in ["objectlab"]: # ["entropy","loss","deepgini","margin","objectlab"]:
-                print(f"{dataset_name}|{model_name}|{baseline_name} 转换中...")
+            for baseline_name in ["objectlab"]:                                                      
+                print(f"{dataset_name}|{model_name}|{baseline_name} converting...")
                 rank_path = os.path.join(exp_data_root_dir,"Results",
                                         "other_baselines",baseline_name,dataset_name,model_name,
                                         "exp_01","rank","rank.joblib")
@@ -54,7 +54,7 @@ def convert_otherbaselines():
 def convert_datactive():
     exp_id = "exp_02"
     for dataset_name in dataset_name_list:
-        print(f"{dataset_name}|dataactive 转换中...")
+        print(f"{dataset_name}|dataactive converting...")
         rank_path = f"{exp_data_root_dir}/Results/datactive/{dataset_name}/YOLOv7/{exp_id}/rank/rank.joblib"
         rank_res = joblib.load(rank_path)
         anno_coco_error_json_path = get_error_ann_file_path(dataset_name)
@@ -67,6 +67,6 @@ def convert_datactive():
 
 
 if __name__ == "__main__":
-    # convert_ours()
+                    
     convert_otherbaselines()
-    # convert_datactive()
+                         

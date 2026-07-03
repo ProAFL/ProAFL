@@ -39,7 +39,7 @@ class QuantizableBasicConv2d(BasicConv2d):
 
 class QuantizableInception(Inception):
     def __init__(self, *args: Any, **kwargs: Any) -> None:
-        super().__init__(conv_block=QuantizableBasicConv2d, *args, **kwargs)  # type: ignore[misc]
+        super().__init__(conv_block=QuantizableBasicConv2d, *args, **kwargs)                      
         self.cat = nn.quantized.FloatFunctional()
 
     def forward(self, x: Tensor) -> Tensor:
@@ -48,33 +48,33 @@ class QuantizableInception(Inception):
 
 
 class QuantizableInceptionAux(InceptionAux):
-    # TODO https://github.com/pytorch/vision/pull/4232#pullrequestreview-730461659
+                                                                                  
     def __init__(self, *args: Any, **kwargs: Any) -> None:
-        super().__init__(conv_block=QuantizableBasicConv2d, *args, **kwargs)  # type: ignore[misc]
+        super().__init__(conv_block=QuantizableBasicConv2d, *args, **kwargs)                      
         self.relu = nn.ReLU()
 
     def forward(self, x: Tensor) -> Tensor:
-        # aux1: N x 512 x 14 x 14, aux2: N x 528 x 14 x 14
+                                                          
         x = F.adaptive_avg_pool2d(x, (4, 4))
-        # aux1: N x 512 x 4 x 4, aux2: N x 528 x 4 x 4
+                                                      
         x = self.conv(x)
-        # N x 128 x 4 x 4
+                         
         x = torch.flatten(x, 1)
-        # N x 2048
+                  
         x = self.relu(self.fc1(x))
-        # N x 1024
+                  
         x = self.dropout(x)
-        # N x 1024
+                  
         x = self.fc2(x)
-        # N x 1000 (num_classes)
+                                
 
         return x
 
 
 class QuantizableGoogLeNet(GoogLeNet):
-    # TODO https://github.com/pytorch/vision/pull/4232#pullrequestreview-730461659
+                                                                                  
     def __init__(self, *args: Any, **kwargs: Any) -> None:
-        super().__init__(  # type: ignore[misc]
+        super().__init__(                      
             blocks=[QuantizableBasicConv2d, QuantizableInception, QuantizableInceptionAux], *args, **kwargs
         )
         self.quant = torch.ao.quantization.QuantStub()
@@ -197,8 +197,8 @@ def googlenet(
         model.load_state_dict(weights.get_state_dict(progress=progress))
         if not original_aux_logits:
             model.aux_logits = False
-            model.aux1 = None  # type: ignore[assignment]
-            model.aux2 = None  # type: ignore[assignment]
+            model.aux1 = None                            
+            model.aux2 = None                            
         else:
             warnings.warn(
                 "auxiliary heads in the pretrained googlenet model are NOT pretrained, so make sure to train them"
@@ -207,14 +207,14 @@ def googlenet(
     return model
 
 
-# The dictionary below is internal implementation detail and will be removed in v0.15
+                                                                                     
 from .._utils import _ModelURLs
-from ..googlenet import model_urls  # noqa: F401
+from ..googlenet import model_urls              
 
 
 quant_model_urls = _ModelURLs(
     {
-        # fp32 GoogLeNet ported from TensorFlow, with weights quantized in PyTorch
+                                                                                  
         "googlenet_fbgemm": GoogLeNet_QuantizedWeights.IMAGENET1K_FBGEMM_V1.url,
     }
 )

@@ -21,8 +21,8 @@ __all__ = ["GoogLeNet", "GoogLeNetOutputs", "_GoogLeNetOutputs", "GoogLeNet_Weig
 GoogLeNetOutputs = namedtuple("GoogLeNetOutputs", ["logits", "aux_logits2", "aux_logits1"])
 GoogLeNetOutputs.__annotations__ = {"logits": Tensor, "aux_logits2": Optional[Tensor], "aux_logits1": Optional[Tensor]}
 
-# Script annotations failed with _GoogleNetOutputs = namedtuple ...
-# _GoogLeNetOutputs set here for backwards compat
+                                                                   
+                                                 
 _GoogLeNetOutputs = GoogLeNetOutputs
 
 
@@ -84,8 +84,8 @@ class GoogLeNet(nn.Module):
             self.aux1 = inception_aux_block(512, num_classes, dropout=dropout_aux)
             self.aux2 = inception_aux_block(528, num_classes, dropout=dropout_aux)
         else:
-            self.aux1 = None  # type: ignore[assignment]
-            self.aux2 = None  # type: ignore[assignment]
+            self.aux1 = None                            
+            self.aux2 = None                            
 
         self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
         self.dropout = nn.Dropout(p=dropout)
@@ -108,58 +108,58 @@ class GoogLeNet(nn.Module):
         return x
 
     def _forward(self, x: Tensor) -> Tuple[Tensor, Optional[Tensor], Optional[Tensor]]:
-        # N x 3 x 224 x 224
+                           
         x = self.conv1(x)
-        # N x 64 x 112 x 112
+                            
         x = self.maxpool1(x)
-        # N x 64 x 56 x 56
+                          
         x = self.conv2(x)
-        # N x 64 x 56 x 56
+                          
         x = self.conv3(x)
-        # N x 192 x 56 x 56
+                           
         x = self.maxpool2(x)
 
-        # N x 192 x 28 x 28
+                           
         x = self.inception3a(x)
-        # N x 256 x 28 x 28
+                           
         x = self.inception3b(x)
-        # N x 480 x 28 x 28
+                           
         x = self.maxpool3(x)
-        # N x 480 x 14 x 14
+                           
         x = self.inception4a(x)
-        # N x 512 x 14 x 14
+                           
         aux1: Optional[Tensor] = None
         if self.aux1 is not None:
             if self.training:
                 aux1 = self.aux1(x)
 
         x = self.inception4b(x)
-        # N x 512 x 14 x 14
+                           
         x = self.inception4c(x)
-        # N x 512 x 14 x 14
+                           
         x = self.inception4d(x)
-        # N x 528 x 14 x 14
+                           
         aux2: Optional[Tensor] = None
         if self.aux2 is not None:
             if self.training:
                 aux2 = self.aux2(x)
 
         x = self.inception4e(x)
-        # N x 832 x 14 x 14
+                           
         x = self.maxpool4(x)
-        # N x 832 x 7 x 7
+                         
         x = self.inception5a(x)
-        # N x 832 x 7 x 7
+                         
         x = self.inception5b(x)
-        # N x 1024 x 7 x 7
+                          
 
         x = self.avgpool(x)
-        # N x 1024 x 1 x 1
+                          
         x = torch.flatten(x, 1)
-        # N x 1024
+                  
         x = self.dropout(x)
         x = self.fc(x)
-        # N x 1000 (num_classes)
+                                
         return x, aux2, aux1
 
     @torch.jit.unused
@@ -167,7 +167,7 @@ class GoogLeNet(nn.Module):
         if self.training and self.aux_logits:
             return _GoogLeNetOutputs(x, aux2, aux1)
         else:
-            return x  # type: ignore[return-value]
+            return x                              
 
     def forward(self, x: Tensor) -> GoogLeNetOutputs:
         x = self._transform_input(x)
@@ -204,8 +204,8 @@ class Inception(nn.Module):
 
         self.branch3 = nn.Sequential(
             conv_block(in_channels, ch5x5red, kernel_size=1),
-            # Here, kernel_size=3 instead of kernel_size=5 is a known bug.
-            # Please see https://github.com/pytorch/vision/issues/906 for details.
+                                                                          
+                                                                                  
             conv_block(ch5x5red, ch5x5, kernel_size=3, padding=1),
         )
 
@@ -246,19 +246,19 @@ class InceptionAux(nn.Module):
         self.dropout = nn.Dropout(p=dropout)
 
     def forward(self, x: Tensor) -> Tensor:
-        # aux1: N x 512 x 14 x 14, aux2: N x 528 x 14 x 14
+                                                          
         x = F.adaptive_avg_pool2d(x, (4, 4))
-        # aux1: N x 512 x 4 x 4, aux2: N x 528 x 4 x 4
+                                                      
         x = self.conv(x)
-        # N x 128 x 4 x 4
+                         
         x = torch.flatten(x, 1)
-        # N x 2048
+                  
         x = F.relu(self.fc1(x), inplace=True)
-        # N x 1024
+                  
         x = self.dropout(x)
-        # N x 1024
+                  
         x = self.fc2(x)
-        # N x 1000 (num_classes)
+                                
 
         return x
 
@@ -332,8 +332,8 @@ def googlenet(*, weights: Optional[GoogLeNet_Weights] = None, progress: bool = T
         model.load_state_dict(weights.get_state_dict(progress=progress))
         if not original_aux_logits:
             model.aux_logits = False
-            model.aux1 = None  # type: ignore[assignment]
-            model.aux2 = None  # type: ignore[assignment]
+            model.aux1 = None                            
+            model.aux2 = None                            
         else:
             warnings.warn(
                 "auxiliary heads in the pretrained googlenet model are NOT pretrained, so make sure to train them"
@@ -342,13 +342,13 @@ def googlenet(*, weights: Optional[GoogLeNet_Weights] = None, progress: bool = T
     return model
 
 
-# The dictionary below is internal implementation detail and will be removed in v0.15
+                                                                                     
 from ._utils import _ModelURLs
 
 
 model_urls = _ModelURLs(
     {
-        # GoogLeNet ported from TensorFlow
+                                          
         "googlenet": GoogLeNet_Weights.IMAGENET1K_V1.url,
     }
 )

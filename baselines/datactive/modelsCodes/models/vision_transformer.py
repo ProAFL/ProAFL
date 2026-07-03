@@ -64,7 +64,7 @@ class MLPBlock(MLP):
         version = local_metadata.get("version", None)
 
         if version is None or version < 2:
-            # Replacing legacy MLPBlock with MLP. See https://github.com/pytorch/vision/pull/6053
+                                                                                                 
             for i in range(2):
                 for type in ["weight", "bias"]:
                     old_key = f"{prefix}linear_{i+1}.{type}"
@@ -98,12 +98,12 @@ class EncoderBlock(nn.Module):
         super().__init__()
         self.num_heads = num_heads
 
-        # Attention block
+                         
         self.ln_1 = norm_layer(hidden_dim)
         self.self_attention = nn.MultiheadAttention(hidden_dim, num_heads, dropout=attention_dropout, batch_first=True)
         self.dropout = nn.Dropout(dropout)
 
-        # MLP block
+                   
         self.ln_2 = norm_layer(hidden_dim)
         self.mlp = MLPBlock(hidden_dim, mlp_dim, dropout)
 
@@ -134,9 +134,9 @@ class Encoder(nn.Module):
         norm_layer: Callable[..., torch.nn.Module] = partial(nn.LayerNorm, eps=1e-6),
     ):
         super().__init__()
-        # Note that batch_size is on the first dim because
-        # we have batch_first=True in nn.MultiAttention() by default
-        self.pos_embedding = nn.Parameter(torch.empty(1, seq_length, hidden_dim).normal_(std=0.02))  # from BERT
+                                                          
+                                                                    
+        self.pos_embedding = nn.Parameter(torch.empty(1, seq_length, hidden_dim).normal_(std=0.02))             
         self.dropout = nn.Dropout(dropout)
         layers: OrderedDict[str, nn.Module] = OrderedDict()
         for i in range(num_layers):
@@ -189,7 +189,7 @@ class VisionTransformer(nn.Module):
         self.norm_layer = norm_layer
 
         if conv_stem_configs is not None:
-            # As per https://arxiv.org/abs/2106.14881
+                                                     
             seq_proj = nn.Sequential()
             prev_channels = 3
             for i, conv_stem_layer_config in enumerate(conv_stem_configs):
@@ -216,7 +216,7 @@ class VisionTransformer(nn.Module):
 
         seq_length = (image_size // patch_size) ** 2
 
-        # Add a class token
+                           
         self.class_token = nn.Parameter(torch.zeros(1, 1, hidden_dim))
         seq_length += 1
 
@@ -243,13 +243,13 @@ class VisionTransformer(nn.Module):
         self.heads = nn.Sequential(heads_layers)
 
         if isinstance(self.conv_proj, nn.Conv2d):
-            # Init the patchify stem
+                                    
             fan_in = self.conv_proj.in_channels * self.conv_proj.kernel_size[0] * self.conv_proj.kernel_size[1]
             nn.init.trunc_normal_(self.conv_proj.weight, std=math.sqrt(1 / fan_in))
             if self.conv_proj.bias is not None:
                 nn.init.zeros_(self.conv_proj.bias)
         elif self.conv_proj.conv_last is not None and isinstance(self.conv_proj.conv_last, nn.Conv2d):
-            # Init the last 1x1 conv of the conv stem
+                                                     
             nn.init.normal_(
                 self.conv_proj.conv_last.weight, mean=0.0, std=math.sqrt(2.0 / self.conv_proj.conv_last.out_channels)
             )
@@ -273,31 +273,31 @@ class VisionTransformer(nn.Module):
         n_h = h // p
         n_w = w // p
 
-        # (n, c, h, w) -> (n, hidden_dim, n_h, n_w)
+                                                   
         x = self.conv_proj(x)
-        # (n, hidden_dim, n_h, n_w) -> (n, hidden_dim, (n_h * n_w))
+                                                                   
         x = x.reshape(n, self.hidden_dim, n_h * n_w)
 
-        # (n, hidden_dim, (n_h * n_w)) -> (n, (n_h * n_w), hidden_dim)
-        # The self attention layer expects inputs in the format (N, S, E)
-        # where S is the source sequence length, N is the batch size, E is the
-        # embedding dimension
+                                                                      
+                                                                         
+                                                                              
+                             
         x = x.permute(0, 2, 1)
 
         return x
 
     def forward(self, x: torch.Tensor):
-        # Reshape and permute the input tensor
+                                              
         x = self._process_input(x)
         n = x.shape[0]
 
-        # Expand the class token to the full batch
+                                                  
         batch_class_token = self.class_token.expand(n, -1, -1)
         x = torch.cat([batch_class_token, x], dim=1)
 
         x = self.encoder(x)
 
-        # Classifier "token" as used by standard language architectures
+                                                                       
         x = x[:, 0]
 
         x = self.heads(x)
@@ -780,7 +780,7 @@ def interpolate_embeddings(
     Returns:
         OrderedDict[str, torch.Tensor]: A state dict which can be loaded into the new model.
     """
-    # Shape of pos_embedding is (1, seq_length, hidden_dim)
+                                                           
     pos_embedding = model_state["encoder.pos_embedding"]
     n, seq_length, hidden_dim = pos_embedding.shape
     if n != 1:
@@ -788,17 +788,17 @@ def interpolate_embeddings(
 
     new_seq_length = (image_size // patch_size) ** 2 + 1
 
-    # Need to interpolate the weights for the position embedding.
-    # We do this by reshaping the positions embeddings to a 2d grid, performing
-    # an interpolation in the (h, w) space and then reshaping back to a 1d grid.
+                                                                 
+                                                                               
+                                                                                
     if new_seq_length != seq_length:
-        # The class token embedding shouldn't be interpolated so we split it up.
+                                                                                
         seq_length -= 1
         new_seq_length -= 1
         pos_embedding_token = pos_embedding[:, :1, :]
         pos_embedding_img = pos_embedding[:, 1:, :]
 
-        # (1, seq_length, hidden_dim) -> (1, hidden_dim, seq_length)
+                                                                    
         pos_embedding_img = pos_embedding_img.permute(0, 2, 1)
         seq_length_1d = int(math.sqrt(seq_length))
         if seq_length_1d * seq_length_1d != seq_length:
@@ -806,12 +806,12 @@ def interpolate_embeddings(
                 f"seq_length is not a perfect square! Instead got seq_length_1d * seq_length_1d = {seq_length_1d * seq_length_1d } and seq_length = {seq_length}"
             )
 
-        # (1, hidden_dim, seq_length) -> (1, hidden_dim, seq_l_1d, seq_l_1d)
+                                                                            
         pos_embedding_img = pos_embedding_img.reshape(1, hidden_dim, seq_length_1d, seq_length_1d)
         new_seq_length_1d = image_size // patch_size
 
-        # Perform interpolation.
-        # (1, hidden_dim, seq_l_1d, seq_l_1d) -> (1, hidden_dim, new_seq_l_1d, new_seq_l_1d)
+                                
+                                                                                            
         new_pos_embedding_img = nn.functional.interpolate(
             pos_embedding_img,
             size=new_seq_length_1d,
@@ -819,10 +819,10 @@ def interpolate_embeddings(
             align_corners=True,
         )
 
-        # (1, hidden_dim, new_seq_l_1d, new_seq_l_1d) -> (1, hidden_dim, new_seq_length)
+                                                                                        
         new_pos_embedding_img = new_pos_embedding_img.reshape(1, hidden_dim, new_seq_length)
 
-        # (1, hidden_dim, new_seq_length) -> (1, new_seq_length, hidden_dim)
+                                                                            
         new_pos_embedding_img = new_pos_embedding_img.permute(0, 2, 1)
         new_pos_embedding = torch.cat([pos_embedding_token, new_pos_embedding_img], dim=1)
 
@@ -838,7 +838,7 @@ def interpolate_embeddings(
     return model_state
 
 
-# The dictionary below is internal implementation detail and will be removed in v0.15
+                                                                                     
 from ._utils import _ModelURLs
 
 

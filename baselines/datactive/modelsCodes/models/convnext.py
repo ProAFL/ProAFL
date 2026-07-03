@@ -67,7 +67,7 @@ class CNBlock(nn.Module):
 
 
 class CNBlockConfig:
-    # Stores information listed at Section 3 of the ConvNeXt paper
+                                                                  
     def __init__(
         self,
         input_channels: int,
@@ -114,7 +114,7 @@ class ConvNeXt(nn.Module):
 
         layers: List[nn.Module] = []
 
-        # Stem
+              
         firstconv_output_channels = block_setting[0].input_channels
         layers.append(
             Conv2dNormActivation(
@@ -132,16 +132,16 @@ class ConvNeXt(nn.Module):
         total_stage_blocks = sum(cnf.num_layers for cnf in block_setting)
         stage_block_id = 0
         for cnf in block_setting:
-            # Bottlenecks
+                         
             stage: List[nn.Module] = []
             for _ in range(cnf.num_layers):
-                # adjust stochastic depth probability based on the depth of the stage block
+                                                                                           
                 sd_prob = stochastic_depth_prob * stage_block_id / (total_stage_blocks - 1.0)
                 stage.append(block(cnf.input_channels, layer_scale, sd_prob))
                 stage_block_id += 1
             layers.append(nn.Sequential(*stage))
             if cnf.out_channels is not None:
-                # Downsampling
+                              
                 layers.append(
                     nn.Sequential(
                         norm_layer(cnf.input_channels),

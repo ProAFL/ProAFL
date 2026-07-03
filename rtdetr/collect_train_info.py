@@ -7,7 +7,7 @@ from rtdetr.custom_module.small_utils import read_yaml
 
 def collect_one_epoch(model:RTDETR,imgs_dir):
     results = model.predict(imgs_dir, stream=True, batch=256, device=f"cuda:{gpu_id}",verbose=False)
-    # 收集容器
+          
     predicted_box_dict = {}
     predicted_box_id = 0
     for r in results:
@@ -32,31 +32,31 @@ def collect_one_epoch(model:RTDETR,imgs_dir):
     return predicted_box_dict
 
 def main():
-    # 所有的训练集图片路径
+          
     for epoch in range(Epochs):
         print(f"Epoch:{epoch}/{Epochs}...")
         e_start_timestamp = time.time()
-        # 模型
+              
         model = RTDETR(os.path.join(models_dir,f"epoch{epoch}.pt"))
         predicted_box_dict = collect_one_epoch(model,imgs_dir)
-        print(f"推理图像数量:{len(predicted_box_dict.keys())}")
-        # 保存收集容器
+        print(f"Inference image count:{len(predicted_box_dict.keys())}")
+              
         save_dir = collect_p_box_dir
         os.makedirs(save_dir,exist_ok=True)
         save_json_file_name = f"epoch_{epoch}_predicted_bboxs.json"
         save_json_path = os.path.join(save_dir,save_json_file_name)
         with open(save_json_path, "w", encoding="utf-8") as f:
             json.dump(predicted_box_dict, f, indent=4)
-        print(f"数据保存在:{save_json_path}")
+        print(f"Data saved at:{save_json_path}")
         e_end_timestamp = time.time()
         e_cost_timestamp = e_end_timestamp - e_start_timestamp
         e_cost_time = get_cost_time(e_cost_timestamp)
-        print(f"该轮次耗时:{e_cost_time}")
+        print(f"textElapsed time:{e_cost_time}")
 
 if __name__ == "__main__":
     config = read_yaml("config.yaml")
     exp_data_root = config["exp_data_dir"]
-    dataset_name = "voc" # voc|kitti|visdrone
+    dataset_name = "voc"                     
     model_name = "rtdetr"
     gpu_id = 1
     Epochs = 100

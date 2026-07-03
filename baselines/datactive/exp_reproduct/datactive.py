@@ -11,7 +11,7 @@ from custom_module.base_data_manager import get_annotations_with_miss_json_path
 
 def aggregation(obj_list:list):
     '''
-    聚合到img level
+    textimg level
     '''
     image2loss = defaultdict(float)
     for obj in obj_list:
@@ -35,12 +35,12 @@ def calcu_afpd(ranked_results):
 
 
 def main():
-    # 把两种模式的推理结果加载出来
+          
     with open(crop_infer_results_path, 'r') as f:
         crop_list = json.load(f)
     with open(others_infer_results_path, 'r') as f:
         others_list = json.load(f)
-    # 把训练集的anno coco加载出来
+                       
     coco = COCO(annotation_path)
     imageId2boxes = defaultdict(list)
     ann_ids = coco.getAnnIds()
@@ -51,16 +51,16 @@ def main():
         imageId2boxes[instance["image_id"]].append([bbox,label])
 
     loss_func = torch.nn.CrossEntropyLoss()
-    # 计算每个裁剪出来的instance的交叉熵损失
+                              
     for i in range(len(crop_list)):
-        scores = crop_list[i]['full_scores'] # prob_list
+        scores = crop_list[i]['full_scores']            
         label = crop_list[i]['gt_category_id']
         loss = loss_func(torch.tensor([scores]), torch.tensor([label]))
         crop_list[i]['loss'] = loss.item()
     crop_list.extend(others_list)
     results = sorted(crop_list, key=lambda x: x['loss'], reverse=True)
 
-    # 得到ground truth  miss img names
+                                      
     with open(annotation_with_miss_path,"r") as f:
         annotation_with_miss = json.load(f)
     images = annotation_with_miss["images"]
@@ -76,14 +76,14 @@ def main():
     
     for i in range(len(results)):
         if int(results[i]["gt_category_id"]) == bg_clss_id:
-            # 如果是背景推理模式下的instance
+                          
             if results[i]["image_name"] in miss_img_name_list:
-                # 并且你的instance的image_name是miss img names 改一下该实例的fault_type
+                                                                             
                 results[i]["fault_type"] = fault_type["missing_fault"]
             else:
                 results[i]["fault_type"] = fault_type["no_fault"]  
     joblib.dump(results,rank_result_save_path)
-    print(f"rank结果保存在:{rank_result_save_path}")
+    print(f"rankResult saved at:{rank_result_save_path}")
     afpd = calcu_afpd(results)
     afpd = round(afpd,3)
     return afpd
@@ -100,7 +100,7 @@ if __name__ == "__main__":
             'missing_fault': 4,
     }
     exp_data_root = config["exp_data_dir"]
-    dataset_name = "voc" # voc|kitti|visdrone
+    dataset_name = "voc"                     
     
     crop_infer_results_path=f'{exp_data_root}/baselines/datactive/{dataset_name}/rank/infer/crop.json'
     others_infer_results_path=f'{exp_data_root}/baselines/datactive/{dataset_name}/rank/infer/other_objects.json'

@@ -81,9 +81,9 @@ class QuantizableSqueezeExcitation(SqueezeExcitation):
 
 
 class QuantizableInvertedResidual(InvertedResidual):
-    # TODO https://github.com/pytorch/vision/pull/4232#pullrequestreview-730461659
+                                                                                  
     def __init__(self, *args: Any, **kwargs: Any) -> None:
-        super().__init__(se_layer=QuantizableSqueezeExcitation, *args, **kwargs)  # type: ignore[misc]
+        super().__init__(se_layer=QuantizableSqueezeExcitation, *args, **kwargs)                      
         self.skip_add = nn.quantized.FloatFunctional()
 
     def forward(self, x: Tensor) -> Tensor:
@@ -140,10 +140,10 @@ def _mobilenet_v3_model(
     _replace_relu(model)
 
     if quantize:
-        # Instead of quantizing the model and then loading the quantized weights we take a different approach.
-        # We prepare the QAT model, load the QAT weights from training and then convert it.
-        # This is done to avoid extremely low accuracies observed on the specific model. This is rather a workaround
-        # for an unresolved bug on the eager quantization API detailed at: https://github.com/pytorch/vision/issues/5890
+                                                                                                              
+                                                                                           
+                                                                                                                    
+                                                                                                                        
         model.fuse_model(is_qat=True)
         model.qconfig = torch.ao.quantization.get_default_qat_qconfig(backend)
         torch.ao.quantization.prepare_qat(model, inplace=True)
@@ -234,9 +234,9 @@ def mobilenet_v3_large(
     return _mobilenet_v3_model(inverted_residual_setting, last_channel, weights, progress, quantize, **kwargs)
 
 
-# The dictionary below is internal implementation detail and will be removed in v0.15
+                                                                                     
 from .._utils import _ModelURLs
-from ..mobilenetv3 import model_urls  # noqa: F401
+from ..mobilenetv3 import model_urls              
 
 
 quant_model_urls = _ModelURLs(

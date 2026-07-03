@@ -71,12 +71,12 @@ class SqueezeNet(nn.Module):
                 Fire(512, 64, 256, 256),
             )
         else:
-            # FIXME: Is this needed? SqueezeNet should only be called from the
-            # FIXME: squeezenet1_x() functions
-            # FIXME: This checking is not done for the other models
+                                                                              
+                                              
+                                                                   
             raise ValueError(f"Unsupported SqueezeNet version {version}: 1_0 or 1_1 expected")
 
-        # Final convolution is initialized differently from the rest
+                                                                    
         final_conv = nn.Conv2d(512, self.num_classes, kernel_size=1)
         self.classifier = nn.Sequential(
             nn.Dropout(p=dropout), final_conv, nn.ReLU(inplace=True), nn.AdaptiveAvgPool2d((1, 1))
@@ -217,7 +217,7 @@ def squeezenet1_1(
     return _squeezenet("1_1", weights, progress, **kwargs)
 
 
-# The dictionary below is internal implementation detail and will be removed in v0.15
+                                                                                     
 from ._utils import _ModelURLs
 
 

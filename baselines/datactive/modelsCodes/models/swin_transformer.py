@@ -57,14 +57,14 @@ class PatchMerging(nn.Module):
         """
         x = _patch_merging_pad(x)
 
-        x0 = x[..., 0::2, 0::2, :]  # ... H/2 W/2 C
-        x1 = x[..., 1::2, 0::2, :]  # ... H/2 W/2 C
-        x2 = x[..., 0::2, 1::2, :]  # ... H/2 W/2 C
-        x3 = x[..., 1::2, 1::2, :]  # ... H/2 W/2 C
-        x = torch.cat([x0, x1, x2, x3], -1)  # ... H/2 W/2 4*C
+        x0 = x[..., 0::2, 0::2, :]                 
+        x1 = x[..., 1::2, 0::2, :]                 
+        x2 = x[..., 0::2, 1::2, :]                 
+        x3 = x[..., 1::2, 1::2, :]                 
+        x = torch.cat([x0, x1, x2, x3], -1)                   
 
         x = self.norm(x)
-        x = self.reduction(x)  # ... H/2 W/2 2*C
+        x = self.reduction(x)                   
         return x
 
 
@@ -100,38 +100,38 @@ def shifted_window_attention(
         Tensor[N, H, W, C]: The output tensor after shifted window attention.
     """
     B, H, W, C = input.shape
-    # pad feature maps to multiples of window size
+                                                  
     pad_r = (window_size[1] - W % window_size[1]) % window_size[1]
     pad_b = (window_size[0] - H % window_size[0]) % window_size[0]
     x = F.pad(input, (0, 0, 0, pad_r, 0, pad_b))
     _, pad_H, pad_W, _ = x.shape
 
-    # If window size is larger than feature size, there is no need to shift window
+                                                                                  
     if window_size[0] >= pad_H:
         shift_size[0] = 0
     if window_size[1] >= pad_W:
         shift_size[1] = 0
 
-    # cyclic shift
+                  
     if sum(shift_size) > 0:
         x = torch.roll(x, shifts=(-shift_size[0], -shift_size[1]), dims=(1, 2))
 
-    # partition windows
+                       
     num_windows = (pad_H // window_size[0]) * (pad_W // window_size[1])
     x = x.view(B, pad_H // window_size[0], window_size[0], pad_W // window_size[1], window_size[1], C)
-    x = x.permute(0, 1, 3, 2, 4, 5).reshape(B * num_windows, window_size[0] * window_size[1], C)  # B*nW, Ws*Ws, C
+    x = x.permute(0, 1, 3, 2, 4, 5).reshape(B * num_windows, window_size[0] * window_size[1], C)                  
 
-    # multi-head attention
+                          
     qkv = F.linear(x, qkv_weight, qkv_bias)
     qkv = qkv.reshape(x.size(0), x.size(1), 3, num_heads, C // num_heads).permute(2, 0, 3, 1, 4)
     q, k, v = qkv[0], qkv[1], qkv[2]
     q = q * (C // num_heads) ** -0.5
     attn = q.matmul(k.transpose(-2, -1))
-    # add relative position bias
+                                
     attn = attn + relative_position_bias
 
     if sum(shift_size) > 0:
-        # generate attention mask
+                                 
         attn_mask = x.new_zeros((pad_H, pad_W))
         h_slices = ((0, -window_size[0]), (-window_size[0], -shift_size[0]), (-shift_size[0], None))
         w_slices = ((0, -window_size[1]), (-window_size[1], -shift_size[1]), (-shift_size[1], None))
@@ -155,15 +155,15 @@ def shifted_window_attention(
     x = F.linear(x, proj_weight, proj_bias)
     x = F.dropout(x, p=dropout)
 
-    # reverse windows
+                     
     x = x.view(B, pad_H // window_size[0], pad_W // window_size[1], window_size[0], window_size[1], C)
     x = x.permute(0, 1, 3, 2, 4, 5).reshape(B, pad_H, pad_W, C)
 
-    # reverse cyclic shift
+                          
     if sum(shift_size) > 0:
         x = torch.roll(x, shifts=(shift_size[0], shift_size[1]), dims=(1, 2))
 
-    # unpad features
+                    
     x = x[:, :H, :W, :].contiguous()
     return x
 
@@ -199,22 +199,22 @@ class ShiftedWindowAttention(nn.Module):
         self.qkv = nn.Linear(dim, dim * 3, bias=qkv_bias)
         self.proj = nn.Linear(dim, dim, bias=proj_bias)
 
-        # define a parameter table of relative position bias
+                                                            
         self.relative_position_bias_table = nn.Parameter(
             torch.zeros((2 * window_size[0] - 1) * (2 * window_size[1] - 1), num_heads)
-        )  # 2*Wh-1 * 2*Ww-1, nH
+        )                       
 
-        # get pair-wise relative position index for each token inside the window
+                                                                                
         coords_h = torch.arange(self.window_size[0])
         coords_w = torch.arange(self.window_size[1])
-        coords = torch.stack(torch.meshgrid(coords_h, coords_w, indexing="ij"))  # 2, Wh, Ww
-        coords_flatten = torch.flatten(coords, 1)  # 2, Wh*Ww
-        relative_coords = coords_flatten[:, :, None] - coords_flatten[:, None, :]  # 2, Wh*Ww, Wh*Ww
-        relative_coords = relative_coords.permute(1, 2, 0).contiguous()  # Wh*Ww, Wh*Ww, 2
-        relative_coords[:, :, 0] += self.window_size[0] - 1  # shift to start from 0
+        coords = torch.stack(torch.meshgrid(coords_h, coords_w, indexing="ij"))             
+        coords_flatten = torch.flatten(coords, 1)            
+        relative_coords = coords_flatten[:, :, None] - coords_flatten[:, None, :]                   
+        relative_coords = relative_coords.permute(1, 2, 0).contiguous()                   
+        relative_coords[:, :, 0] += self.window_size[0] - 1                         
         relative_coords[:, :, 1] += self.window_size[1] - 1
         relative_coords[:, :, 0] *= 2 * self.window_size[1] - 1
-        relative_position_index = relative_coords.sum(-1).view(-1)  # Wh*Ww*Wh*Ww
+        relative_position_index = relative_coords.sum(-1).view(-1)               
         self.register_buffer("relative_position_index", relative_position_index)
 
         nn.init.trunc_normal_(self.relative_position_bias_table, std=0.02)
@@ -228,7 +228,7 @@ class ShiftedWindowAttention(nn.Module):
         """
 
         N = self.window_size[0] * self.window_size[1]
-        relative_position_bias = self.relative_position_bias_table[self.relative_position_index]  # type: ignore[index]
+        relative_position_bias = self.relative_position_bias_table[self.relative_position_index]                       
         relative_position_bias = relative_position_bias.view(N, N, -1)
         relative_position_bias = relative_position_bias.permute(2, 0, 1).contiguous().unsqueeze(0)
 
@@ -349,7 +349,7 @@ class SwinTransformer(nn.Module):
             norm_layer = partial(nn.LayerNorm, eps=1e-5)
 
         layers: List[nn.Module] = []
-        # split image into non-overlapping patches
+                                                  
         layers.append(
             nn.Sequential(
                 nn.Conv2d(
@@ -362,12 +362,12 @@ class SwinTransformer(nn.Module):
 
         total_stage_blocks = sum(depths)
         stage_block_id = 0
-        # build SwinTransformer blocks
+                                      
         for i_stage in range(len(depths)):
             stage: List[nn.Module] = []
             dim = embed_dim * 2 ** i_stage
             for i_layer in range(depths[i_stage]):
-                # adjust stochastic depth probability based on the depth of the stage block
+                                                                                           
                 sd_prob = stochastic_depth_prob * float(stage_block_id) / (total_stage_blocks - 1)
                 stage.append(
                     block(
@@ -384,7 +384,7 @@ class SwinTransformer(nn.Module):
                 )
                 stage_block_id += 1
             layers.append(nn.Sequential(*stage))
-            # add patch merging layer
+                                     
             if i_stage < (len(depths) - 1):
                 layers.append(PatchMerging(dim, norm_layer))
         self.features = nn.Sequential(*layers)

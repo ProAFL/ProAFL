@@ -61,7 +61,7 @@ Parameter explanation:
 
 ## Results
 
-*Datactive* improves the performance of the model：
+*Datactive* improves the performance of the model:
 
 | Map@0.5    | Method-    | Test Set |         |           |         |            |         |         |          |          |
 |------------|------------|----------|---------|-----------|---------|------------|---------|---------|----------|----------|
@@ -96,32 +96,32 @@ Parameter explanation:
 
 
 Some `demo.py` results on COCO are shown below :
-<div><table frame=void>	<!--用了<div>进行封装-->
+<div><table frame=void>	<!--text<div>text-->
 	<tr>
-        <td><div><center>	<!--每个格子内是图片加标题-->
+        <td><div><center>	<!--Each grid cell contains an image and a title-->
         	<img src="./pictures/35.png"
-                 height="120"/>	<!--高度设置-->
-        	<br>	<!--换行-->
+                 height="120"/>	<!--height setting-->
+        	<br>	<!--line wrap-->
         </center></div></td>    
-     	<td><div><center>	<!--第二张图片-->
+     	<td><div><center>	<!--text-->
     		<img src="./pictures/67.png"
                  height="120"/>	
     		<br>
         </center></div></td>
-        <td><div><center>	<!--每个格子内是图片加标题-->
+        <td><div><center>	<!--Each grid cell contains an image and a title-->
         	<img src="./pictures/111.png"
-                 height="120"/>	<!--高度设置-->
-        	<br>	<!--换行-->
+                 height="120"/>	<!--height setting-->
+        	<br>	<!--line wrap-->
         </center></div></td> 
-        <td><div><center>	<!--每个格子内是图片加标题-->
+        <td><div><center>	<!--Each grid cell contains an image and a title-->
         	<img src="./pictures/123.png"
-                 height="120"/>	<!--高度设置-->
-        	<br>	<!--换行-->
+                 height="120"/>	<!--height setting-->
+        	<br>	<!--line wrap-->
         </center></div></td> 
-        <td><div><center>	<!--每个格子内是图片加标题-->
+        <td><div><center>	<!--Each grid cell contains an image and a title-->
         	<img src="./pictures/141.png"
-                 height="120"/>	<!--高度设置-->
-        	<br>	<!--换行-->
+                 height="120"/>	<!--height setting-->
+        	<br>	<!--line wrap-->
         </center></div></td> 
 	</tr>
 </table></div>

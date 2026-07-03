@@ -26,13 +26,13 @@ import matplotlib.pyplot as plt
 import cv2
 
 def draw_bbox(imgfilepath,error_anno,correct_anno,cls_id_to_name:dict,isfault,save_path):
-    # 读取图像（注意 cv2 是 BGR，需要转 RGB）
+                                                           
     img = cv2.imread(imgfilepath)
     img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
     fig, axes = plt.subplots(1, 2, figsize=(12, 6))
     
 
-    # 显示correct的标注框
+                                   
     ax1 = axes[0]
     ax1.imshow(img)
     ax1.set_title('Correct Annotation', fontsize=14, color='green')
@@ -43,15 +43,15 @@ def draw_bbox(imgfilepath,error_anno,correct_anno,cls_id_to_name:dict,isfault,sa
         x1, y1, x2, y2 = int(x), int(y), int(x + w), int(y + h)
         class_id = _anno['category_id']
         class_name = cls_id_to_name[class_id]
-        # 绘制边界框
+                           
         rect = plt.Rectangle((x1, y1), w, h, linewidth=2, edgecolor="green", facecolor='none')
         ax1.add_patch(rect)
-        # 添加类别标签
+                         
         ax1.text(x1, y1 - 5, f'{class_name}', fontsize=10, color="green", 
                 bbox=dict(boxstyle='round,pad=0.2', facecolor='white', alpha=0.8))
         ax1.axis('off')
 
-    # 显示error标注框
+                                 
     ax2 = axes[1]
     ax2.imshow(img)
     ax2.set_title('Error Annotation', fontsize=14, color='red')
@@ -61,10 +61,10 @@ def draw_bbox(imgfilepath,error_anno,correct_anno,cls_id_to_name:dict,isfault,sa
         x1, y1, x2, y2 = int(x), int(y), int(x + w), int(y + h)
         class_id = error_anno['category_id']
         class_name = cls_id_to_name[class_id]
-        # 绘制边界框
+                           
         rect = plt.Rectangle((x1, y1), w, h, linewidth=2, edgecolor="red", facecolor='none')
         ax2.add_patch(rect)
-        # 添加类别标签
+                         
         ax2.text(x1, y1 - 5, f'{class_name}', fontsize=10, color="red", 
                 bbox=dict(boxstyle='round,pad=0.2', facecolor='white', alpha=0.8))
         ax2.axis('off')
@@ -72,13 +72,13 @@ def draw_bbox(imgfilepath,error_anno,correct_anno,cls_id_to_name:dict,isfault,sa
     plt.savefig(save_path)
 
 def draw_bbox_for_missFault(imgfilepath,correct_annos,missed_annoidset,cls_id_to_name:dict,save_path):
-    # 读取图像（注意 cv2 是 BGR，需要转 RGB）
+                                                           
     img = cv2.imread(imgfilepath)
     img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
     fig, axes = plt.subplots(1, 2, figsize=(12, 6))
     
 
-    # 显示correct的标注框
+                                   
     ax1 = axes[0]
     ax1.imshow(img)
     ax1.set_title('Correct Annotation', fontsize=14, color='green')
@@ -89,15 +89,15 @@ def draw_bbox_for_missFault(imgfilepath,correct_annos,missed_annoidset,cls_id_to
         x1, y1, x2, y2 = int(x), int(y), int(x + w), int(y + h)
         class_id = _anno['category_id']
         class_name = cls_id_to_name[class_id]
-        # 绘制边界框
+                           
         rect = plt.Rectangle((x1, y1), w, h, linewidth=2, edgecolor="green", facecolor='none')
         ax1.add_patch(rect)
-        # 添加类别标签
+                         
         ax1.text(x1, y1 - 5, f'{class_name}', fontsize=10, color="green", 
                 bbox=dict(boxstyle='round,pad=0.2', facecolor='white', alpha=0.8))
         ax1.axis('off')
 
-    # 显示error标注框
+                                 
     ax2 = axes[1]
     ax2.imshow(img)
     ax2.set_title('Error Annotation', fontsize=14, color='red')
@@ -109,10 +109,10 @@ def draw_bbox_for_missFault(imgfilepath,correct_annos,missed_annoidset,cls_id_to
             x1, y1, x2, y2 = int(x), int(y), int(x + w), int(y + h)
             class_id = _anno['category_id']
             class_name = cls_id_to_name[class_id]
-            # 绘制边界框
+                               
             rect = plt.Rectangle((x1, y1), w, h, linewidth=2,linestyle='--',edgecolor="red", facecolor='none')
             ax2.add_patch(rect)
-            # 添加类别标签
+                             
             ax2.text(x1, y1 - 5, f'{class_name}', fontsize=10, color="red", 
                     bbox=dict(boxstyle='round,pad=0.2', facecolor='white', alpha=0.8))
             ax2.axis('off')
@@ -121,10 +121,10 @@ def draw_bbox_for_missFault(imgfilepath,correct_annos,missed_annoidset,cls_id_to
             x1, y1, x2, y2 = int(x), int(y), int(x + w), int(y + h)
             class_id = _anno['category_id']
             class_name = cls_id_to_name[class_id]
-            # 绘制边界框
+                               
             rect = plt.Rectangle((x1, y1), w, h, linewidth=2, edgecolor="green", facecolor='none')
             ax2.add_patch(rect)
-            # 添加类别标签
+                             
             ax2.text(x1, y1 - 5, f'{class_name}', fontsize=10, color="green", 
                     bbox=dict(boxstyle='round,pad=0.2', facecolor='white', alpha=0.8))
             ax2.axis('off')
@@ -143,14 +143,14 @@ def _analyse_miss_fault(ours_rank):
             hard_img_list.append(idd)
     hard_img = hard_img_list[5]
 
-    # 数值分析(数)
+                
     rank_res = img_rank_2(img_to_nomatched_pboxs_json_path)
     ranked_imgs = rank_res["ranked_imgs"]
     X =  rank_res["feature_data"]
     feature_names = rank_res["feature_names"]
     idx = ranked_imgs.index(hard_img)
     feature =  X[idx]
-    rows_to_use = np.delete(X, idx, axis=0)  # 删除指定行（不会改变原数据）
+    rows_to_use = np.delete(X, idx, axis=0)                                                         
     mean_values = np.mean(rows_to_use, axis=0)
     print(f"imgname: {hard_img}")
     for i in range(len(feature_names)):
@@ -160,9 +160,9 @@ def _analyse_miss_fault(ours_rank):
         print(f"{feature_name}|cur_val:{cur_val}|mean:{mean_val}")
 
 
-    # 可视化(型)
+                         
     imgfilepath = os.path.join(imgs_dir,hard_img)
-    # 获得该图像所有正确annos
+               
     correct_annos = []
     imgname_to_annoids = get_img_name_to_ann_ids(anno_correct)
     correct_annoids = imgname_to_annoids[hard_img]
@@ -173,7 +173,7 @@ def _analyse_miss_fault(ours_rank):
     imgname_to_annoids = get_img_name_to_ann_ids(anno_error)
     error_annoids = imgname_to_annoids[hard_img]
     missed_anno_id_set = set(correct_annoids) - set(error_annoids)
-    #  绘制出bbox on img
+                         
     cls_id_to_name = get_cls_id_to_name(anno_error)
     save_path = os.path.join(exp_data_root_dir,"temp","bbox_img","missfault.png")
     draw_bbox_for_missFault(imgfilepath,correct_annos,missed_anno_id_set,cls_id_to_name,save_path)
@@ -192,7 +192,7 @@ def _analyse(ours_rank,fault_type):
         if idd in fault_annoid_set:
             hard_idd_list.append(idd)
 
-    # 拿到一个max hard idd(imgname|annoid)
+                                      
     hard_idd = hard_idd_list[0]
     gid_to_annoid = get_gid_to_anno_id(g_boxes_json,anno_error)
     annoid_to_gid = dict(zip(gid_to_annoid.values(), gid_to_annoid.keys()))
@@ -205,7 +205,7 @@ def _analyse(ours_rank,fault_type):
     feature_signs = rank_res["sign_list"]
     idx = ranked_gids.index(hard_gid)
     feature =  X[idx]
-    rows_to_use = np.delete(X, idx, axis=0)  # 删除指定行（不会改变原数据）
+    rows_to_use = np.delete(X, idx, axis=0)                                                         
     mean_values = np.mean(rows_to_use, axis=0)
     print(f"gid: {hard_gid}")
     print(f"annoid: {hard_idd}")
@@ -217,7 +217,7 @@ def _analyse(ours_rank,fault_type):
         print(f"{feature_name}|{feature_sign}|cur_val:{cur_val}|mean:{mean_val}")
 
 
-    # 找到对应的imgname
+                 
     annoid_to_imgname = get_annoid_to_imgname(anno_error)
     imgname = annoid_to_imgname[hard_idd]
     imgfilepath = os.path.join(imgs_dir,imgname)
@@ -235,12 +235,12 @@ def _analyse(ours_rank,fault_type):
         for annoid in annoids:
             anno = annoid_to_anno[annoid]
             correct_annos.append(anno)
-        correct_anno = correct_annos # 绘制全部的correct annos
+        correct_anno = correct_annos                    
     else:
         annoid_to_anno = get_annoId_to_anno(anno_correct)
-        correct_anno = annoid_to_anno[hard_idd] # 绘制该correct anno
+        correct_anno = annoid_to_anno[hard_idd]                   
 
-    #  绘制出bbox on img
+                         
     cls_id_to_name = get_cls_id_to_name(anno_error)
     save_path = os.path.join(exp_data_root_dir,"temp","bbox_img","1.png")
     draw_bbox(imgfilepath,error_anno,correct_anno,cls_id_to_name,isfault=True,save_path=save_path)
@@ -249,13 +249,13 @@ def _analyse(ours_rank,fault_type):
 def main():
     ours_rank = joblib.load(ours_rank_path)
     converted_ours_rank = conver_ours_rank(ours_rank, g_boxes_json, anno_error)
-    # fault_type = "class_fault" # class_fault|loc_fault|redun_fault|miss_fault|clean
-    # _analyse(converted_ours_rank,fault_type)
+                                                                                     
+                                              
     _analyse_miss_fault(converted_ours_rank)
 
 
 if __name__ == "__main__":
-    dataset_name = "VOC2012" # VOC2012|KITTI_8|VisDrone
+    dataset_name = "VOC2012"                           
     model_name = "YOLOv7"
 
     gt_json_path = get_collected_gt_box_json_path(dataset_name)

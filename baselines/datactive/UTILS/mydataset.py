@@ -17,7 +17,7 @@ fault_type_dict = parameters().fault_type
 
 class classificationDataSet(data.Dataset):
     def __init__(self, root, transforms=None, txt_name: str = "train.txt", mask_type='other objects',
-                 train_type='clean', dirty_path='', datatype: str = 'VOC', run_type='test'):  # run_type 仅用来指定是测试集还是训练集
+                 train_type='clean', dirty_path='', datatype: str = 'VOC', run_type='test'):                                                                       
         assert mask_type in ['other objects', 'all backgrounds',
                              'crop'], "mask_type must be in ['other objects', 'all backgrounds', 'crop']"
         assert train_type in ['clean', 'dirty'], "train_type must be in ['clean', 'dirty']"
@@ -37,7 +37,7 @@ class classificationDataSet(data.Dataset):
             class_num = 11
             self.img_root = os.path.join(self.root, "images")
         elif datatype == 'COCO':
-            class_num = 80  # 仅用来添加bkg，所以不用区分extra class
+            class_num = 80                           
             self.img_root = os.path.join(self.root, "val2017")
         elif datatype == 'KITTI':
             class_num = 8
@@ -51,7 +51,7 @@ class classificationDataSet(data.Dataset):
                 xml_list = [os.path.join(self.annotations_root, line.strip() + ".xml")
                             for line in f.readlines() if len(line.strip()) > 0]
             self.xml_list = []
-            # check file
+                        
             for xml_path in xml_list:
                 assert os.path.exists(xml_path), "xml file not found"
                 with open(xml_path, "r") as f:
@@ -62,14 +62,14 @@ class classificationDataSet(data.Dataset):
                     print(f"INFO: no objects in {xml_path}, skip this annotation file.")
                     continue
                 self.xml_list.append(xml_path)
-            # read class_indict
+                               
             json_file = os.path.join(self.root, 'pascal_voc_classes.json')
             assert os.path.exists(json_file), 'json file not found'
             with open(json_file, 'r') as fp:
                 self.class_dict = json.load(fp)
 
             self.imageid2boxes = {}
-            # split into instances
+                                  
             self.instances_list = []
             for xml_path in self.xml_list:
                 with open(xml_path, "r") as f:
@@ -88,8 +88,8 @@ class classificationDataSet(data.Dataset):
             len_before = len(self.instances_list)
             if self.mask_type == 'all backgrounds' or self.mask_type == 'other objects':
                 print('INFO: all backgrounds or other objects')
-                # random select 1000 instances
-                # need revised
+                                              
+                              
                 self.background_instances_list = random.sample(self.instances_list,
                                                                int(len(self.instances_list) / class_num))
 
@@ -142,8 +142,8 @@ class classificationDataSet(data.Dataset):
             len_before = len(self.instances_list)
             if self.mask_type == 'all backgrounds' or self.mask_type == 'other objects':
                 print('INFO: all backgrounds or other objects')
-                # random select 1000 instances
-                # need revised
+                                              
+                              
                 self.background_instances_list = random.sample(self.instances_list,
                                                                int(len(self.instances_list) / class_num))
 
@@ -162,10 +162,10 @@ class classificationDataSet(data.Dataset):
             if datatype == 'VisDrone':
                 random.seed(2023)
 
-                # random shuffle
+                                
                 random.shuffle(self.instances_list)
 
-                # sample 1/7 for
+                                
                 if self.mask_type == 'crop':
                     self.instances_list = self.instances_list[:int(len(self.instances_list) / 10)]
                 elif self.mask_type == 'other objects':
@@ -185,7 +185,7 @@ class classificationDataSet(data.Dataset):
             with open(self.instances_root, 'r') as f:
                 self.instances_list = json.load(f)
 
-            # make boxes be int
+                               
             for instance in self.instances_list:
                 instance["boxes"] = [int(i) for i in instance["boxes"]]
                 if instance["boxes"][0] == instance["boxes"][2]:
@@ -201,8 +201,8 @@ class classificationDataSet(data.Dataset):
             len_before = len(self.instances_list)
             if self.mask_type == 'all backgrounds' or self.mask_type == 'other objects':
                 print('INFO: all backgrounds or other objects')
-                # random select 1000 instances
-                # need revised
+                                              
+                              
                 self.background_instances_list = random.sample(self.instances_list,
                                                                int(len(self.instances_list) / class_num))
 
@@ -221,11 +221,11 @@ class classificationDataSet(data.Dataset):
 
 
 
-        elif train_type == 'dirty':  # 这里处理方式是一致的
+        elif train_type == 'dirty':        
             with open(self.dirtypath, 'r') as f:
                 self.dirtylist = json.load(f)
             if datatype == 'COCO' or datatype == 'KITTI':
-                # make boxes be int
+                                   
                 for instance in self.dirtylist:
                     instance["boxes"] = [int(i) for i in instance["boxes"]]
                     if instance["boxes"][0] == instance["boxes"][2]:
@@ -244,7 +244,7 @@ class classificationDataSet(data.Dataset):
             len_before = len(self.instances_list)
             if self.mask_type == 'all backgrounds' or self.mask_type == 'other objects':
                 print('INFO: all backgrounds or other objects')
-                # random select 1000 instances
+                                              
                 self.background_instances_list = random.sample(self.instances_list,
                                                                int(len(self.instances_list) / class_num))
 
@@ -264,10 +264,10 @@ class classificationDataSet(data.Dataset):
             if datatype == 'VisDrone':
                 random.seed(2023)
 
-                # random shuffle
+                                
                 random.shuffle(self.instances_list)
 
-                # sample 1/7 for train
+                                      
                 if self.mask_type == 'crop':
                     self.instances_list = self.instances_list[:int(len(self.instances_list) / 10)]
                 elif self.mask_type == 'other objects':
@@ -304,7 +304,7 @@ class classificationDataSet(data.Dataset):
                     img_name = instance["image_name"]
 
                 in_boxes_list = []
-                # get img boxes except current box
+                                                  
 
                 img_need = None
                 if label != 0:
@@ -316,9 +316,9 @@ class classificationDataSet(data.Dataset):
 
                     if box == boxes and label != 0:
                         continue
-                    # Gaussian blur the box area of the image
+                                                             
 
-                    # if box belong to the part of boxes
+                                                        
                     if box[0] > boxes[0] and box[1] > boxes[1] and box[2] < boxes[2] and box[3] < boxes[3]:
                         in_boxes_list.append(box)
                     else:
@@ -365,7 +365,7 @@ class classificationDataSet(data.Dataset):
             boxes = [int(instance["bbox"]["xmin"]), int(instance["bbox"]["ymin"]),
                      int(instance["bbox"]["xmax"]), int(instance["bbox"]["ymax"])]
             in_boxes_list = []
-            # get img boxes except current box
+                                              
             label = instance["category_id"]
             img_need = None
             if label != 0:
@@ -374,9 +374,9 @@ class classificationDataSet(data.Dataset):
                 box = [int(box["xmin"]), int(box["ymin"]), int(box["xmax"]), int(box["ymax"])]
                 if box == boxes and label != 0:
                     continue
-                # Gaussian blur the box area of the image
+                                                         
 
-                # if box belong to the part of boxes
+                                                    
                 if box[0] > boxes[0] and box[1] > boxes[1] and box[2] < boxes[2] and box[3] < boxes[3]:
                     in_boxes_list.append(box)
             img = self.gaussian_blur(img, [0, 0, img.size[0], img.size[1]])
@@ -404,34 +404,34 @@ class classificationDataSet(data.Dataset):
                     boxes = [int(x) for x in instance["boxes"]]
                     label = instance["labels"]
 
-            # Crop out the boxes part of the image
+                                                  
             img = img.crop(boxes)
-            #
+             
 
 
-        # if idx == 3952:
-        # for box in self.imageid2boxes[instance["image_name"]]:
-        #     if box == instance["boxes"]:
-        #         continue
-        #     # box = [int(box["xmin"]), int(box["ymin"]), int(box["xmax"]), int(box["ymax"])]
-        #     plt.gca().add_patch(
-        #         plt.Rectangle((box[0], box[1]), box[2] - box[0], box[3] - box[1], fill=False, edgecolor='red',
-        #                       linewidth=3))  # xmin, ymin, w, h
-        # plt.gca().add_patch(
-        #     plt.Rectangle((boxes[0], boxes[1]), boxes[2] - boxes[0], boxes[3] - boxes[1], fill=False, edgecolor='green',
-        #                   linewidth=3))
-        # #
-        # print(instance)
-        # plt.imshow(img)
-        # plt.show()
-        #
+                         
+                                                                
+                                          
+                          
+                                                                                              
+                                  
+                                                                                                                
+                                                                 
+                              
+                                                                                                                          
+                                         
+           
+                         
+                         
+                    
+         
         img = img.resize((224, 224))
-        # plt.imshow(img)
-        # plt.show()
+                         
+                    
 
-        # convert everything into
-        #
-        # torch.Tensor
+                                 
+         
+                      
         if self.transforms is not None:
             img = self.transforms(img)
         label = torch.tensor(label)
@@ -455,7 +455,7 @@ class classificationDataSet(data.Dataset):
                 result[child.tag].append(child_result[child.tag])
         return {xml.tag: result}
 
-    # collate_fn needs for batch
+                                
     @staticmethod
     def collate_fn(batch):
         return tuple(zip(*batch))
@@ -473,7 +473,7 @@ class inference_VOCGt_classificationDataSet(data.Dataset):
             xml_list = [os.path.join(self.annotations_root, line.strip() + ".xml")
                         for line in f.readlines() if len(line.strip()) > 0]
         self.xml_list = []
-        # check file
+                    
         for xml_path in xml_list:
             assert os.path.exists(xml_path), "xml file not found"
             with open(xml_path, "r") as f:
@@ -484,13 +484,13 @@ class inference_VOCGt_classificationDataSet(data.Dataset):
                 print(f"INFO: no objects in {xml_path}, skip this annotation file.")
                 continue
             self.xml_list.append(xml_path)
-        # read class_indict
+                           
         json_file = os.path.join(self.root, 'pascal_voc_classes.json')
         assert os.path.exists(json_file), 'json file not found'
         with open(json_file, 'r') as fp:
             self.class_dict = json.load(fp)
 
-        # split into instances
+                              
         self.instances_list = []
         for xml_path in self.xml_list:
             with open(xml_path, "r") as f:
@@ -517,29 +517,29 @@ class inference_VOCGt_classificationDataSet(data.Dataset):
         target["category_id"] = torch.tensor(instance["category_id"])
         target["boxes"] = torch.tensor(boxes)
 
-        # # # draw img with bounding box
-        # plt.gca().add_patch(
-        #     plt.Rectangle((boxes[0], boxes[1]), boxes[2] - boxes[0], boxes[3] - boxes[1], fill=False, edgecolor='red',
-        #                   linewidth=3)) # xmin, ymin, w, h
-        # # plt original image
-        # plt.imshow(img)
-        # plt.show()
+                                        
+                              
+                                                                                                                        
+                                                            
+                              
+                         
+                    
 
-        # Crop out the boxes part of the image
+                                              
         img = img.crop(boxes)
 
-        # # plt cropped image
-        # plt.imshow(img)
-        # plt.show()
+                             
+                         
+                    
 
-        # Resize the image to 224x224
+                                     
         img = img.resize((224, 224))
 
-        # # plt resized image
-        # plt.imshow(img)
-        # plt.show()
+                             
+                         
+                    
 
-        # convert everything into a torch.Tensor
+                                                
         if self.transforms is not None:
             img = self.transforms(img)
 
@@ -562,7 +562,7 @@ class inference_VOCGt_classificationDataSet(data.Dataset):
                 result[child.tag].append(child_result[child.tag])
         return {xml.tag: result}
 
-    # collate_fn needs for batch
+                                
     @staticmethod
     def collate_fn(batch):
         return tuple(zip(*batch))
@@ -579,7 +579,7 @@ class inference_VOCinf_classificationDataSet(data.Dataset):
         full_inference_results = json.load(open(inferences_root, "r"))
 
         self.inference_results = []
-        # get inference results score > m_t
+                                           
         params = parameters()
         for inference_result in full_inference_results:
             if inference_result["score"] > params.m_t:
@@ -599,29 +599,29 @@ class inference_VOCinf_classificationDataSet(data.Dataset):
         target["category_id"] = torch.tensor(instance["category_id"])
         target["boxes"] = torch.tensor(boxes)
 
-        # # draw img with bounding box
-        # plt.gca().add_patch(
-        #     plt.Rectangle((boxes[0], boxes[1]), boxes[2] - boxes[0], boxes[3] - boxes[1], fill=False, edgecolor='red',
-        #                   linewidth=3)) # xmin, ymin, w, h
-        # # plt original image
-        # plt.imshow(img)
-        # plt.show()
+                                      
+                              
+                                                                                                                        
+                                                            
+                              
+                         
+                    
 
-        # Crop out the boxes part of the image
+                                              
         img = img.crop(boxes)
 
-        # plt cropped image
-        # plt.imshow(img)
-        # plt.show()
+                           
+                         
+                    
 
-        # Resize the image to 224x224
+                                     
         img = img.resize((224, 224))
 
-        # plt resized image
-        # plt.imshow(img)
-        # plt.show()
+                           
+                         
+                    
 
-        # convert everything into a torch.Tensor
+                                                
         if self.transforms is not None:
             img = self.transforms(img)
 
@@ -644,7 +644,7 @@ class inference_VOCinf_classificationDataSet(data.Dataset):
                 result[child.tag].append(child_result[child.tag])
         return {xml.tag: result}
 
-    # collate_fn needs for batch
+                                
     @staticmethod
     def collate_fn(batch):
         return tuple(zip(*batch))
@@ -666,10 +666,10 @@ class inference_VOCgtfault_classificationDataSet(data.Dataset):
             path = "training/image_2"
         self.img_root = os.path.join(self.root, path)
         self.mask_type = mask_type
-        # falut_type without space
+                                  
         fault_gt = json.load(open(dirty_path, "r"))
         self.fault_gt_instances = []
-        # if fault_type == 'missing fault' then remove it
+                                                         
         print(f"INFO: fault type is {fault_type}")
         print(f"INFO: {len(fault_gt)} instances pre-loaded.")
 
@@ -709,10 +709,10 @@ class inference_VOCgtfault_classificationDataSet(data.Dataset):
                     bkg_fault_gt_instances.append(item)
                     bkg_image_names.append(item["image_name"])
 
-            # self.fault_gt_instances = bkg_fault_gt_instances
-            # merge fault_gt_instances and bkg_fault_gt_instances
-            # self.fault_gt_instances.extend(bkg_fault_gt_instances)
-            self.fault_gt_instances = bkg_fault_gt_instances #只需推理背景部分即可
+                                                              
+                                                                 
+                                                                    
+            self.fault_gt_instances = bkg_fault_gt_instances                                
 
             print(f"INFO: {len(self.fault_gt_instances)} instances only bkg-loaded.")
 
@@ -736,7 +736,7 @@ class inference_VOCgtfault_classificationDataSet(data.Dataset):
         boxes = [int(i) for i in boxes]
 
         in_boxes_list = []
-        # get img boxes except current box
+                                          
         label = instance["labels"]
         img_need = None
         if label != 0:
@@ -746,9 +746,9 @@ class inference_VOCgtfault_classificationDataSet(data.Dataset):
                 box = [int(i) for i in box]
                 if box == boxes and label != 0:
                     continue
-                # Gaussian blur the box area of the image
+                                                         
 
-                # if box belong to the part of boxes
+                                                    
                 if box[0] > boxes[0] and box[1] > boxes[1] and box[2] < boxes[2] and box[3] < boxes[3]:
                     in_boxes_list.append(box)
                 else:
@@ -764,9 +764,9 @@ class inference_VOCgtfault_classificationDataSet(data.Dataset):
                 box = [int(i) for i in box]
                 if box == boxes and label != 0:
                     continue
-                # Gaussian blur the box area of the image
+                                                         
 
-                # if box belong to the part of boxes
+                                                    
                 if box[0] > boxes[0] and box[1] > boxes[1] and box[2] < boxes[2] and box[3] < boxes[3]:
                     in_boxes_list.append(box)
             img = self.gaussian_blur(img, [0, 0, img.size[0], img.size[1]])
@@ -778,18 +778,18 @@ class inference_VOCgtfault_classificationDataSet(data.Dataset):
         elif self.mask_type == 'crop':
             img = img.crop(boxes)
 
-        # print(label)
-        # for box in self.imagename2boxes[instance["image_name"]]:
-        #     if box == instance["boxes"]:
-        #         continue
-        #     plt.gca().add_patch(
-        #         plt.Rectangle((box[0], box[1]), box[2] - box[0], box[3] - box[1], fill=False, edgecolor='red',
-        #                       linewidth=3))  # xmin, ymin, w, h
-        # plt.gca().add_patch(
-        #     plt.Rectangle((boxes[0], boxes[1]), boxes[2] - boxes[0], boxes[3] - boxes[1], fill=False, edgecolor='green',
-        #                   linewidth=3))
-        # plt.imshow(img)
-        # plt.show()
+                      
+                                                                  
+                                          
+                          
+                                  
+                                                                                                                
+                                                                 
+                              
+                                                                                                                          
+                                         
+                         
+                    
 
         target = {}
         target["image_name"] = instance["image_name"]
@@ -797,14 +797,14 @@ class inference_VOCgtfault_classificationDataSet(data.Dataset):
         target["boxes"] = torch.tensor(boxes)
         target["fault_type"] = instance["fault_type"]
 
-        # Resize the image to 224x224
+                                     
         img = img.resize((224, 224))
 
-        # plt resized image
-        # plt.imshow(img)
-        # plt.show()
+                           
+                         
+                    
 
-        # convert everything into a torch.Tensor
+                                                
         if self.transforms is not None:
             img = self.transforms(img)
 
@@ -813,7 +813,7 @@ class inference_VOCgtfault_classificationDataSet(data.Dataset):
     def __len__(self):
         return len(self.fault_gt_instances)
 
-    # collate_fn needs for batch
+                                
     @staticmethod
     def collate_fn(batch):
         return tuple(zip(*batch))
@@ -822,9 +822,9 @@ class inference_VOCgtfault_classificationDataSet(data.Dataset):
 class DetectionDataSet(data.Dataset):
     def __init__(self, root, transforms=None, runtype: str = 'train', datatype: str = 'VOC', traintype='clean',
                  dirtypath=''):
-        self.datatype = datatype # COCO/VOC
+        self.datatype = datatype           
         self.root = root
-        self.traintype = traintype # clean dirty
+        self.traintype = traintype              
         self.dirtypath = dirtypath
         if self.datatype == 'VOC' and self.traintype == 'clean':
             self.img_root = os.path.join(self.root, "JPEGImages")
@@ -836,7 +836,7 @@ class DetectionDataSet(data.Dataset):
                 xml_list = [os.path.join(self.annotations_root, line.strip() + ".xml")
                             for line in f.readlines() if len(line.strip()) > 0]
             self.xml_list = []
-            # check file
+                        
             for xml_path in xml_list:
                 assert os.path.exists(xml_path), "xml file not found"
                 with open(xml_path, "r") as f:
@@ -847,7 +847,7 @@ class DetectionDataSet(data.Dataset):
                     print(f"INFO: no objects in {xml_path}, skip this annotation file.")
                     continue
                 self.xml_list.append(xml_path)
-            # read class_indict
+                               
             json_file = os.path.join(self.root, 'pascal_voc_classes.json')
             assert os.path.exists(json_file), 'json file not found'
             with open(json_file, 'r') as fp:
@@ -856,18 +856,18 @@ class DetectionDataSet(data.Dataset):
         elif self.traintype == 'dirty':
             with open(self.dirtypath, 'r') as f:
                 self.dirtylist = json.load(f)
-            # transform dirtylist to {imagename:[]} format dict
+                                                               
             self.imagename2targets = {}
             for target in self.dirtylist:
                 if target['image_name'] not in self.imagename2targets:
                     self.imagename2targets[target['image_name']] = []
-                if target['fault_type'] != fault_type_dict['missing fault']:  # missing is not a target
+                if target['fault_type'] != fault_type_dict['missing fault']:                           
                     self.imagename2targets[target['image_name']].append(target)
             print('imagename2targets len:', len(self.imagename2targets))
             self.keys_list = list(self.imagename2targets.keys())
 
             self.new_keys_list = []
-            # delete the image which has no target
+                                                  
             for key in self.keys_list:
                 if len(self.imagename2targets[key]) != 0:
                     self.new_keys_list.append(key)
@@ -875,7 +875,7 @@ class DetectionDataSet(data.Dataset):
 
             if datatype == 'VOC':
                 self.img_root = os.path.join(self.root, "JPEGImages")
-                # read class_indict
+                                   
                 json_file = os.path.join(self.root, 'pascal_voc_classes.json')
                 assert os.path.exists(json_file), 'json file not found'
                 with open(json_file, 'r') as fp:
@@ -941,7 +941,7 @@ class DetectionDataSet(data.Dataset):
                               int(obj["bndbox"]["xmax"]), int(obj["bndbox"]["ymax"])])
                 labels.append(self.class_dict[obj["name"]])
 
-                # check if the boxes are valid
+                                              
                 if boxes[-1][2] <= boxes[-1][0] or boxes[-1][3] <= boxes[-1][1]:
                     print(f"INFO: invalid box in {xml_path}, skip this annotation file.")
                     continue
@@ -961,20 +961,20 @@ class DetectionDataSet(data.Dataset):
             iscrowd = [x['iscrowd'] for x in targets]
             fault_type = [x['fault_type'] for x in targets]
 
-            # print(targets)
-            # # # draw img with bounding box and labels
-            # for i in range(len(boxes)):
-            #     plt.gca().add_patch(
-            #         plt.Rectangle((boxes[i][0], boxes[i][1]), boxes[i][2] - boxes[i][0], boxes[i][3] - boxes[i][1], fill=False, edgecolor='red',
-            #                       linewidth=3))
-            #     # reverse class_dict to get class name
-            #     # class_name = list(self.class_dict.keys())[list(self.class_dict.values()).index(labels[i])]
-            #     class_name = str(labels[i])
-            #     plt.gca().text(boxes[i][0], boxes[i][1], '{:s}'.format(class_name), bbox=dict(facecolor='blue', alpha=0.5),
-            #                     fontsize=14, color='white')
-            # # plt original image
-            # plt.imshow(img)
-            # plt.show()
+                            
+                                                       
+                                         
+                                      
+                                                                                                                                                  
+                                                 
+                                                        
+                                                                                                              
+                                             
+                                                                                                                             
+                                                             
+                                  
+                             
+                        
 
         elif (self.datatype == 'VisDrone' or self.datatype == 'KITTI') and self.traintype == 'clean':
 
@@ -1007,8 +1007,8 @@ class DetectionDataSet(data.Dataset):
 
         target["iscrowd"] = torch.as_tensor(iscrowd, dtype=torch.int64)
 
-        # print(target)
-        # convert everything into a torch.Tensor
+                       
+                                                
         if self.transforms is not None:
             img, target = self.transforms(img, target)
 
@@ -1038,7 +1038,7 @@ class DetectionDataSet(data.Dataset):
                 result[child.tag].append(child_result[child.tag])
         return {xml.tag: result}
 
-    # collate_fn needs for batch
+                                
     @staticmethod
     def collate_fn(batch):
         return tuple(zip(*batch))
@@ -1056,7 +1056,7 @@ class inferenceVOCDetectionDataSet(data.Dataset):
             xml_list = [os.path.join(self.annotations_root, line.strip() + ".xml")
                         for line in f.readlines() if len(line.strip()) > 0]
         self.xml_list = []
-        # check file
+                    
         for xml_path in xml_list:
             assert os.path.exists(xml_path), "xml file not found"
             with open(xml_path, "r") as f:
@@ -1067,7 +1067,7 @@ class inferenceVOCDetectionDataSet(data.Dataset):
                 print(f"INFO: no objects in {xml_path}, skip this annotation file.")
                 continue
             self.xml_list.append(xml_path)
-        # read class_indict
+                           
         json_file = os.path.join(self.root, 'pascal_voc_classes.json')
         assert os.path.exists(json_file), 'json file not found'
         with open(json_file, 'r') as fp:
@@ -1089,7 +1089,7 @@ class inferenceVOCDetectionDataSet(data.Dataset):
                           int(obj["bndbox"]["xmax"]), int(obj["bndbox"]["ymax"])])
             labels.append(self.class_dict[obj["name"]])
 
-            # check if the boxes are valid
+                                          
             if boxes[-1][2] <= boxes[-1][0] or boxes[-1][3] <= boxes[-1][1]:
                 print(f"INFO: invalid box in {xml_path}, skip this annotation file.")
                 continue
@@ -1099,18 +1099,18 @@ class inferenceVOCDetectionDataSet(data.Dataset):
             else:
                 iscrowd.append(0)
 
-        # # # draw img with bounding box and labels
-        # for i in range(len(boxes)):
-        #     plt.gca().add_patch(
-        #         plt.Rectangle((boxes[i][0], boxes[i][1]), boxes[i][2] - boxes[i][0], boxes[i][3] - boxes[i][1], fill=False, edgecolor='red',
-        #                       linewidth=3))
-        #     # reverse class_dict to get class name
-        #     class_name = list(self.class_dict.keys())[list(self.class_dict.values()).index(labels[i])]
-        #     plt.gca().text(boxes[i][0], boxes[i][1], '{:s}'.format(class_name), bbox=dict(facecolor='blue', alpha=0.5),
-        #                     fontsize=14, color='white')
-        # # plt original image
-        # plt.imshow(img)
-        # plt.show()
+                                                   
+                                     
+                                  
+                                                                                                                                              
+                                             
+                                                    
+                                                                                                        
+                                                                                                                         
+                                                         
+                              
+                         
+                    
 
         target = {}
         target["image_name"] = data["filename"]
@@ -1121,8 +1121,8 @@ class inferenceVOCDetectionDataSet(data.Dataset):
                 target["boxes"][:, 2] - target["boxes"][:, 0])
         target["iscrowd"] = torch.as_tensor(iscrowd, dtype=torch.int64)
 
-        # print(target)
-        # convert everything into a torch.Tensor
+                       
+                                                
         if self.transforms is not None:
             img, target = self.transforms(img, target)
 
@@ -1145,62 +1145,62 @@ class inferenceVOCDetectionDataSet(data.Dataset):
                 result[child.tag].append(child_result[child.tag])
         return {xml.tag: result}
 
-    # collate_fn needs for batch
+                                
     @staticmethod
     def collate_fn(batch):
         return tuple(zip(*batch))
 
 
-# test
+      
 if __name__ == "__main__":
-    # dataset = DetectionDataSet(root="../dataset/COCO", runtype='train', datatype='COCO', traintype='clean',
-    #                            dirtypath='../data/fault_annotations/COCOtrain_mixedfault0.1.json')
-    # test inference_VOCinf_classificationDataSet
-    # dataset = inference_VOCgtfault_classificationDataSet(voc_root="../dataset/VOCdevkit/VOC2012",
-    #                                                      mask_type="crop")
+                                                                                                             
+                                                                                                    
+                                                 
+                                                                                                   
+                                                                            
 
-    # "../dataset/VisDrone2019-DET-train/"
+                                          
     dataset = classificationDataSet(root="../dataset/KITTI", mask_type="other objects",
                                     train_type='clean',
                                     dirty_path='../data/fault_annotations/KITTItrain_mixedfault0.1.json',
                                     datatype='KITTI')
 
     dataloader = data.DataLoader(dataset, batch_size=1, shuffle=False, num_workers=0, collate_fn=dataset.collate_fn)
-    # test dataloader for 10 images
+                                   
     params = parameters()
     fault_type_dict = params.fault_type
     for i, (img, target, idx) in enumerate(dataloader):
         print(idx)
-        # # print(target)
-        # if i == 100:
-        #     break
+                         
+                      
+                   
 
-        # if target[0]["fault type"] == fault_type_dict["class fault"]:
-        #     print(target)
+                                                                       
+                           
 
-    #     # test VOCDetectionDataSet
-    # dataset = inferenceVOCDetectionDataSet(voc_root="../dataset/VOCdevkit/VOC2012/", txt_name="train.txt")
-    # dataloader = data.DataLoader(dataset, batch_size=1, shuffle=False, num_workers=0, collate_fn=dataset.collate_fn)
-    # # test dataloader for 10 images
-    # for i, (img, target) in enumerate(dataloader):
-    #     print(target)
-    #     if i == 10:
-    #         break
+                                    
+                                                                                                            
+                                                                                                                      
+                                     
+                                                    
+                       
+                     
+                   
 
-    # from torchvision import transforms
-    # from torch.utils.data import DataLoader
-    #
-    # data_transforms = transforms.Compose([
-    #     transforms.ToTensor(),
-    #     transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
-    # ])
-    #
-    # dataset = VOCclassificationDataSet(voc_root="./dataset/VOCdevkit/VOC2012", transforms=data_transforms, txt_name="train.txt")
-    # dataloader = DataLoader(dataset, batch_size=1, shuffle=True, collate_fn=dataset.collate_fn)
-    #
-    #
-    # # test dataloader for 10 images
-    # for i, (img, label) in enumerate(dataloader):
-    #     if i == 10:
-    #         break
-    #     print(f"img shape: {img[0].shape}, label: {label[0]}")
+                                        
+                                             
+     
+                                            
+                                
+                                                                            
+        
+     
+                                                                                                                                  
+                                                                                                 
+     
+     
+                                     
+                                                   
+                     
+                   
+                                                                

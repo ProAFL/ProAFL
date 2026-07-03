@@ -50,9 +50,9 @@ class QuantizableInvertedResidual(shufflenetv2.InvertedResidual):
 
 
 class QuantizableShuffleNetV2(shufflenetv2.ShuffleNetV2):
-    # TODO https://github.com/pytorch/vision/pull/4232#pullrequestreview-730461659
+                                                                                  
     def __init__(self, *args: Any, **kwargs: Any) -> None:
-        super().__init__(*args, inverted_residual=QuantizableInvertedResidual, **kwargs)  # type: ignore[misc]
+        super().__init__(*args, inverted_residual=QuantizableInvertedResidual, **kwargs)                      
         self.quant = torch.ao.quantization.QuantStub()
         self.dequant = torch.ao.quantization.DeQuantStub()
 
@@ -399,9 +399,9 @@ def shufflenet_v2_x2_0(
     )
 
 
-# The dictionary below is internal implementation detail and will be removed in v0.15
+                                                                                     
 from .._utils import _ModelURLs
-from ..shufflenetv2 import model_urls  # noqa: F401
+from ..shufflenetv2 import model_urls              
 
 
 quant_model_urls = _ModelURLs(

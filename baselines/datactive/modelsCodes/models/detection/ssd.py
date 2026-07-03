@@ -92,11 +92,11 @@ class SSDScoringHead(nn.Module):
         for i, features in enumerate(x):
             results = self._get_result_from_module_list(features, i)
 
-            # Permute output from (N, A * K, H, W) to (N, HWA, K).
+                                                                  
             N, _, H, W = results.shape
             results = results.view(N, -1, self.num_columns, H, W)
             results = results.permute(0, 3, 4, 1, 2)
-            results = results.reshape(N, -1, self.num_columns)  # Size=(N, HWA, K)
+            results = results.reshape(N, -1, self.num_columns)                    
 
             all_results.append(results)
 
@@ -238,7 +238,7 @@ class SSD(nn.Module):
         self.topk_candidates = topk_candidates
         self.neg_to_pos_ratio = (1.0 - positive_fraction) / positive_fraction
 
-        # used only on torchscript mode
+                                       
         self._has_warned = False
 
     @torch.jit.unused
@@ -260,7 +260,7 @@ class SSD(nn.Module):
         bbox_regression = head_outputs["bbox_regression"]
         cls_logits = head_outputs["cls_logits"]
 
-        # Match original targets with default boxes
+                                                   
         num_foreground = 0
         bbox_loss = []
         cls_targets = []
@@ -271,12 +271,12 @@ class SSD(nn.Module):
             anchors_per_image,
             matched_idxs_per_image,
         ) in zip(targets, bbox_regression, cls_logits, anchors, matched_idxs):
-            # produce the matching between boxes and targets
+                                                            
             foreground_idxs_per_image = torch.where(matched_idxs_per_image >= 0)[0]
             foreground_matched_idxs_per_image = matched_idxs_per_image[foreground_idxs_per_image]
             num_foreground += foreground_matched_idxs_per_image.numel()
 
-            # Calculate regression loss
+                                       
             matched_gt_boxes_per_image = targets_per_image["boxes"][foreground_matched_idxs_per_image]
             bbox_regression_per_image = bbox_regression_per_image[foreground_idxs_per_image, :]
             anchors_per_image = anchors_per_image[foreground_idxs_per_image, :]
@@ -285,7 +285,7 @@ class SSD(nn.Module):
                 torch.nn.functional.smooth_l1_loss(bbox_regression_per_image, target_regression, reduction="sum")
             )
 
-            # Estimate ground truth for class targets
+                                                     
             gt_classes_target = torch.zeros(
                 (cls_logits_per_image.size(0),),
                 dtype=targets_per_image["labels"].dtype,
@@ -299,20 +299,20 @@ class SSD(nn.Module):
         bbox_loss = torch.stack(bbox_loss)
         cls_targets = torch.stack(cls_targets)
 
-        # Calculate classification loss
+                                       
         num_classes = cls_logits.size(-1)
         cls_loss = F.cross_entropy(cls_logits.view(-1, num_classes), cls_targets.view(-1), reduction="none").view(
             cls_targets.size()
         )
 
-        # Hard Negative Sampling
+                                
         foreground_idxs = cls_targets > 0
         num_negative = self.neg_to_pos_ratio * foreground_idxs.sum(1, keepdim=True)
-        # num_negative[num_negative < self.neg_to_pos_ratio] = self.neg_to_pos_ratio
+                                                                                    
         negative_loss = cls_loss.clone()
-        negative_loss[foreground_idxs] = -float("inf")  # use -inf to detect positive values that creeped in the sample
+        negative_loss[foreground_idxs] = -float("inf")                                                                 
         values, idx = negative_loss.sort(1, descending=True)
-        # background_idxs = torch.logical_and(idx.sort(1)[1] < num_negative, torch.isfinite(values))
+                                                                                                    
         background_idxs = idx.sort(1)[1] < num_negative
 
         N = max(1, num_foreground)
@@ -338,7 +338,7 @@ class SSD(nn.Module):
                     else:
                         torch._assert(False, f"Expected target boxes to be of type Tensor, got {type(boxes)}.")
 
-        # get the original image sizes
+                                      
         original_image_sizes: List[Tuple[int, int]] = []
         for img in images:
             val = img.shape[-2:]
@@ -348,10 +348,10 @@ class SSD(nn.Module):
             )
             original_image_sizes.append((val[0], val[1]))
 
-        # transform the input
+                             
         images, targets = self.transform(images, targets)
 
-        # Check for degenerate boxes
+                                    
         if targets is not None:
             for target_idx, target in enumerate(targets):
                 boxes = target["boxes"]
@@ -365,17 +365,17 @@ class SSD(nn.Module):
                         f" Found invalid box {degen_bb} for target at index {target_idx}.",
                     )
 
-        # get the features from the backbone
+                                            
         features = self.backbone(images.tensors)
         if isinstance(features, torch.Tensor):
             features = OrderedDict([("0", features)])
 
         features = list(features.values())
 
-        # compute the ssd heads outputs using the features
+                                                          
         head_outputs = self.head(features)
 
-        # create the set of anchors
+                                   
         anchors = self.anchor_generator(images, features)
 
         losses = {}
@@ -437,7 +437,7 @@ class SSD(nn.Module):
                 box = boxes[keep_idxs]
                 full_score = full_score[keep_idxs]
 
-                # keep only topk scoring predictions
+                                                    
                 num_topk = det_utils._topk_min(score, self.topk_candidates, 0)
                 score, idxs = score.topk(num_topk)
                 box = box[idxs]
@@ -453,7 +453,7 @@ class SSD(nn.Module):
             image_full_score = torch.cat(image_full_score, dim=0)
             image_labels = torch.cat(image_labels, dim=0)
 
-            # non-maximum suppression
+                                     
             keep = box_ops.batched_nms(image_boxes, image_scores, image_labels, self.nms_thresh)
             keep = keep[: self.detections_per_img]
 
@@ -474,80 +474,80 @@ class SSDFeatureExtractorVGG(nn.Module):
 
         _, _, maxpool3_pos, maxpool4_pos, _ = (i for i, layer in enumerate(backbone) if isinstance(layer, nn.MaxPool2d))
 
-        # Patch ceil_mode for maxpool3 to get the same WxH output sizes as the paper
+                                                                                    
         backbone[maxpool3_pos].ceil_mode = True
 
-        # parameters used for L2 regularization + rescaling
+                                                           
         self.scale_weight = nn.Parameter(torch.ones(512) * 20)
 
-        # Multiple Feature maps - page 4, Fig 2 of SSD paper
-        self.features = nn.Sequential(*backbone[:maxpool4_pos])  # until conv4_3
+                                                            
+        self.features = nn.Sequential(*backbone[:maxpool4_pos])                 
 
-        # SSD300 case - page 4, Fig 2 of SSD paper
+                                                  
         extra = nn.ModuleList(
             [
                 nn.Sequential(
                     nn.Conv2d(1024, 256, kernel_size=1),
                     nn.ReLU(inplace=True),
-                    nn.Conv2d(256, 512, kernel_size=3, padding=1, stride=2),  # conv8_2
+                    nn.Conv2d(256, 512, kernel_size=3, padding=1, stride=2),           
                     nn.ReLU(inplace=True),
                 ),
                 nn.Sequential(
                     nn.Conv2d(512, 128, kernel_size=1),
                     nn.ReLU(inplace=True),
-                    nn.Conv2d(128, 256, kernel_size=3, padding=1, stride=2),  # conv9_2
+                    nn.Conv2d(128, 256, kernel_size=3, padding=1, stride=2),           
                     nn.ReLU(inplace=True),
                 ),
                 nn.Sequential(
                     nn.Conv2d(256, 128, kernel_size=1),
                     nn.ReLU(inplace=True),
-                    nn.Conv2d(128, 256, kernel_size=3),  # conv10_2
+                    nn.Conv2d(128, 256, kernel_size=3),            
                     nn.ReLU(inplace=True),
                 ),
                 nn.Sequential(
                     nn.Conv2d(256, 128, kernel_size=1),
                     nn.ReLU(inplace=True),
-                    nn.Conv2d(128, 256, kernel_size=3),  # conv11_2
+                    nn.Conv2d(128, 256, kernel_size=3),            
                     nn.ReLU(inplace=True),
                 ),
             ]
         )
         if highres:
-            # Additional layers for the SSD512 case. See page 11, footernote 5.
+                                                                               
             extra.append(
                 nn.Sequential(
                     nn.Conv2d(256, 128, kernel_size=1),
                     nn.ReLU(inplace=True),
-                    nn.Conv2d(128, 256, kernel_size=4),  # conv12_2
+                    nn.Conv2d(128, 256, kernel_size=4),            
                     nn.ReLU(inplace=True),
                 )
             )
         _xavier_init(extra)
 
         fc = nn.Sequential(
-            nn.MaxPool2d(kernel_size=3, stride=1, padding=1, ceil_mode=False),  # add modified maxpool5
-            nn.Conv2d(in_channels=512, out_channels=1024, kernel_size=3, padding=6, dilation=6),  # FC6 with atrous
+            nn.MaxPool2d(kernel_size=3, stride=1, padding=1, ceil_mode=False),                         
+            nn.Conv2d(in_channels=512, out_channels=1024, kernel_size=3, padding=6, dilation=6),                   
             nn.ReLU(inplace=True),
-            nn.Conv2d(in_channels=1024, out_channels=1024, kernel_size=1),  # FC7
+            nn.Conv2d(in_channels=1024, out_channels=1024, kernel_size=1),       
             nn.ReLU(inplace=True),
         )
         _xavier_init(fc)
         extra.insert(
             0,
             nn.Sequential(
-                *backbone[maxpool4_pos:-1],  # until conv5_3, skip maxpool5
+                *backbone[maxpool4_pos:-1],                                
                 fc,
             ),
         )
         self.extra = extra
 
     def forward(self, x: Tensor) -> Dict[str, Tensor]:
-        # L2 regularization + Rescaling of 1st block's feature map
+                                                                  
         x = self.features(x)
         rescaled = self.scale_weight.view(1, -1, 1, 1) * F.normalize(x)
         output = [rescaled]
 
-        # Calculating Feature maps for the rest blocks
+                                                      
         for block in self.extra:
             x = block(x)
             output.append(x)
@@ -557,11 +557,11 @@ class SSDFeatureExtractorVGG(nn.Module):
 
 def _vgg_extractor(backbone: VGG, highres: bool, trainable_layers: int):
     backbone = backbone.features
-    # Gather the indices of maxpools. These are the locations of output blocks.
+                                                                               
     stage_indices = [0] + [i for i, b in enumerate(backbone) if isinstance(b, nn.MaxPool2d)][:-1]
     num_stages = len(stage_indices)
 
-    # find the index of the layer from which we wont freeze
+                                                           
     torch._assert(
         0 <= trainable_layers <= num_stages,
         f"trainable_layers should be in the range [0, {num_stages}]. Instead got {trainable_layers}",
@@ -663,7 +663,7 @@ def ssd300_vgg16(
         weights is not None or weights_backbone is not None, trainable_backbone_layers, 5, 4
     )
 
-    # Use custom backbones more appropriate for SSD
+                                                   
     backbone = vgg16(weights=weights_backbone, progress=progress)
     backbone = _vgg_extractor(backbone, False, trainable_backbone_layers)
     anchor_generator = DefaultBoxGenerator(
@@ -673,9 +673,9 @@ def ssd300_vgg16(
     )
 
     defaults = {
-        # Rescale the input in a way compatible to the backbone
+                                                               
         "image_mean": [0.48235, 0.45882, 0.40784],
-        "image_std": [1.0 / 255.0, 1.0 / 255.0, 1.0 / 255.0],  # undo the 0-1 scaling of toTensor
+        "image_std": [1.0 / 255.0, 1.0 / 255.0, 1.0 / 255.0],                                    
     }
     kwargs: Any = {**defaults, **kwargs}
     model = SSD(backbone, anchor_generator, (300, 300), num_classes, **kwargs)
@@ -686,7 +686,7 @@ def ssd300_vgg16(
     return model
 
 
-# The dictionary below is internal implementation detail and will be removed in v0.15
+                                                                                     
 from .._utils import _ModelURLs
 
 
@@ -699,10 +699,10 @@ model_urls = _ModelURLs(
 
 backbone_urls = _ModelURLs(
     {
-        # We port the features of a VGG16 backbone trained by amdegroot because unlike the one on TorchVision, it uses
-        # the same input standardization method as the paper.
-        # Ref: https://s3.amazonaws.com/amdegroot-models/vgg16_reducedfc.pth
-        # Only the `features` weights have proper values, those on the `classifier` module are filled with nans.
+                                                                                                                      
+                                                             
+                                                                            
+                                                                                                                
         "vgg16_features": VGG16_Weights.IMAGENET1K_FEATURES.url,
     }
 )

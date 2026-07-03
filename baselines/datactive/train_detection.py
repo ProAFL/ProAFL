@@ -4,23 +4,23 @@ from torchvision.models.detection.faster_rcnn import FastRCNNPredictor
 from UTILS import presets
 from UTILS.mydataset import DetectionDataSet
 from torch.utils.data import DataLoader
-from torchvision.models.detection import ssd300_vgg16, SSD300_VGG16_Weights, FasterRCNN_ResNet50_FPN_V2_Weights, \
+from torchvision.models.detection import ssd300_vgg16, SSD300_VGG16_Weights, FasterRCNN_ResNet50_FPN_V2_Weights,\
     fasterrcnn_resnet50_fpn_v2
 from torchvision.models.detection.ssd import SSDClassificationHead
 from UTILS.engine import evaluate, train_one_epoch
 from torch.utils.tensorboard import SummaryWriter
 
-# parameters
+            
 model, optimizer, lr_scheduler, train_dataset, writer, epochs, modelsavepath = None, None, None, None, None, None, None
-modeltype = 'ssd'  # 'ssd' or 'frcnn'
-datatype = 'KITTI'  # 'VisDrone' or 'VOC' or 'COCO' or 'KITTI'
+modeltype = 'ssd'                    
+datatype = 'KITTI'                                            
 root_path, data_augmentation, layer_num = None, None, None
 resume = None
 batch_size = 4
 lr = 0.002
 traintype = 'dirty'
 dirtypath = './data/fault_annotations/KITTItrain_mixedfault0.1.json'
-# tensorboard
+             
 if modeltype == 'ssd':
     writer = SummaryWriter(log_dir='./' + modeltype + 'logs' + '/' + datatype + '_' + traintype,
                            comment="ssd_" + datatype)
@@ -48,7 +48,7 @@ elif datatype == 'VisDrone':
 
 elif datatype == 'COCO':
     root_path = './autodl-tmp/dataset/COCO'
-    layer_num = None # no need to set
+    layer_num = None                 
 
 elif datatype == 'KITTI':
     root_path = './autodl-tmp/dataset/KITTI'
@@ -71,20 +71,20 @@ val_dataloader = DataLoader(val_dataset, batch_size=1, shuffle=False, num_worker
                             collate_fn=val_dataset.collate_fn)
 
 if modeltype == 'ssd':
-    # ssd model
-    if datatype == 'COCO':# if coco dataset just load the pretrained model
+               
+    if datatype == 'COCO':                                                
         model = ssd300_vgg16(weights=SSD300_VGG16_Weights.DEFAULT)
     else:
         model = ssd300_vgg16(weights=SSD300_VGG16_Weights.DEFAULT)
 
         model.head.classification_head = SSDClassificationHead([512, 1024, 512, 256, 256, 256],
                                                                model.anchor_generator.num_anchors_per_location(), layer_num)
-    # optimizer
+               
     optimizer = torch.optim.SGD(model.parameters(), lr=lr, momentum=0.9, weight_decay=0.0005)
     lr_scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=[14, 22], gamma=0.1)
 
 elif modeltype == 'frcnn':
-    if datatype =='COCO': # if coco dataset just load the pretrained model
+    if datatype =='COCO':                                                 
         weights = FasterRCNN_ResNet50_FPN_V2_Weights.DEFAULT
         model = fasterrcnn_resnet50_fpn_v2(weights=weights)
     else:
@@ -124,7 +124,7 @@ for epoch in range(start_epoch, epochs):
     with torch.no_grad():
         coco_evaluator = evaluate(model, val_dataloader, device=device)
 
-    # checkpoint
+                
     torch.save({
         "model": model.state_dict(),
         "optimizer": optimizer.state_dict(),
@@ -134,7 +134,7 @@ for epoch in range(start_epoch, epochs):
         "map": coco_evaluator.coco_eval["bbox"].stats[0]
     }, modelsavepath.format(epoch))
 
-    # tensorboard
+                 
     writer.add_scalar("train/totalloss", loss, epoch)
     if modeltype == 'ssd':
         writer.add_scalar("train/classloss", classloss, epoch)
@@ -144,11 +144,11 @@ for epoch in range(start_epoch, epochs):
         writer.add_scalar("train/loss_box_reg", loss_box_reg, epoch)
         writer.add_scalar("train/loss_objectness", loss_objectness, epoch)
 
-    # VOC map@0.5
+                 
     writer.add_scalar("val/map_0.5:0.95", coco_evaluator.coco_eval["bbox"].stats[1], epoch)
 
-    # VOC map@  0.5:0.95
+                        
     writer.add_scalar("val/map", coco_evaluator.coco_eval["bbox"].stats[0], epoch)
 
 writer.close()
-# sudo fuser -v /dev/nvidia* |awk '{for(i=1;i<=NF;i++)print "kill -9 " $i;}' | sudo sh
+                                                                                      

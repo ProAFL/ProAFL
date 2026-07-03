@@ -1,6 +1,6 @@
 
 '''
-收集的标注框和所有轮次的预测框的匹配和度量(confi/iou)统计
+text(confi/iou)text
 '''
 import os
 import json
@@ -34,8 +34,8 @@ def get_epoch_to_pboxs(predicted_bboxs_dir) -> dict:
 
 def pretty_print(content,count,col_nums=10):
     print(content, end=' ')
-    if count % col_nums == 0:  # 如果计数器是10的倍数
-        print()  # 打印换行符
+    if count % col_nums == 0:                                      
+        print()                   
 
 def get_img_path_by_img_name(img_name,style):
     if style == "yolo":
@@ -50,19 +50,19 @@ def xcycwh_to_x1y1x2y2(bbox,W,H):
     w = bbox[2]
     h = bbox[3]
 
-    # 1. 归一化 -> 像素
+                            
     x_c = xc * W
     y_c = yc * H
     bw  = w  * W
     bh  = h  * H
 
-    # 2. 中心 -> 左上 / 右下
+                                          
     x1 = x_c - bw / 2
     y1 = y_c - bh / 2
     x2 = x_c + bw / 2
     y2 = y_c + bh / 2
 
-    # 3. 转 int + 裁剪
+                              
     x1 = max(0, min(W - 1, int(round(x1))))
     y1 = max(0, min(H - 1, int(round(y1))))
     x2 = max(0, min(W - 1, int(round(x2))))
@@ -71,7 +71,7 @@ def xcycwh_to_x1y1x2y2(bbox,W,H):
     return [x1,y1,x2,y2]
 
 def offset_p_label(p_box_list):
-    # predicted box数量
+                        
     for box in p_box_list:
         box["predicted_cls"] -= 1
     return p_box_list
@@ -126,7 +126,7 @@ def get_iou_matrix_GP(gt_box_list, p_box_list):
 
 def search_match_GP(gt_box_list, predicted_box_list, iou_thre=0.5):
 
-    # 仍然按 conf 排序，但不再在 pred 维度贪心
+                                      
     predicted_box_list = sorted(predicted_box_list, key=lambda x: x["conf"], reverse=True)
 
     matches = []
@@ -143,14 +143,14 @@ def search_match_GP(gt_box_list, predicted_box_list, iou_thre=0.5):
 
         iou_matrix = get_iou_matrix_GP(cur_gt, cur_pred)
 
-        # 行: gt，列: pred
-        assert iou_matrix.shape == (len(cur_gt), len(cur_pred)), "形状不对"
+                             
+        assert iou_matrix.shape == (len(cur_gt), len(cur_pred)), "Invalid shape"
 
         used_pred = set()
 
         for g_idx in range(len(cur_gt)):
 
-            # 当前 GT 找最佳预测框
+                          
             best_pred_idx = iou_matrix[g_idx].argmax().item()
             best_iou = float(iou_matrix[g_idx, best_pred_idx])
 
@@ -184,50 +184,50 @@ def gt_best_match(predicted_box_list, gt_box_list):
 
 def search_match_PG(predicted_box_list, gt_box_list, iou_thre=0.5):
     '''
-    一张图像的gt boxs与predicted boxs匹配函数.
+    Match gt boxes and predicted boxes for one image.
     args:
-        gt_box_list: 该图像的所有g_boxes x1y1x2y2
-        predicted_box_list: 该图像在某个轮次的p_boxes
-        iou_thre: pbox与gbox的iou只有大于这个阈值才算match
+        gt_box_list: all g_boxes of this image x1y1x2y2
+        predicted_box_list: p_boxes of this image at a given epoch
+        iou_thre: pboxpbox and gbox are matched only when IoU is above this threshold
     '''
-    # 将预测框按照conf从大到小进行排序
+                                                   
     predicted_box_list.sort(key=lambda x: x["conf"], reverse=True)
-    # predicted box数量
+                        
     P = len(predicted_box_list)
-    # GT box数量
+                 
     G = len(gt_box_list)
-    # 记录已经匹配成功的GT box
+                             
     used_gt = set()
-    # 匹配结果容器
+                            
     matches = []
-    # 所有的cls
+                 
     cls_set = set([gt_box["cls"] for gt_box in gt_box_list])
-    # 分类下的match，遍历cls_set
+                                         
     for cls in cls_set:
-        # 当前类别的gt boxs
+                                       
         cur_cls_gt_box_list = [box for box in gt_box_list if box["cls"] == cls]
-        # 当前类别的p boxs，（已经按照conf从大到小）
+                                                                               
         cur_cls_p_box_list = [box for box in predicted_box_list if box["predicted_cls"] == cls]
         if len(cur_cls_gt_box_list) == 0 or len(cur_cls_p_box_list) == 0:
             continue
-        # 获得p_boxs与g_boxs的iou矩阵，shape:(len(p_boxs),len(g_boxs))
+                                                                                           
         iou_matrix = get_iou_matrix_PG(cur_cls_p_box_list,cur_cls_gt_box_list,)
         assert iou_matrix.shape == (len(cur_cls_p_box_list), len(cur_cls_gt_box_list))
-        # 每个p_box(行)匹配最好的g_box
+                                               
         best_gt_box_id_list = iou_matrix.argmax(axis=1)
-        # 每个p_box(行)匹配最好的g_box对应的iou值
+                                                                
         best_iou_list = iou_matrix.max(axis=1)
         for r_i,iou_val in enumerate(best_iou_list):
             iou_val = iou_val.item()
             if iou_val < iou_thre:
-                # 说明这个p_box与所有的g_box的iou都没达到阈值以上
+                                                                      
                 continue
-            # 这个p_box匹配上了一个g_box
+                                        
             best_gt_id = best_gt_box_id_list[r_i]
-            # 这个g_box被p_box[i]匹配上了
+                                                      
             matched_gt_box = cur_cls_gt_box_list[best_gt_id]
             if matched_gt_box["box_id"] in used_gt:
-                # p_box看中的g_box已经被conf 更大的p_box占有了，就不管你（当前p_box[r_i]）了!!
+                                                                                                                                   
                 continue
             used_gt.add(matched_gt_box["box_id"])
             p_box = cur_cls_p_box_list[r_i]
@@ -237,96 +237,96 @@ def search_match_PG(predicted_box_list, gt_box_list, iou_thre=0.5):
 
 def match(gt_json:dict, epoch_to_p_boxs:dict, offset:bool, save_path):
     '''
-    收集数据集中g_boxs与每个epoch的p_box的匹配关系
-    参数
+    Collect matches between dataset g_boxes and p_boxes for each epoch.
+    Parameters
     ---
     gt_json : dict
-        数据格式：
+        Data format:
         {
             img_name:[g_box1,...], 
             ...
         }
-        注意：gbox其中的bbox坐标是归一的xcycwh, 并且没有任何标注的img的img name是不会出现在gt_json中的
+        text:gboxtextbboxtextxcycwh, textimgtextimg nametextgt_jsontext
     
     '''
-    start_time = time.time()  # 记录开始时间
-    # 收集每个g_box在所有轮次中的匹配信息
-    # {g_id:[{"epoch":epoch,"g_box":g_box,"p_box":p_box}]}
+    start_time = time.time()                     
+                   
+                                                          
     matched_gbox = defaultdict(list)
     total_gbox_num = 0
-    # 遍历所有的img name和该图像的g_boxes
+                                               
     for img_name,g_boxs in tqdm(gt_json.items(),total=len(gt_json)):
-        # 图像路径
+                    
         image_path = get_img_path_by_img_name(img_name,"yolo")
-        # 图像的width,height
+                                
         image = Image.open(image_path)
         width, height = image.size
-        # 当前图像的g_boxs的bbox格式进行转换
+                                                       
         for g_box in g_boxs:
             total_gbox_num += 1
             g_box["gt_bbox"] = xcycwh_to_x1y1x2y2(g_box["gt_bbox"],width,height)
-        # 在该图像下，遍历所有的epoch预测结果
+                            
         for epoch in range(epochs):
-            # 当前epoch下的图像->predicted_boxes
+                                                             
             p_boxs_dict = epoch_to_p_boxs[epoch]
             if img_name not in p_boxs_dict:
-                # 图像在当前epoch下没有预测结果,则直接跳过当前epoch
+                                                                                       
                 continue
-            # 得到当前epoch该图像的预测p_boxs
+                                                                      
             cur_epoch_p_boxs = p_boxs_dict[img_name]["predicted_bboxs"]
             if cur_epoch_p_boxs == None:
-                # 图像在当前epoch下没有预测结果,则直接跳过当前epoch,此处可能是多余
+                                                                                                              
                 continue
-            # 获得当前图像g_boxs与当前epoch的p_boxs的匹配关系
+                                                                                 
             if offset:
                 cur_epoch_p_boxs = offset_p_label(cur_epoch_p_boxs)
-            # matches = gt_best_match(cur_epoch_p_boxs,g_boxs)
+                                                              
             matches = search_match_PG(cur_epoch_p_boxs,g_boxs,iou_thre=0.5)
-            # matches = search_match_GP(g_boxs,cur_epoch_p_boxs,iou_thre=0.5)
+                                                                             
             for match in matches:
                 matched_g_box = match[0]
                 p_box = match[1]
                 iou_val = match[2]
                 g_box_id = matched_g_box["box_id"]
                 matched_gbox[g_box_id].append({"epoch":epoch, "g_box":matched_g_box, "p_box":p_box,"iou_val":iou_val})
-    print(f"带有标注的img数量: {len(gt_json)}")
-    print(f"总共的gbox数量: {total_gbox_num}")
-    print(f"matched gbox数量: {len(matched_gbox)}")
+    print(f"textimgCount: {len(gt_json)}")
+    print(f"textgboxCount: {total_gbox_num}")
+    print(f"matched gboxCount: {len(matched_gbox)}")
     with open(save_path, "w", encoding="utf-8") as f:
         json.dump(matched_gbox, f, indent=4)
     print(f"matched gbox is saved in {save_path}")
-    end_time = time.time()  # 记录结束时间
-    elapsed_timestamp = end_time - start_time  # 计算运行时间（秒）
+    end_time = time.time()                   
+    elapsed_timestamp = end_time - start_time                                     
     cost_time = get_cost_time(elapsed_timestamp)
-    print(f"运行时间:{cost_time}")
-    print(f"实验结束时刻:{get_formatted_time()}")
+    print(f"Elapsed time:{cost_time}")
+    print(f"text:{get_formatted_time()}")
     return matched_gbox
 
 def collect_metrics_for_gboxs(match_json:dict, save_path:str):
     '''
-    收集所有gt_box在 cross epoch上的预测conf和iou
+    textgt_boxtext cross epochtextconftextiou
 
-    参数：
+    Parameters:
     ---
     match_json: dict
-        数据格式：
+        Data format:
         {
             g_id:[{"epoch":epoch,"g_box":g_box,"p_box":p_box},...],
             ...
         }
     '''
-    start_time = time.time()  # 记录开始时间
-    # 结果容器
+    start_time = time.time()                     
+          
     collect = []
     for g_box_id in tqdm(match_json.keys(),total=len(match_json)):
-        # 该g_box的match info [{"epoch":epoch,"g_box":g_box,"p_box":p_box},{}]
+                                                                                  
         matched_info_over_epoch = match_json[g_box_id]
         instance = {
             "g_box_id":int(g_box_id),
             "conf_list":[],
             "iou_list":[]
         }
-        # epoch => gbox,pbox,iou
+                                
         temp_dict = {}
         for matched_info in matched_info_over_epoch:
             epoch = matched_info["epoch"]
@@ -335,11 +335,11 @@ def collect_metrics_for_gboxs(match_json:dict, save_path:str):
                 "p_box":matched_info["p_box"],
                 "iou_val":matched_info["iou_val"]
             }
-        # 遍历所有的epoch
+                   
         for epoch in range(epochs):
             matched_info = temp_dict.get(epoch)
             if matched_info is None:
-                # 当前epoch，该g_box没有p_box匹配
+                                                  
                 conf = 0
                 iou = 0
             else:
@@ -353,34 +353,34 @@ def collect_metrics_for_gboxs(match_json:dict, save_path:str):
         json.dump(collect, f, indent=4)
     print(f"\ncollection_metrics is saved in {save_path}")
     
-    end_time = time.time()  # 记录结束时间
-    elapsed_time = end_time - start_time  # 计算运行时间（秒）
-    hours = int(elapsed_time // 3600)  # 计算小时数
-    minutes = int((elapsed_time % 3600) // 60)  # 计算分钟数
-    seconds = elapsed_time % 60  # 计算剩余的秒数
+    end_time = time.time()                   
+    elapsed_time = end_time - start_time                                     
+    hours = int(elapsed_time // 3600)                   
+    minutes = int((elapsed_time % 3600) // 60)                     
+    seconds = elapsed_time % 60                               
 
-    print(f"运行时间：{hours:02d}:{minutes:02d}:{seconds:02.0f}")
+    print(f"Elapsed time: {hours:02d}:{minutes:02d}:{seconds:02.0f}")
     now_str = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-    print(f"实验结束时刻: {now_str}")
+    print(f"text: {now_str}")
 
 def main():
     mode = 0
-    print("装载gt框json数据...")
+    print("textgttextjsontext...")
     gt_json = get_json(gt_json_path)
-    print("装载每个epoch的预测框json数据...")
+    print("textepochtextjsontext...")
     epoch_to_p_boxs = get_epoch_to_pboxs(predicted_bboxs_dir)
     offset = False
-    if model_name not in ["YOLOv7","rtdetr"]: # FRCNN是需要offset的0（bg）, 1->0..,10->9
+    if model_name not in ["YOLOv7","rtdetr"]:                                         
         offset = True
     if mode == 0 or mode == 1:
         print("match START")
-        # PG match
+                  
         save_path = os.path.join(exp_data_root_dir,"collection_bbox_level",dataset_name,model_name,"match.json")
         matched_gbox = match(gt_json, epoch_to_p_boxs, offset, save_path)
         print("match END")
     if mode == 0 or mode == 2:
         print("metrics START")
-        # collect metrics
+                         
         if mode == 2:
             match_json_path = os.path.join(exp_data_root_dir,"collection_bbox_level",dataset_name,model_name,"match.json")
             with open(match_json_path, "r") as f:
@@ -392,15 +392,15 @@ def main():
 if __name__ == "__main__":
     pid = os.getpid()
     print(f"pid:{pid}")
-    dataset_name = "KITTI_8" # VOC2012|KITTI_8|VisDrone
-    model_name = "rtdetr" # YOLOv7|FRCNN|SSD|rtdetr
+    dataset_name = "KITTI_8"                           
+    model_name = "rtdetr"                          
     epochs = 50
     if model_name == "rtdetr":
         epochs = 100
-    # 需要的数据文件路径
-    # gt box数据
+                              
+                
     gt_json_path = get_collected_gt_box_json_path(dataset_name)
-    # 预测 box数据
+                  
     predicted_bboxs_dir = os.path.join(exp_data_root_dir,"collection_bbox_level",
                                        dataset_name,model_name,
                                        "predicted_bbox")

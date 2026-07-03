@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+                     
 
 import argparse
 import numpy as np
@@ -104,7 +104,7 @@ if __name__ == '__main__':
 
     FLAGS = parser.parse_args()
 
-    # Create server context
+                           
     try:
         triton_client = grpcclient.InferenceServerClient(
             url=FLAGS.url,
@@ -117,7 +117,7 @@ if __name__ == '__main__':
         print("context creation failed: " + str(e))
         sys.exit()
 
-    # Health check
+                  
     if not triton_client.is_server_live():
         print("FAILED : is_server_live")
         sys.exit(1)
@@ -131,7 +131,7 @@ if __name__ == '__main__':
         sys.exit(1)
 
     if FLAGS.model_info:
-        # Model metadata
+                        
         try:
             metadata = triton_client.get_model_metadata(FLAGS.model)
             print(metadata)
@@ -144,7 +144,7 @@ if __name__ == '__main__':
                 print("FAILED : get_model_metadata")
                 sys.exit(1)
 
-        # Model configuration
+                             
         try:
             config = triton_client.get_model_config(FLAGS.model)
             if not (config.config.name == FLAGS.model):
@@ -156,7 +156,7 @@ if __name__ == '__main__':
             print("Got: {}".format(ex.message()))
             sys.exit(1)
 
-    # DUMMY MODE
+                
     if FLAGS.mode == 'dummy':
         print("Running in 'dummy' mode")
         print("Creating emtpy buffer filled with ones...")
@@ -187,7 +187,7 @@ if __name__ == '__main__':
             print(f"Received result buffer \"{output}\" of size {result.shape}")
             print(f"Naive buffer sum: {np.sum(result)}")
 
-    # IMAGE MODE
+                
     if FLAGS.mode == 'image':
         print("Running in 'image' mode")
         if not FLAGS.input:
@@ -252,7 +252,7 @@ if __name__ == '__main__':
             cv2.waitKey(0)
             cv2.destroyAllWindows()
 
-    # VIDEO MODE
+                
     if FLAGS.mode == 'video':
         print("Running in 'video' mode")
         if not FLAGS.input:

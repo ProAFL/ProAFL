@@ -23,7 +23,7 @@ params = parameters()
 fault_type_dict = parameters().fault_type
 
 metric = Metric()
-# convert fault_type_dict to number2fault
+                                         
 number2fault = {}
 for key in fault_type_dict.keys():
     number2fault[fault_type_dict[key]] = key
@@ -96,7 +96,7 @@ class FaultDetective:
         )
         self.mask_others_path = namer_("mask_others")
         self.crop_path = namer_("crop")
-        # self.mask_all_path = namer_('mask_all')
+                                                 
         self.gt_path = "./data/fault_annotations/" + config["dataset"] + config["set"] + "_mixedfault" + str(config["fault_ratio"]) + ".json"
         self.loss_based_config = loss_based_config
         self.al_based_config = al_based_config
@@ -117,11 +117,11 @@ class FaultDetective:
         with open(self.crop_path, "r") as f:
             self.crop_list = json.load(f)
 
-        # with open(self.mask_all_path, 'r') as f:
-        #     self.mask_all_list = json.load(f)
+                                                  
+                                               
 
         with open(self.gt_path, "r") as f:
-            fullgt_list = json.load(f)  # with missing fault
+            fullgt_list = json.load(f)                      
 
         for i in range(len(fullgt_list)):
             if fullgt_list[i]["fault_type"] == fault_type_dict["class fault"]:
@@ -143,11 +143,11 @@ class FaultDetective:
             loss = loss_func(torch.tensor([scores]), torch.tensor([label]))
             self.crop_list[i]["loss"] = loss.item()
 
-        # mutiple loss
+                      
         if config["dataset"] == "VOC" or (config["dataset"] == "VisDrone" and config["set"] == "test"):
             for i in range(len(self.mask_others_list)):
-                #
-                # assert self.mask_others_list[i]['image_name'] == self.mask_all_list[i]['image_name']
+                 
+                                                                                                      
                 if self.mask_others_list[i]["detectiongt_category_id"] != 0:
                     assert self.mask_others_list[i]["image_name"] == self.crop_list[i]["image_name"]
                     self.mask_others_list[i]["loss"] = self.crop_list[i]["loss"]
@@ -155,9 +155,9 @@ class FaultDetective:
             self.crop_list.extend(self.mask_others_list)
             self.mask_others_list = self.crop_list
 
-        # process fullgt_list
-        gt_list = []  # without missing fault
-        self.missing_list = []  # only missing fault
+                             
+        gt_list = []                         
+        self.missing_list = []                      
         for i in range(len(fullgt_list)):
             if fullgt_list[i]["fault_type"] != fault_type_dict["missing fault"]:
                 gt_list.append(fullgt_list[i])
@@ -194,7 +194,7 @@ class FaultDetective:
         elif method == "cleanlab":
             cleanlab = CleanLab(self.cleanlab_based_config, excel=excel)
             res = cleanlab.run(early_return=True)
-            # make all score in res to negative
+                                               
             for i in range(len(res)):
                 res[i]["score"] = -res[i]["score"]
             self.mask_others_list = None
@@ -203,7 +203,7 @@ class FaultDetective:
         dirty_data = self.load_json(
             "./data/fault_annotations/" + self.config["dataset"] + self.config["set"] + "_mixedfault" + str(self.config["fault_ratio"]) + ".json"
         )
-        # argsort mask_others_list by loss in descending order
+                                                              
         print(len(res))
         tmp = [i.copy() for i in res]
         results = sorted(tmp, key=lambda x: x[loss_name], reverse=True)
@@ -217,10 +217,10 @@ class FaultDetective:
         incert_index = 0
         len_orgclean = len(clean_data)
         len_orgmasklist = len(res)
-        # 对齐
+              
         while incert_index < len(dirty_data):
             if dirty_data[incert_index]["fault_type"] == fault_type_dict["redundancy fault"]:
-                # incert dirty_data[incert_index] to clean_data after the index of incert_index
+                                                                                               
                 clean_data.insert(incert_index, dirty_data[incert_index])
             if dirty_data[incert_index]["fault_type"] == fault_type_dict["missing fault"] and method != "albased" and method != "cleanlab":
                 res.insert(
@@ -239,11 +239,11 @@ class FaultDetective:
             incert_index += 1
 
         assert len(dirty_data) == len(clean_data)
-        # 插入了miss fault的 res 的 排序
+                                             
         sorted_index = np.argsort([i[loss_name] for i in res])[::-1]
-        # 代价之前的排序
+                     
         filter_index = sorted_index[: int(len_orgmasklist * 0.4)]
-        # 代价
+              
         print("0.4 lenorg" + str(int(len_orgmasklist * 0.4)))
         print(len(filter_index))
 
@@ -272,10 +272,10 @@ class FaultDetective:
                 dirty_data[i]["fault_type"] = fault_type_dict["no fault"]
         print("fliter:", count)
         for i in reversed(sorted(del_list)):
-            # delete index i in dirty_data
+                                          
             del dirty_data[i]
         print(pp_cnt, cnt)
-        # assert pp_cnt == cnt
+                              
         json_str = json.dumps(dirty_data, indent=4)
         filename = None
         if method == "cleanlab":
@@ -290,7 +290,7 @@ class FaultDetective:
 
     def run(self):
         start_time = time.time()
-        # sort self.c_list by self.c_list[i]['loss']
+                                                    
         tmp = [i.copy() for i in self.mask_others_list]
         results = sorted(tmp, key=lambda x: x["loss"], reverse=True)
 
@@ -299,7 +299,7 @@ class FaultDetective:
 
         X = [i for i in range(len(results))]
         Y = [0 for i in range(len(results))]
-        # print(results)
+                        
         fault_t = []
 
         flag_list = []
@@ -314,7 +314,7 @@ class FaultDetective:
         for i in range(len(results)):
             fault_ = "no"
             if int(results[i]["detectiongt_category_id"]) == 0 and results[i]["image_name"] in self.missing_dict:
-                # 该实例是背景
+                      
                 results[i]["fault_type"] = fault_type_dict["missing fault"]
                 Y[i] = Y[i - 1] + 1
                 fault_ = "mis"
@@ -322,18 +322,18 @@ class FaultDetective:
                     if "mis" in key:
                         Stacked_line_chart[key][i] = Stacked_line_chart[key][i - 1] + 1
                 fault_t.append(fault_type_dict["missing fault"])
-                # box = results[i]["bbox"]
-                # image_name = results[i]['image_name']
-                # missing_boxes = [j["boxes"] for j in self.missing_dict[image_name]]
-                # missing_max_IoU = torch.max(metric.cal_IoU([box], missing_boxes))
-                #
-                # if missing_max_IoU > params.missing_threshold:
-                #     results[i]['fault_type'] = fault_type_dict['missing fault']
-                #     Y[i] = Y[i - 1] + 1
-                #     fault_t.append(fault_type_dict['missing fault'])
-                # else:
-                #     Y[i] = Y[i - 1]
-                #     fault_t.append(fault_type_dict["no fault"])
+                                          
+                                                       
+                                                                                     
+                                                                                   
+                 
+                                                                
+                                                                                 
+                                         
+                                                                      
+                       
+                                     
+                                                                 
             elif results[i]["fault_type"] != fault_type_dict["no fault"] and int(results[i]["detectiongt_category_id"]) != 0:
                 if results[i]["fault_type"] == fault_type_dict["class fault"]:
                     fault_ = "cls"
@@ -364,40 +364,40 @@ class FaultDetective:
         print("ours: ", APFD)
         EXAM_F, EXAM_F_rel, Top_1, Top_3 = metric.EXAM_F(results)
         excel.run([EXAM_F_rel, EXAM_F, Top_1, Top_3], [0, 12, 24, 36], 1)
-        # excel.run([APFD],[0],1)
+                                 
         print("ours EXAM_F: ", EXAM_F)
         print("ours EXAM_F_rel: ", EXAM_F_rel)
         print("ours Top_1: ", Top_1)
         print("ours Top_3: ", Top_3)
 
-        # color_dict = {0: 'b', 1: 'g', 2: 'r', 3: 'c', 4: 'm', 5: 'y', 6: 'k', 7: 'w'}
+                                                                                       
 
-        # delete no fault
+                         
         for i in range(len(fault_t)):
             if fault_t[i] == fault_type_dict["no fault"]:
                 fault_t[i] = -1
-        # XX = [X[i] for i in range(len(X)) if fault_t[i] != -1]
-        # YY = [Y[i] for i in range(len(Y)) if fault_t[i] != -1]
-        # fault_t = [i for i in fault_t if i != -1]
-        #
-        # plt.plot(X, Y, color='g')
-        # # plt.scatter(XX, YY, c=[color_dict[i] for i in fault_t])
-        # plt.plot([0, len(results)], [0, len(fault_t)], color='r')
-        #
-        # # color legend
-        # for i in range(len(fault_type_dict)):
-        #     plt.scatter([], [], c=color_dict[i], label=number2fault[i])
+                                                                
+                                                                
+                                                   
+         
+                                   
+                                                                   
+                                                                   
+         
+                        
+                                               
+                                                                         
 
-        # loss_based = LossBased(self.loss_based_config, self.missing_dict, excel=excel)
-        # results_lossbased = loss_based.run()
-        # #
+                                                                                        
+                                              
+           
         al_based = ALBased(self.al_based_config, excel=excel)
         results_albased = al_based.run()
 
         Clean_Lab = CleanLab(self.cleanlab_based_config, excel=excel)
         results_cleanlab = Clean_Lab.run()
 
-        # plt.legend()
+                      
         max_fault = (
             self.max_fault_num["class fault"]
             + self.max_fault_num["location fault"]
@@ -406,65 +406,65 @@ class FaultDetective:
         )
         print("max_fault: ", max_fault)
 
-        # delete missing fault in results_lossbased
-        # results_lossbased = [
-        #     i
-        #     for i in results_lossbased
-        #     if i["fault_type"] != fault_type_dict["missing fault"]
-        # ]
+                                                   
+                               
+               
+                                        
+                                                                    
+           
 
-        # plt1 = metric.plt_stack_line_chart(
-        #     results_lossbased,
-        #     missing_dict=self.missing_dict,
-        #     x_max=len(results) * 1.1,
-        #     y_max=len([i for i in fault_t if i != -1]) * 1.1,
-        #     max_fault=max_fault,
-        # )
-        # plt1.savefig(
-        #     "./pictures/lossbased/"
-        #     + self.dataset
-        #     + "_"
-        #     + self.setname
-        #     + "_"
-        #     + self.loss_type
-        #     + "_"
-        #     + self.model_name
-        #     + ".pdf",
-        #     bbox_inches="tight",
-        # )
-        # plt1.close()
-        # plt2 = metric.plt_stack_line_chart(
-        #     results_albased,
-        #     missing_dict=self.missing_dict,
-        #     x_max=len(results) * 1.1,
-        #     y_max=len([i for i in fault_t if i != -1]) * 1.1,
-        #     max_fault=max_fault,
-        # )
-        # plt2.savefig(
-        #     "./pictures/albased/"
-        #     + self.dataset
-        #     + "_"
-        #     + self.setname
-        #     + "_"
-        #     + self.al_type
-        #     + "_"
-        #     + self.model_name
-        #     + ".pdf",
-        #     bbox_inches="tight",
-        # )
-        # plt2.close()
-        # plt3 = metric.plt_stack_line_chart(
-        #     results,
-        #     missing_dict=self.missing_dict,
-        #     x_max=len(results) * 1.1,
-        #     y_max=max_fault * 1.1,
-        #     max_fault=max_fault,
-        # )
-        # plt3.savefig(
-        #     "./pictures/ours/" + self.dataset + "_" + self.setname + ".pdf",
-        #     bbox_inches="tight",
-        # )
-        # plt3.close()
+                                             
+                                
+                                             
+                                       
+                                                               
+                                  
+           
+                       
+                                     
+                            
+                   
+                            
+                   
+                              
+                   
+                               
+                       
+                                  
+           
+                      
+                                             
+                              
+                                             
+                                       
+                                                               
+                                  
+           
+                       
+                                   
+                            
+                   
+                            
+                   
+                            
+                   
+                               
+                       
+                                  
+           
+                      
+                                             
+                      
+                                             
+                                       
+                                    
+                                  
+           
+                       
+                                                                              
+                                  
+           
+                      
 
         plt4 = metric.plt_stack_line_chart(
             results_cleanlab,
@@ -482,5 +482,5 @@ class FaultDetective:
 
 if __name__ == "__main__":
     detective = FaultDetective()
-    # detective.run()
+                     
     detective.get_retrain_data(METHOD)

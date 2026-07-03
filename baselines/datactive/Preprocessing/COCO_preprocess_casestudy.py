@@ -4,21 +4,21 @@ from PIL import Image
 from tqdm import tqdm
 
 import matplotlib.pyplot as plt
-# read COCO instances_val2017.json and transform it to
-# {
-#         "image_name": "xxx.jpg",
-#         "image_size": [
-#             1400,
-#             788
-#         ],
-#         "boxes": [
-#             x1,y1,x2,y2
-#         ],
-#         "labels": 1,
-#         "image_id": 469,
-#         "area": 24,
-#         "iscrowd": 0,
-# },
+                                                      
+   
+                                  
+                         
+                   
+                 
+            
+                    
+                         
+            
+                      
+                          
+                     
+                       
+    
 from UTILS.parameters import parameters
 
 params = parameters()
@@ -60,7 +60,7 @@ for image in tqdm(data['images']):
             }
             instances.append(instance)
 
-#############case study###############
+                                      
 
 for instance in instances:
     if instance['labels'] not in [1, 3, 62, 84, 44, 47, 67, 10]:
@@ -69,7 +69,7 @@ for instance in instances:
 for instance in instances:
     if instance['labels'] != -1:
         instance['labels']=labelmap[int(instance['labels'])]
-#############
+             
 
 
 COCO_label_name = {'1': 'person', '2': 'bicycle', '3': 'car', '4': 'motorcycle', '5': 'airplane', '6': 'bus',
@@ -89,7 +89,7 @@ COCO_label_name = {'1': 'person', '2': 'bicycle', '3': 'car', '4': 'motorcycle',
                    '85': 'clock', '86': 'vase', '87': 'scissors', '88': 'teddy bear', '89': 'hair drier',
                    '90': 'toothbrush'}
 
-# 统计每个类别的数量 并作柱状图
+                
 num = {}
 for instance in instances:
     if instance['labels'] not in num:
@@ -100,16 +100,16 @@ for instance in instances:
 plt.bar(num.keys(), num.values())
 plt.show()
 print('number of categories: ', len(num))
-# num.keys() to list and sort
+                             
 print('categories: ', sorted(list(num.keys())))
 
-# get top 8 num.values() corresponding num.keys()
+                                                 
 print(num)
 print('top 8 categories: ', sorted(num.items(), key=lambda x: x[1], reverse=True)[:8])
 
-# top 8 categories:  [(1, 11004), (3, 1932), (62, 1791), (84, 1161), (44, 1025), (47, 899), (67, 697), (10, 637)]
+                                                                                                                 
 
-# transform instances to {imagename:[]} format dict
+                                                   
 
 instances_dict = {}
 
@@ -119,7 +119,7 @@ for instance in instances:
         instances_dict[image_name] = []
     instances_dict[image_name].append(instance)
 
-# random split instances_dict to 2 equal parts and assert the number of categories in each part is 80
+                                                                                                     
 
 import random
 
@@ -145,7 +145,7 @@ for key in instances_dict_keys1:
 for key in instances_dict_keys2:
     instances_dict2[key] = instances_dict[key]
 
-# assert the number of categories in each part is 80
+                                                    
 
 num1 = {}
 num2 = {}
@@ -170,9 +170,9 @@ for key in instances_dict2:
 print('number of categories in instances_dict1: ', len(num1))
 print('number of categories in instances_dict2: ', len(num2))
 
-# assert len(num1) == 80 and len(num2) == 80, 'number of categories is not 80'
+                                                                              
 
-# transform instances_dict to instances_list
+                                            
 
 instances_list1 = []
 instances_list2 = []
@@ -185,7 +185,7 @@ for key in instances_dict2:
     for instance in instances_dict2[key]:
         instances_list2.append(instance)
 
-# save instances_list to json file
+                                  
 
 print('number of instances in instances_list1: ', len(instances_list1))
 print('number of instances in instances_list2: ', len(instances_list2))
@@ -198,22 +198,22 @@ with open('../dataset/COCO/casestudy_test.json', 'w') as f:
     json.dump(instances_list2, f, indent=4)
 
 
-# # plt some images with instances
-#
-#
-#
-# for key in instances_dict:
-#     img = Image.open('../dataset/COCO/val2017/' + key)
-#     for instance in instances_dict[key]:
-#
-#         boxes = instance['boxes']
-#         plt.gca().add_patch(
-#             plt.Rectangle((boxes[0], boxes[1]), boxes[2] - boxes[0], boxes[3] - boxes[1], fill=False, edgecolor='red',
-#                           linewidth=3))
-#
-#         class_name = str(instance['labels'])
-#         plt.gca().text(boxes[0], boxes[1], '{:s}'.format(class_name), bbox=dict(facecolor='blue', alpha=0.5),
-#                         fontsize=14, color='white')
-#
-#     plt.imshow(img)
-#     plt.show()
+                                  
+ 
+ 
+ 
+                            
+                                                        
+                                          
+ 
+                                   
+                              
+                                                                                                                        
+                                         
+ 
+                                              
+                                                                                                               
+                                                     
+ 
+                     
+                

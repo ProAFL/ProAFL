@@ -73,7 +73,7 @@ def get_gid_to_img_and_line(g_boxes_json:dict):
     return res
 
 def get_gid_to_anno_id(g_boxes_json:dict,anno:dict)->dict:
-    '''我们收集的gboxs和coco风格的anno json的box进行对应，即gid to annoid'''
+    '''Map our collected gboxes to boxes in COCO-style annotation JSON, namely gid to annoid.'''
     gid_to_anno_id = {}
     gid_to_img_and_line =get_gid_to_img_and_line(g_boxes_json)
     img_name_to_ann_ids = get_img_name_to_ann_ids(anno)
@@ -167,7 +167,7 @@ def get_all_annoids_detail(anno_error_with_miss:dict) -> list:
         elif anno["fault_type"] == 4:
             all_annoids_detail["miss_fault"].append(anno["id"])
         else:
-            raise Exception("fault_type异常")
+            raise Exception("Invalid fault_type")
     return all_annoids_detail
 
 def get_all_error_clean_set(anno_error_with_miss:dict) -> dict:
@@ -202,7 +202,7 @@ def get_all_error_clean_set(anno_error_with_miss:dict) -> dict:
 
 def conver_ours_rank(ours_rank:list,g_boxes_json:dict,anno_error_json:dict) -> list:
     '''
-    把我们方法的到的混排（imgname or gid）转换为（imgname or anno_id）
+    Convert the mixed ranking from our method (imgname or gid) to (imgname or anno_id).
     '''
     gid_to_anno_id = get_gid_to_anno_id(g_boxes_json, anno_error_json)
     converted_ours_rank = []
@@ -211,18 +211,18 @@ def conver_ours_rank(ours_rank:list,g_boxes_json:dict,anno_error_json:dict) -> l
             img_name = idd
             converted_ours_rank.append(img_name)
         else:
-            gid = idd # 我们方法rank的idd是（imgname or gid）
+            gid = idd                                                  
             annoid = gid_to_anno_id[gid]
             converted_ours_rank.append(annoid)
-    return converted_ours_rank # imgname or gid 的排序
+    return converted_ours_rank                         
 
 def conver_datactive_rank(datactive_rank:list, bg_catId:int) -> list:
     '''
-    把datactive方法得到的序（instances）转换为统一的（imgname or anno_id）序
+    Convert the sequence from datactive (instances) to a unified (imgname or anno_id) sequence.
     '''
     converted_rank_list = []
     for instance in datactive_rank:
-        gt_category_id = instance["gt_category_id"] # 背景类实例其实就是被怀疑有miss fault的img
+        gt_category_id = instance["gt_category_id"]                                                                        
         if gt_category_id == bg_catId:
             converted_rank_list.append(instance["image_name"])
         else:
@@ -233,24 +233,24 @@ def get_all_image_name_list(anno_json:dict)->list:
     all_img_name_list = []
     images = anno_json["images"]
     all_img_name_list = [img["file_name"] for img in images]
-    assert len(set(all_img_name_list)) == len(all_img_name_list), "具有重复元素"
+    assert len(set(all_img_name_list)) == len(all_img_name_list), "contains duplicate elements"
     return all_img_name_list
 
 def get_name_id_map(ANN_FILE):
     
     coco = COCO(ANN_FILE)
 
-    # 1) file_name -> img_id（假设 file_name 唯一）
+                                                          
     name2id = {img_info["file_name"]: img_id for img_id, img_info in coco.imgs.items()}
 
-    # 2) 反向：img_id -> file_name
+                                     
     id2name = {img_id: img_info["file_name"] for img_id, img_info in coco.imgs.items()}
 
     return name2id,id2name
 
 def get_all_errored_g_box_id_set(gt_json:dict) -> set[int]:
     '''
-    基于我们收集的g_boxs，获得fault g box id set
+    Get fault g_box id set based on collected g_boxes
     '''
 
     all_errored_g_box_id_set = set()
@@ -262,7 +262,7 @@ def get_all_errored_g_box_id_set(gt_json:dict) -> set[int]:
 
 def get_all_correct_g_box_id_set(gt_json:dict) -> set[int]:
     '''
-    基于我们收集的g_boxs，获得fault g box id set
+    Get fault g_box id set based on collected g_boxes
     '''
 
     all_correct_g_box_id_set = set()
@@ -281,7 +281,7 @@ def get_image_id_to_image_name_for_coco(annos_with_miss_json:dict) -> dict:
 
 def get_all_miss_error_img_name_set(annos_with_miss_json_path:str) -> set[str]:
     '''
-    获得所有具有miss fault的 img name set
+    Get the set of image names with miss faults
     '''
     if type(annos_with_miss_json_path) is str:
         with open(annos_with_miss_json_path, "r") as f:
@@ -289,7 +289,7 @@ def get_all_miss_error_img_name_set(annos_with_miss_json_path:str) -> set[str]:
     elif type(annos_with_miss_json_path) is dict:
         annos_with_miss_json = annos_with_miss_json_path
     else:
-        raise Exception("参数类型错误")
+        raise Exception("Invalid parameter type")
     
     imageid_2_imagename = get_image_id_to_image_name_for_coco(annos_with_miss_json)
     anns = annos_with_miss_json["annotations"]
@@ -303,20 +303,20 @@ def get_all_miss_error_img_name_set(annos_with_miss_json_path:str) -> set[str]:
 
 def get_all_gids(gt_json:dict) -> list[int]:
     '''
-    得到所有的g_box_id_list
+    Get all g_box_id_list values
     
-    参数
+    Parameters
     ----
     gt_json : dict
-        数据格式：
+        Data format:
         {
             image_name:[g_box_1,g_box_2],
             ...
         }
-    返回
+    Returns
     ---
     all_g_box_id_list : list[int]
-        提取出的所有的g_box_id_list
+        All extracted g_box_id_list values
     '''
     all_g_box_id_list = []
     for img_name, g_box_list in gt_json.items():
@@ -326,11 +326,11 @@ def get_all_gids(gt_json:dict) -> list[int]:
 
 def get_g_id_to_metric(metric_json_path):
     '''
-    提供每个gid对应的metric(conf_list和iou_list)
+    Provide metrics (conf_list and iou_list) for each gid
     '''
     with open(metric_json_path, "r", encoding="utf-8") as f:
         gt_box_metric_collection_list = json.load(f)
-    print(f"matched gt_box数量:{len(gt_box_metric_collection_list)}")
+    print(f"matched gt_boxCount:{len(gt_box_metric_collection_list)}")
 
     g_box_id_to_metric = {}
 

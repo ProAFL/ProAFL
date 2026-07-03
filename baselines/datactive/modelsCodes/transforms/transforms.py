@@ -327,7 +327,7 @@ class Resize(torch.nn.Module):
         self.size = size
         self.max_size = max_size
 
-        # Backward compatibility with integer value
+                                                   
         if isinstance(interpolation, int):
             warnings.warn(
                 "Argument 'interpolation' of type int is deprecated since 0.13 and will be removed in 0.15. "
@@ -664,11 +664,11 @@ class RandomCrop(torch.nn.Module):
             img = F.pad(img, self.padding, self.fill, self.padding_mode)
 
         _, height, width = F.get_dimensions(img)
-        # pad the width if needed
+                                 
         if self.pad_if_needed and width < self.size[1]:
             padding = [self.size[1] - width, 0]
             img = F.pad(img, padding, self.fill, self.padding_mode)
-        # pad the height if needed
+                                  
         if self.pad_if_needed and height < self.size[0]:
             padding = [0, self.size[0] - height]
             img = F.pad(img, padding, self.fill, self.padding_mode)
@@ -766,7 +766,7 @@ class RandomPerspective(torch.nn.Module):
         _log_api_usage_once(self)
         self.p = p
 
-        # Backward compatibility with integer value
+                                                   
         if isinstance(interpolation, int):
             warnings.warn(
                 "Argument 'interpolation' of type int is deprecated since 0.13 and will be removed in 0.15. "
@@ -886,7 +886,7 @@ class RandomResizedCrop(torch.nn.Module):
         if (scale[0] > scale[1]) or (ratio[0] > ratio[1]):
             warnings.warn("Scale and ratio should be of kind (min, max)")
 
-        # Backward compatibility with integer value
+                                                   
         if isinstance(interpolation, int):
             warnings.warn(
                 "Argument 'interpolation' of type int is deprecated since 0.13 and will be removed in 0.15. "
@@ -927,7 +927,7 @@ class RandomResizedCrop(torch.nn.Module):
                 j = torch.randint(0, width - w + 1, size=(1,)).item()
                 return i, j, h, w
 
-        # Fallback to central crop
+                                  
         in_ratio = float(width) / float(height)
         if in_ratio < min(ratio):
             w = width
@@ -935,7 +935,7 @@ class RandomResizedCrop(torch.nn.Module):
         elif in_ratio > max(ratio):
             h = height
             w = int(round(h * max(ratio)))
-        else:  # whole image
+        else:               
             w = width
             h = height
         i = (height - h) // 2
@@ -1184,8 +1184,8 @@ class ColorJitter(torch.nn.Module):
         else:
             raise TypeError(f"{name} should be a single number or a list/tuple with length 2.")
 
-        # if value is 0 or (1., 1.) for brightness/contrast/saturation
-        # or (0., 0.) for hue, do nothing
+                                                                      
+                                         
         if value[0] == value[1] == center:
             value = None
         return value
@@ -1300,7 +1300,7 @@ class RandomRotation(torch.nn.Module):
             )
             interpolation = _interpolation_modes_from_int(resample)
 
-        # Backward compatibility with integer value
+                                                   
         if isinstance(interpolation, int):
             warnings.warn(
                 "Argument 'interpolation' of type int is deprecated since 0.13 and will be removed in 0.15. "
@@ -1430,7 +1430,7 @@ class RandomAffine(torch.nn.Module):
             )
             interpolation = _interpolation_modes_from_int(resample)
 
-        # Backward compatibility with integer value
+                                                   
         if isinstance(interpolation, int):
             warnings.warn(
                 "Argument 'interpolation' of type int is deprecated since 0.13 and will be removed in 0.15. "
@@ -1533,7 +1533,7 @@ class RandomAffine(torch.nn.Module):
             else:
                 fill = [float(f) for f in fill]
 
-        img_size = [width, height]  # flip for keeping BC on get_params call
+        img_size = [width, height]                                          
 
         ret = self.get_params(self.degrees, self.translate, self.scale, self.shear, img_size)
 
@@ -1716,7 +1716,7 @@ class RandomErasing(torch.nn.Module):
             j = torch.randint(0, img_w - w + 1, size=(1,)).item()
             return i, j, h, w, v
 
-        # Return original image
+                               
         return 0, 0, img_h, img_w, img
 
     def forward(self, img):
@@ -1729,7 +1729,7 @@ class RandomErasing(torch.nn.Module):
         """
         if torch.rand(1) < self.p:
 
-            # cast self.value to script acceptable type
+                                                       
             if isinstance(self.value, (int, float)):
                 value = [self.value]
             elif isinstance(self.value, str):

@@ -47,34 +47,34 @@ class _DenseLayer(nn.Module):
 
     def bn_function(self, inputs: List[Tensor]) -> Tensor:
         concated_features = torch.cat(inputs, 1)
-        bottleneck_output = self.conv1(self.relu1(self.norm1(concated_features)))  # noqa: T484
+        bottleneck_output = self.conv1(self.relu1(self.norm1(concated_features)))              
         return bottleneck_output
 
-    # todo: rewrite when torchscript supports any
+                                                 
     def any_requires_grad(self, input: List[Tensor]) -> bool:
         for tensor in input:
             if tensor.requires_grad:
                 return True
         return False
 
-    @torch.jit.unused  # noqa: T484
+    @torch.jit.unused              
     def call_checkpoint_bottleneck(self, input: List[Tensor]) -> Tensor:
         def closure(*inputs):
             return self.bn_function(inputs)
 
         return cp.checkpoint(closure, *input)
 
-    @torch.jit._overload_method  # noqa: F811
-    def forward(self, input: List[Tensor]) -> Tensor:  # noqa: F811
+    @torch.jit._overload_method              
+    def forward(self, input: List[Tensor]) -> Tensor:              
         pass
 
-    @torch.jit._overload_method  # noqa: F811
-    def forward(self, input: Tensor) -> Tensor:  # noqa: F811
+    @torch.jit._overload_method              
+    def forward(self, input: Tensor) -> Tensor:              
         pass
 
-    # torchscript does not yet support *args, so we overload method
-    # allowing it to take either a List[Tensor] or single Tensor
-    def forward(self, input: Tensor) -> Tensor:  # noqa: F811
+                                                                   
+                                                                
+    def forward(self, input: Tensor) -> Tensor:              
         if isinstance(input, Tensor):
             prev_features = [input]
         else:
@@ -164,7 +164,7 @@ class DenseNet(nn.Module):
         super().__init__()
         _log_api_usage_once(self)
 
-        # First convolution
+                           
         self.features = nn.Sequential(
             OrderedDict(
                 [
@@ -176,7 +176,7 @@ class DenseNet(nn.Module):
             )
         )
 
-        # Each denseblock
+                         
         num_features = num_init_features
         for i, num_layers in enumerate(block_config):
             block = _DenseBlock(
@@ -194,13 +194,13 @@ class DenseNet(nn.Module):
                 self.features.add_module("transition%d" % (i + 1), trans)
                 num_features = num_features // 2
 
-        # Final batch norm
+                          
         self.features.add_module("norm5", nn.BatchNorm2d(num_features))
 
-        # Linear layer
+                      
         self.classifier = nn.Linear(num_features, num_classes)
 
-        # Official init from torch repo.
+                                        
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
                 nn.init.kaiming_normal_(m.weight)
@@ -220,10 +220,10 @@ class DenseNet(nn.Module):
 
 
 def _load_state_dict(model: nn.Module, weights: WeightsEnum, progress: bool) -> None:
-    # '.'s are no longer allowed in module names, but previous _DenseLayer
-    # has keys 'norm.1', 'relu.1', 'conv.1', 'norm.2', 'relu.2', 'conv.2'.
-    # They are also in the checkpoints in model_urls. This pattern is used
-    # to find such keys.
+                                                                          
+                                                                          
+                                                                          
+                        
     pattern = re.compile(
         r"^(.*denselayer\d+\.(?:norm|relu|conv))\.((?:[12])\.(?:weight|bias|running_mean|running_var))$"
     )
@@ -437,7 +437,7 @@ def densenet201(*, weights: Optional[DenseNet201_Weights] = None, progress: bool
     return _densenet(32, (6, 12, 48, 32), 64, weights, progress, **kwargs)
 
 
-# The dictionary below is internal implementation detail and will be removed in v0.15
+                                                                                     
 from ._utils import _ModelURLs
 
 

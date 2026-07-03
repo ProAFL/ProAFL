@@ -1,5 +1,5 @@
 '''
-统计分析ours和datactive,排序结果的中前40%的TP的交并比
+textourstextdatactive,rankingtext40%textTPtext
 '''
 import os
 import joblib
@@ -71,20 +71,20 @@ def analyse_jaccard(ours_list:list,datactive_list:list,anno_error_with_miss:dict
 
 
 def main():
-    # 得到转换后的ours rank list
+                        
     ours_rank = joblib.load(ours_rank_path)
     g_boxes_json = read_json(gt_json_path)
     anno_error = read_json(anno_error_path)
     anno_error_with_miss = read_json(anno_with_miss_error_path)
     converted_ours_rank = conver_ours_rank(ours_rank, g_boxes_json, anno_error)
 
-    # 得到转换后的datactive rank list
+                             
     datactive_rank = joblib.load(datactive_rank_path)
     coco = COCO(anno_error_path)
     bg_catId = coco.getCatIds()[-1]+1
     converted_datactive_rank = conver_datactive_rank(datactive_rank,bg_catId)
 
-    # 比较cut off中两个方法的交并比
+                     
     cut_off_rate = 0.4
     cut_off_point = int(len(converted_ours_rank) * cut_off_rate)
     ours_cut_off = converted_ours_rank[:cut_off_point]

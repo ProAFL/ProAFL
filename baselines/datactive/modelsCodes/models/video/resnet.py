@@ -135,16 +135,16 @@ class Bottleneck(nn.Module):
         super().__init__()
         midplanes = (inplanes * planes * 3 * 3 * 3) // (inplanes * 3 * 3 + 3 * planes)
 
-        # 1x1x1
+               
         self.conv1 = nn.Sequential(
             nn.Conv3d(inplanes, planes, kernel_size=1, bias=False), nn.BatchNorm3d(planes), nn.ReLU(inplace=True)
         )
-        # Second kernel
+                       
         self.conv2 = nn.Sequential(
             conv_builder(planes, planes, midplanes, stride), nn.BatchNorm3d(planes), nn.ReLU(inplace=True)
         )
 
-        # 1x1x1
+               
         self.conv3 = nn.Sequential(
             nn.Conv3d(planes, planes * self.expansion, kernel_size=1, bias=False),
             nn.BatchNorm3d(planes * self.expansion),
@@ -229,7 +229,7 @@ class VideoResNet(nn.Module):
         self.avgpool = nn.AdaptiveAvgPool3d((1, 1, 1))
         self.fc = nn.Linear(512 * block.expansion, num_classes)
 
-        # init weights
+                      
         for m in self.modules():
             if isinstance(m, nn.Conv3d):
                 nn.init.kaiming_normal_(m.weight, mode="fan_out", nonlinearity="relu")
@@ -245,7 +245,7 @@ class VideoResNet(nn.Module):
         if zero_init_residual:
             for m in self.modules():
                 if isinstance(m, Bottleneck):
-                    nn.init.constant_(m.bn3.weight, 0)  # type: ignore[union-attr, arg-type]
+                    nn.init.constant_(m.bn3.weight, 0)                                      
 
     def forward(self, x: Tensor) -> Tensor:
         x = self.stem(x)
@@ -256,7 +256,7 @@ class VideoResNet(nn.Module):
         x = self.layer4(x)
 
         x = self.avgpool(x)
-        # Flatten the layer to fc
+                                 
         x = x.flatten(1)
         x = self.fc(x)
 
@@ -433,7 +433,7 @@ def mc3_18(*, weights: Optional[MC3_18_Weights] = None, progress: bool = True, *
 
     return _video_resnet(
         BasicBlock,
-        [Conv3DSimple] + [Conv3DNoTemporal] * 3,  # type: ignore[list-item]
+        [Conv3DSimple] + [Conv3DNoTemporal] * 3,                           
         [2, 2, 2, 2],
         BasicStem,
         weights,
@@ -478,7 +478,7 @@ def r2plus1d_18(*, weights: Optional[R2Plus1D_18_Weights] = None, progress: bool
     )
 
 
-# The dictionary below is internal implementation detail and will be removed in v0.15
+                                                                                     
 from .._utils import _ModelURLs
 
 

@@ -26,7 +26,7 @@ def _register_custom_op():
             g, squeeze(g, select(g, rois, 1, g.op("Constant", value_t=torch.tensor([0], dtype=torch.long))), 1), False
         )
         rois = select(g, rois, 1, g.op("Constant", value_t=torch.tensor([1, 2, 3, 4], dtype=torch.long)))
-        # TODO: Remove this warning after ONNX opset 16 is supported.
+                                                                     
         if aligned:
             warnings.warn(
                 "ROIAlign with aligned=True is not supported in ONNX, but will be supported in opset 16. "
@@ -35,7 +35,7 @@ def _register_custom_op():
                 "and build ONNXRuntime from source."
             )
 
-        # ONNX doesn't support negative sampling_ratio
+                                                      
         if sampling_ratio < 0:
             warnings.warn(
                 "ONNX doesn't support negative sampling ratio, therefore is set to 0 in order to be exported."

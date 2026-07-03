@@ -81,11 +81,11 @@ class LRASPPHead(nn.Module):
 
 def _lraspp_mobilenetv3(backbone: MobileNetV3, num_classes: int) -> LRASPP:
     backbone = backbone.features
-    # Gather the indices of blocks which are strided. These are the locations of C1, ..., Cn-1 blocks.
-    # The first and last blocks are always included because they are the C0 (conv1) and Cn.
+                                                                                                      
+                                                                                           
     stage_indices = [0] + [i for i, b in enumerate(backbone) if getattr(b, "_is_cn", False)] + [len(backbone) - 1]
-    low_pos = stage_indices[-4]  # use C2 here which has output_stride = 8
-    high_pos = stage_indices[-1]  # use C5 which has output_stride = 16
+    low_pos = stage_indices[-4]                                           
+    high_pos = stage_indices[-1]                                       
     low_channels = backbone[low_pos].out_channels
     high_channels = backbone[high_pos].out_channels
     backbone = IntermediateLayerGetter(backbone, return_layers={str(low_pos): "low", str(high_pos): "high"})
@@ -175,7 +175,7 @@ def lraspp_mobilenet_v3_large(
     return model
 
 
-# The dictionary below is internal implementation detail and will be removed in v0.15
+                                                                                     
 from .._utils import _ModelURLs
 
 

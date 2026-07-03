@@ -45,20 +45,20 @@ class BalancedPositiveNegativeSampler:
             negative = torch.where(matched_idxs_per_image == 0)[0]
 
             num_pos = int(self.batch_size_per_image * self.positive_fraction)
-            # protect against not enough positive examples
+                                                          
             num_pos = min(positive.numel(), num_pos)
             num_neg = self.batch_size_per_image - num_pos
-            # protect against not enough negative examples
+                                                          
             num_neg = min(negative.numel(), num_neg)
 
-            # randomly select positive and negative examples
+                                                            
             perm1 = torch.randperm(positive.numel(), device=positive.device)[:num_pos]
             perm2 = torch.randperm(negative.numel(), device=negative.device)[:num_neg]
 
             pos_idx_per_image = positive[perm1]
             neg_idx_per_image = negative[perm2]
 
-            # create binary mask from indices
+                                             
             pos_idx_per_image_mask = torch.zeros_like(matched_idxs_per_image, dtype=torch.uint8)
             neg_idx_per_image_mask = torch.zeros_like(matched_idxs_per_image, dtype=torch.uint8)
 
@@ -83,7 +83,7 @@ def encode_boxes(reference_boxes: Tensor, proposals: Tensor, weights: Tensor) ->
         weights (Tensor[4]): the weights for ``(x, y, w, h)``
     """
 
-    # perform some unpacking to make it JIT-fusion friendly
+                                                           
     wx = weights[0]
     wy = weights[1]
     ww = weights[2]
@@ -99,7 +99,7 @@ def encode_boxes(reference_boxes: Tensor, proposals: Tensor, weights: Tensor) ->
     reference_boxes_x2 = reference_boxes[:, 2].unsqueeze(1)
     reference_boxes_y2 = reference_boxes[:, 3].unsqueeze(1)
 
-    # implementation starts here
+                                
     ex_widths = proposals_x2 - proposals_x1
     ex_heights = proposals_y2 - proposals_y1
     ex_ctr_x = proposals_x1 + 0.5 * ex_widths
@@ -203,7 +203,7 @@ class BoxCoder:
         dw = rel_codes[:, 2::4] / ww
         dh = rel_codes[:, 3::4] / wh
 
-        # Prevent sending too large values into torch.exp()
+                                                           
         dw = torch.clamp(dw, max=self.bbox_xform_clip)
         dh = torch.clamp(dh, max=self.bbox_xform_clip)
 
@@ -212,7 +212,7 @@ class BoxCoder:
         pred_w = torch.exp(dw) * widths[:, None]
         pred_h = torch.exp(dh) * heights[:, None]
 
-        # Distance from center to box's corner.
+                                               
         c_to_c_h = torch.tensor(0.5, dtype=pred_ctr_y.dtype, device=pred_h.device) * pred_h
         c_to_c_w = torch.tensor(0.5, dtype=pred_ctr_x.dtype, device=pred_w.device) * pred_w
 
@@ -249,11 +249,11 @@ class BoxLinearCoder:
             Tensor: the encoded relative box offsets that can be used to
             decode the boxes.
         """
-        # get the center of reference_boxes
+                                           
         reference_boxes_ctr_x = 0.5 * (reference_boxes[:, 0] + reference_boxes[:, 2])
         reference_boxes_ctr_y = 0.5 * (reference_boxes[:, 1] + reference_boxes[:, 3])
 
-        # get box regression transformation deltas
+                                                  
         target_l = reference_boxes_ctr_x - proposals[:, 0]
         target_t = reference_boxes_ctr_y - proposals[:, 1]
         target_r = proposals[:, 2] - reference_boxes_ctr_x
@@ -357,21 +357,21 @@ class Matcher:
             be matched.
         """
         if match_quality_matrix.numel() == 0:
-            # empty targets or proposals not supported during training
+                                                                      
             if match_quality_matrix.shape[0] == 0:
                 raise ValueError("No ground-truth boxes available for one of the images during training")
             else:
                 raise ValueError("No proposal boxes available for one of the images during training")
 
-        # match_quality_matrix is M (gt) x N (predicted)
-        # Max over gt elements (dim 0) to find best gt candidate for each prediction
+                                                        
+                                                                                    
         matched_vals, matches = match_quality_matrix.max(dim=0)
         if self.allow_low_quality_matches:
             all_matches = matches.clone()
         else:
-            all_matches = None  # type: ignore[assignment]
+            all_matches = None                            
 
-        # Assign candidate matches with low quality to negative (unassigned) values
+                                                                                   
         below_low_threshold = matched_vals < self.low_threshold
         between_thresholds = (matched_vals >= self.low_threshold) & (matched_vals < self.high_threshold)
         matches[below_low_threshold] = self.BELOW_LOW_THRESHOLD
@@ -393,23 +393,23 @@ class Matcher:
         it is unmatched, then match it to the ground-truth with which it has the highest
         quality value.
         """
-        # For each gt, find the prediction with which it has highest quality
+                                                                            
         highest_quality_foreach_gt, _ = match_quality_matrix.max(dim=1)
-        # Find highest quality match available, even if it is low, including ties
+                                                                                 
         gt_pred_pairs_of_highest_quality = torch.where(match_quality_matrix == highest_quality_foreach_gt[:, None])
-        # Example gt_pred_pairs_of_highest_quality:
-        #   tensor([[    0, 39796],
-        #           [    1, 32055],
-        #           [    1, 32070],
-        #           [    2, 39190],
-        #           [    2, 40255],
-        #           [    3, 40390],
-        #           [    3, 41455],
-        #           [    4, 45470],
-        #           [    5, 45325],
-        #           [    5, 46390]])
-        # Each row is a (gt index, prediction index)
-        # Note how gt items 1, 2, 3, and 5 each have two ties
+                                                   
+                                   
+                                   
+                                   
+                                   
+                                   
+                                   
+                                   
+                                   
+                                   
+                                    
+                                                    
+                                                             
 
         pred_inds_to_update = gt_pred_pairs_of_highest_quality[1]
         matches[pred_inds_to_update] = all_matches[pred_inds_to_update]
@@ -422,7 +422,7 @@ class SSDMatcher(Matcher):
     def __call__(self, match_quality_matrix: Tensor) -> Tensor:
         matches = super().__call__(match_quality_matrix)
 
-        # For each gt, find the prediction with which it has the highest quality
+                                                                                
         _, highest_quality_pred_foreach_gt = match_quality_matrix.max(dim=1)
         matches[highest_quality_pred_foreach_gt] = torch.arange(
             highest_quality_pred_foreach_gt.size(0), dtype=torch.int64, device=highest_quality_pred_foreach_gt.device
@@ -465,7 +465,7 @@ def retrieve_out_channels(model: nn.Module, size: Tuple[int, int]) -> List[int]:
     model.eval()
 
     with torch.no_grad():
-        # Use dummy data to retrieve the feature map sizes to avoid hard-coding their values
+                                                                                            
         device = next(model.parameters()).device
         tmp_img = torch.zeros((1, 3, size[1], size[0]), device=device)
         features = model(tmp_img)
@@ -481,7 +481,7 @@ def retrieve_out_channels(model: nn.Module, size: Tuple[int, int]) -> List[int]:
 
 @torch.jit.unused
 def _fake_cast_onnx(v: Tensor) -> int:
-    return v  # type: ignore[return-value]
+    return v                              
 
 
 def _topk_min(input: Tensor, orig_kval: int, axis: int) -> int:
@@ -534,5 +534,5 @@ def _box_loss(
             return complete_box_iou_loss(bbox_per_image, matched_gt_boxes_per_image, reduction="sum", eps=eps)
         if type == "diou":
             return distance_box_iou_loss(bbox_per_image, matched_gt_boxes_per_image, reduction="sum", eps=eps)
-        # otherwise giou
+                        
         return generalized_box_iou_loss(bbox_per_image, matched_gt_boxes_per_image, reduction="sum", eps=eps)

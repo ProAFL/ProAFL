@@ -15,13 +15,13 @@ import torch,torchvision
 from collections import defaultdict
 from cutom_module.small_utils import read_yaml
 
-# Transform PIL image --> PyTorch tensor
+                                        
 def get_transform():
     return ToTensor()
 
 def build_frcnn_model(num_classes):
     model = torchvision.models.detection.fasterrcnn_resnet50_fpn(weights=FasterRCNN_ResNet50_FPN_Weights.DEFAULT)
-    # Number of input features for the classifier head
+                                                      
     in_features = model.roi_heads.box_predictor.cls_score.in_features
     """  
     Number of classes must be equal to your label number
@@ -50,11 +50,11 @@ def set_nms(model, model_name, conf_threshold=0.25,iou_threshold=0.65):
         model.roi_heads.nms_thresh = iou_threshold
         
     else:
-        raise Exception("模型名称错误")
+        raise Exception("Invalid model name")
     return model
 
 def model_load_weight(model,epoch):
-    # 加载模型
+                
     w_path = os.path.join(error_model_pth_dir,f"epoch_{epoch}.pth")
     state_dict = torch.load(w_path,map_location="cpu")
     model.load_state_dict(state_dict)
@@ -92,7 +92,7 @@ def collect_one_epoch(model,dataset_loader,device):
             p_labels = pred['labels']
             confs = pred['scores']
             if p_boxes.shape[0] > 0:
-                # 模型对该图像有预测输出
+                                                                
                 collected_p_boxs = collect_help(img_name,p_boxes,p_labels,confs, global_id)
                 collect_dict[img_name] = {
                     "predicted_bboxs":collected_p_boxs
@@ -109,34 +109,34 @@ def save_one_epoch(collect_dict,epoch):
 
 
 def collect_predicted_boxes():
-    start_time = time.time()  # 记录开始时间
-    # 构建数据集实例
+    start_time = time.time()                     
+          
     train_dataset = get_trainset()
-    # 构建数据集加载器
+          
     train_loader = DataLoader(train_dataset, batch_size=16, 
                               shuffle=True, collate_fn=lambda x: tuple(zip(*x)))
-    # 得到数据集nc:
+             
     num_classes = len(train_dataset.coco.getCatIds()) + 1
-    # 构建模型
+                 
     model = get_model(num_classes)
     if _args["custom_nms"] is True:
         model = set_nms(model,model_name=model_name)
-    # 得到设备
+                
     device = torch.device(f"cuda:{gpu_id}")
     model.to(device)
-    # 开始收集
+                      
     for epoch in range(num_epochs):
         print(f"\nEpoch {epoch}/{num_epochs}")
         model = model_load_weight(model,epoch)
         collect_dict = collect_one_epoch(model,train_loader,device)
         save_path = save_one_epoch(collect_dict,epoch)
-        print(f"收集的数据保存在: {save_path}")
-    end_time = time.time()  # 记录结束时间
-    elapsed_time = end_time - start_time  # 计算运行时间（秒）
-    hours = int(elapsed_time // 3600)  # 计算小时数
-    minutes = int((elapsed_time % 3600) // 60)  # 计算分钟数
-    seconds = elapsed_time % 60  # 计算剩余的秒数
-    print(f"耗时: {hours:02d}:{minutes:02d}:{seconds:02.0f}")
+        print(f"Collected data saved at: {save_path}")
+    end_time = time.time()                   
+    elapsed_time = end_time - start_time                                     
+    hours = int(elapsed_time // 3600)                   
+    minutes = int((elapsed_time % 3600) // 60)                     
+    seconds = elapsed_time % 60                               
+    print(f"Elapsed time: {hours:02d}:{minutes:02d}:{seconds:02.0f}")
 
 if __name__ == "__main__":
     config = read_yaml("config.yaml")
@@ -145,7 +145,7 @@ if __name__ == "__main__":
     PID = os.getpid()
     print("PID:",PID)
     _args = {
-        "dataset_name":"voc", # voc|kitti|visdrone
+        "dataset_name":"voc",                     
         "model_name":"frcnn",
         "num_epochs":50,
         "custom_nms":False

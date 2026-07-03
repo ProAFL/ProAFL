@@ -30,19 +30,19 @@ def xcycwh_to_x1y1x2y2(bbox,W,H):
     w = bbox[2]
     h = bbox[3]
 
-    # 1. 归一化 -> 像素
+                            
     x_c = xc * W
     y_c = yc * H
     bw  = w  * W
     bh  = h  * H
 
-    # 2. 中心 -> 左上 / 右下
+                                          
     x1 = x_c - bw / 2
     y1 = y_c - bh / 2
     x2 = x_c + bw / 2
     y2 = y_c + bh / 2
 
-    # 3. 转 int + 裁剪
+                              
     x1 = max(0, min(W - 1, int(round(x1))))
     y1 = max(0, min(H - 1, int(round(y1))))
     x2 = max(0, min(W - 1, int(round(x2))))
@@ -68,7 +68,7 @@ def get_nc(dataset_name)->int:
     elif dataset_name == "VisDrone":
         nc = 10
     else:
-        raise Exception("数据集参数错误")
+        raise Exception("Invalid dataset parameters")
     return nc
 
 def read_json(json_path:str):
@@ -84,17 +84,17 @@ def read_yaml(yaml_path):
 
 def save_json_file(data, file_path):
     """
-    保存JSON数据到文件
+    Save JSON data to a file
     
     Args:
-        data (dict): 要保存的JSON数据
-        file_path (str): 目标文件路径
+        data (dict): JSON data to save
+        file_path (str): Target file path
     """
     with open(file_path, 'w', encoding='utf-8') as f:
         json.dump(data, f, indent=4, ensure_ascii=False)
 
 def get_formatted_time():
-    """返回当前时间的格式化字符串（YYYY-MM-DD_HH:MM:SS）"""
+    """Return the current time as a formatted string (YYYY-MM-DD_HH:MM:SS)"""
     now = datetime.now()
     return now.strftime("%Y-%m-%d_%H:%M:%S")
 
@@ -103,16 +103,16 @@ def is_directory_exists(path):
 
 def add_path_value(d:dict, keys:list, value):
     '''
-    多层级字典，最后指向[]
+    Nested dictionary whose final value is [].
     '''
     cur = d
-    # 遍历所有层级的key
+                                     
     for k in keys[:-1]:
         cur = cur.setdefault(k, {})
     cur.setdefault(keys[-1], []).append(value)
 
 def get_cost_time(cost_timetamp)->str:
-    hours = int(cost_timetamp // 3600)  # 计算小时数
-    minutes = int((cost_timetamp % 3600) // 60)  # 计算分钟数
-    seconds = cost_timetamp % 60  # 计算剩余的秒数
+    hours = int(cost_timetamp // 3600)                   
+    minutes = int((cost_timetamp % 3600) // 60)                     
+    seconds = cost_timetamp % 60                               
     return f"{hours:02d}:{minutes:02d}:{seconds:02.0f}"

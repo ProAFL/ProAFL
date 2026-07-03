@@ -37,7 +37,7 @@ def upsample_flow(flow, up_mask: Optional[Tensor] = None):
         return 8 * F.interpolate(flow, size=(new_h, new_w), mode="bilinear", align_corners=True)
 
     up_mask = up_mask.view(batch_size, 1, 9, 8, 8, h, w)
-    up_mask = torch.softmax(up_mask, dim=2)  # "convex" == weights sum to 1
+    up_mask = torch.softmax(up_mask, dim=2)                                
 
     upsampled_flow = F.unfold(8 * flow, kernel_size=3, padding=1).view(batch_size, 2, 9, 1, 1, h, w)
     upsampled_flow = torch.sum(up_mask * upsampled_flow, dim=2)

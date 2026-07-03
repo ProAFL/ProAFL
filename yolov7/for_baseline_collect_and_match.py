@@ -1,6 +1,6 @@
 
 '''
-收集p_box信息并与g_box进行匹配是YOLOv7在3个数据集上的其他基线方法的基础
+Collecting p_box information and matching it with g_box is the basis for other YOLOv7 baselines on three datasets.
 '''
 import os
 import time
@@ -64,50 +64,50 @@ def get_iou_matrix_PG(p_box_list,gt_box_list):
 
 def search_match(gt_box_list, predicted_box_list, iou_thre=0.5):
     '''
-    一张图像的gt boxs与predicted boxs匹配函数.
+    Match gt boxes and predicted boxes for one image.
     args:
-        gt_box_list: 该图像的所有g_boxes
-        predicted_box_list: 该图像在某个轮次的p_boxes
-        iou_thre: pbox与gbox的iou只有大于这个阈值才算match
+        gt_box_list: all g_boxes of this image
+        predicted_box_list: p_boxes of this image at a given epoch
+        iou_thre: pboxpbox and gbox are matched only when IoU is above this threshold
     '''
-    # 将预测框按照conf从大到小进行排序
+                                                   
     predicted_box_list.sort(key=lambda x: x["conf"], reverse=True)
-    # GT box数量
+                 
     G = len(gt_box_list)
-    # predicted box数量
+                        
     P = len(predicted_box_list)
-    # 记录已经匹配成功的GT box
+                             
     used_gt = set()
-    # 匹配结果容器
+                            
     matches = []
-    # 所有的cls
+                 
     cls_set = set([gt_box["cls"] for gt_box in gt_box_list])
-    # 分类下的match，遍历cls_set
+                                         
     for cls in cls_set:
-        # 当前类别的gt boxs
+                                       
         cur_cls_gt_box_list = [box for box in gt_box_list if box["cls"] == cls]
-        # 当前类别的p boxs，（已经按照conf从大到小）
+                                                                               
         cur_cls_p_box_list = [box for box in predicted_box_list if box["predicted_cls"] == cls]
         if len(cur_cls_gt_box_list) == 0 or len(cur_cls_p_box_list) == 0:
             continue
-        # 获得p_boxs与g_boxs的iou矩阵，shape:(len(p_boxs),len(g_boxs))
+                                                                                           
         iou_matrix = get_iou_matrix_PG(cur_cls_p_box_list,cur_cls_gt_box_list)
         assert iou_matrix.shape == (len(cur_cls_p_box_list), len(cur_cls_gt_box_list))
-        # 每个p_box(行)匹配最好的g_box
+                                               
         best_gt_box_id_list = iou_matrix.argmax(axis=1)
-        # 每个p_box(行)匹配最好的g_box对应的iou值
+                                                                
         best_iou_list = iou_matrix.max(axis=1)
         for r_i,iou_val in enumerate(best_iou_list):
             iou_val = iou_val.item()
             if iou_val < iou_thre:
-                # 说明这个p_box与所有的g_box的iou都没达到阈值以上
+                                                                      
                 continue
-            # 这个p_box匹配上了一个g_box
+                                        
             best_gt_id = best_gt_box_id_list[r_i]
-            # 这个g_box被p_box[i]匹配上了
+                                                      
             matched_gt_box = cur_cls_gt_box_list[best_gt_id]
             if matched_gt_box["box_id"] in used_gt:
-                # p_box看中的g_box已经被conf 更大的p_box占有了，就不管你（当前p_box[r_i]）了!!
+                                                                                                                                   
                 continue
             used_gt.add(matched_gt_box["box_id"])
             p_box = cur_cls_p_box_list[r_i]
@@ -116,21 +116,21 @@ def search_match(gt_box_list, predicted_box_list, iou_thre=0.5):
 
 def search_match_v2(gt_box_list, predicted_box_list):
     '''
-    基于"datactive: For each bounding box in the original annotation set, we identify the
+    text"datactive: For each bounding box in the original annotation set, we identify the
     predicted box with the highest overlap to compute the prediction loss."
-    对每个GT box找IoU最高的预测框
+    textGT boxtextIoUtext
     '''
     matches = []
     for gt_box in gt_box_list:
         gt_bbox = gt_box["gt_bbox"]
         gt_cls = gt_box["cls"]
 
-        # 筛选同类别预测框
+              
         same_cls_preds = [p for p in predicted_box_list if p["predicted_cls"] == gt_cls]
         if not same_cls_preds:
             continue
 
-        # 找IoU最高的预测框
+                     
         max_iou = 0.0
         best_pred = None
         for pred in same_cls_preds:
@@ -145,15 +145,15 @@ def search_match_v2(gt_box_list, predicted_box_list):
     return matches
 
 def offset_p_label(p_box_list):
-    # predicted box数量
+                        
     for box in p_box_list:
         box["predicted_cls"] -= 1
     return p_box_list
 
 def pretty_print(content,count,col_nums=10):
     print(content, end=' ')
-    if count % col_nums == 0:  # 如果计数器是10的倍数
-        print()  # 打印换行符
+    if count % col_nums == 0:                                      
+        print()                   
 
 def get_img_path_by_img_name(img_name,style):
     if style == "yolo":
@@ -168,19 +168,19 @@ def xcycwh_to_x1y1x2y2(bbox,W,H):
     w = bbox[2]
     h = bbox[3]
 
-    # 1. 归一化 -> 像素
+                            
     x_c = xc * W
     y_c = yc * H
     bw  = w  * W
     bh  = h  * H
 
-    # 2. 中心 -> 左上 / 右下
+                                          
     x1 = x_c - bw / 2
     y1 = y_c - bh / 2
     x2 = x_c + bw / 2
     y2 = y_c + bh / 2
 
-    # 3. 转 int + 裁剪
+                              
     x1 = max(0, min(W - 1, int(round(x1))))
     y1 = max(0, min(H - 1, int(round(y1))))
     x2 = max(0, min(W - 1, int(round(x2))))
@@ -190,7 +190,7 @@ def xcycwh_to_x1y1x2y2(bbox,W,H):
 
 
 def model_load_weight(model:nn.Module,device,weight_path:str):
-    # 加载模型权重
+                        
     
     if weight_path.endswith("last.pt"):
         state_dict = torch.load(weight_path, map_location=device, weights_only=False)
@@ -203,49 +203,49 @@ def model_load_weight(model:nn.Module,device,weight_path:str):
 
 def collectprobs_one_epoch(model,dataloader,conf_thres=0.25,iou_thres=0.65):
     '''
-    iou_thres用于NMS
+    iou_threstextNMS
     '''
     predicted_box_dict = {}
     predicted_box_id = 0
-    # 将数据集喂给model
+               
     for batch_i, (imgs, targets, paths, shapes) in enumerate(tqdm(dataloader)):
         '''
         shapes: list
-            长度等于batchsize,该批次图像数据增强前的shape
+            textbatchsize,textshape
         paths: list
-            长度等于batchsize,该批次图像的文件路径
+            textbatchsize,text
         '''
         imgs = imgs.to(device, non_blocking=True)
         imgs = imgs.float()
         imgs /= 255.0
         targets = targets.to(device)
-        nb, _, height, width = imgs.shape  # batch size, channels, height, wid
+        nb, _, height, width = imgs.shape                                     
         with torch.no_grad():
-            # out:shape:(bs,anchors*grids,nc+5)
-            outs, train_outs = model(imgs, augment=False)  # inference and training outputs
+                                               
+            outs, train_outs = model(imgs, augment=False)                                  
             '''
             outs: list
-                长度等于batchsize
-                outs[i][0]为该批次第i个样本输出的检测数据(p_box_nums,6),
-                outs[i][0]为该批次第i个样本输出的检测数据(p_box_nums,20)
+                textbatchsize
+                outs[i][0]textitextOutputtext(p_box_nums,6),
+                outs[i][0]textitextOutputtext(p_box_nums,20)
             '''
-            targets[:, 2:] *= torch.Tensor([width, height, width, height]).to(device)  # to pixels
-            # lb = [targets[targets[:, 0] == i, 1:] for i in range(nb)]
+            targets[:, 2:] *= torch.Tensor([width, height, width, height]).to(device)             
+                                                                       
             lb = []
-            # len(outs) eq batch_size, type(outs):list
-            # outs[0][0].shape eq torch.Size([82, 6]): dets xyxy,conf,cls
-            # outs[0][1].shape eq torch.Size([82, 20]): probs
+                                                      
+                                                                         
+                                                             
             outs = non_max_suppression_with_probs(outs, conf_thres=conf_thres, 
                                                   iou_thres=iou_thres,labels=lb, multi_label=True)
-            # 遍历每个input的检测信息
+                           
             for loc_i, (pred,prob) in enumerate(outs):
-                # loc_i: 这批图像的局部索引
-                pred = pred.clone() # 拷贝一份这张图像的预测(det)
+                                                        
+                pred = pred.clone()            
                 path = Path(paths[loc_i])
                 img_name = path.name
-                scale_coords(imgs[loc_i].shape[1:], pred[:, :4], shapes[loc_i][0], shapes[loc_i][1])  # native-space pred
+                scale_coords(imgs[loc_i].shape[1:], pred[:, :4], shapes[loc_i][0], shapes[loc_i][1])                     
                 predicted_bbox_list = []
-                # 遍历每个p_box的预测信息
+                               
                 for box_i, (*xyxy, conf, cls) in enumerate(pred.tolist()):
                     predicted_box = {
                         "predicted_box_id":predicted_box_id,
@@ -268,49 +268,49 @@ def collectprobs_one_epoch(model,dataloader,conf_thres=0.25,iou_thres=0.65):
     save_json_path = os.path.join(save_dir,save_json_file_name)
     with open(save_json_path, "w", encoding="utf-8") as f:
         json.dump(predicted_box_dict, f, indent=4)
-    print(f"数据保存在:{save_json_path}")
+    print(f"Data saved at:{save_json_path}")
 
 
 
 def match(g_json_path,p_json_path,offset):
-    # 加载g_box json,bbox 坐标还是归一的xcycwh,no anno的img_name是不存在这个json中的
+                                                                    
     g_json = read_json(g_json_path)
     p_json = read_json(p_json_path)
 
     '''
-    收集数据集中g_boxs与每个epoch的p_box的匹配关系
+    Collect matches between dataset g_boxes and p_boxes for each epoch.
     '''
-    start_time = time.time()  # 记录开始时间
-    # 收集每个g_box的匹配信息
-    # {g_id:{"g_box":g_box,"p_box":p_box}}
+    start_time = time.time()                     
+                   
+                                          
     gt_box_match = {}
-    # 至少含有一个g_box的img数量
+                           
     with_gtboxed_img_count = 0
-    # 遍历所有的img name和该图像的g_boxes
+                                               
     for img_name,g_boxs in g_json.items():
         with_gtboxed_img_count += 1
         pretty_print(img_name,with_gtboxed_img_count,col_nums=10)
-        # 图像路径
+                    
         image_path = get_img_path_by_img_name(img_name,"yolo")
-        # 图像的width,height
+                                
         image = Image.open(image_path)
         width, height = image.size
-        # 当前图像的g_boxs的bbox格式进行转换
+                                                       
         for g_box in g_boxs:
             g_box["gt_bbox"] = xcycwh_to_x1y1x2y2(g_box["gt_bbox"],width,height)
-        # 在该图像下，遍历预测结果
+                   
         
-        # 当前epoch下的图像->predicted_boxes
+                                                         
         epoch_predicted_bboxs_dict = p_json
         if img_name not in epoch_predicted_bboxs_dict:
-            # 图像在当前epoch下没有预测结果,则直接跳过当前epoch
+                                                                                   
             continue
-        # 得到当前epoch该图像的预测p_boxs
+                                                                  
         cur_epoch_p_boxs = epoch_predicted_bboxs_dict[img_name]["predicted_bboxs"]
         if cur_epoch_p_boxs == None:
-            # 图像在当前epoch下没有预测结果,则直接跳过当前epoch,此处可能是多余
+                                                                                                          
             continue
-        # 获得当前图像g_boxs与当前epoch的p_boxs的匹配关系
+                                                                             
         if offset:
             cur_epoch_p_boxs = offset_p_label(cur_epoch_p_boxs)
         matches = search_match_v2(g_boxs,cur_epoch_p_boxs)
@@ -324,47 +324,47 @@ def match(g_json_path,p_json_path,offset):
     with open(match_save_path, "w", encoding="utf-8") as f:
         json.dump(gt_box_match, f, indent=4)
     print(f"\ngt_box_match is saved in {match_save_path}")
-    end_time = time.time()  # 记录结束时间
-    elapsed_time = end_time - start_time  # 计算运行时间（秒）
-    hours = int(elapsed_time // 3600)  # 计算小时数
-    minutes = int((elapsed_time % 3600) // 60)  # 计算分钟数
-    seconds = elapsed_time % 60  # 计算剩余的秒数
-    print(f"运行时间：{hours:02d}:{minutes:02d}:{seconds:02.0f}")
+    end_time = time.time()                   
+    elapsed_time = end_time - start_time                                     
+    hours = int(elapsed_time // 3600)                   
+    minutes = int((elapsed_time % 3600) // 60)                     
+    seconds = elapsed_time % 60                               
+    print(f"Elapsed time: {hours:02d}:{minutes:02d}:{seconds:02.0f}")
 
 def collect_p():
-    # 加载最后的模型
+          
     model_weight_path = get_error_train_model_weight_file_path(dataset_name,model_name,epoch)
-    # 加载模型结构
+                    
     nc = get_nc_by_datasetname(dataset_name)
     model = Model("cfg/training/yolov7.yaml", ch=3, nc=nc, anchors=3).to(device)
     
     model = model_load_weight(model,device,model_weight_path)
     model.eval()
 
-    # 加载error数据集
-    # 读取data yaml文件
+                   
+                         
     data = f"data/{dataset_name}.yaml"
     with open(data) as f:
         data = yaml.load(f, Loader=yaml.SafeLoader)
-    gs = max(int(model.stride.max()), 32)  # grid size (max stride)
+    gs = max(int(model.stride.max()), 32)                          
     parser = argparse.ArgumentParser()
     opt = parser.parse_args()
     opt.single_cls = False
-    # 数据加载器
+                 
     dataloader = create_dataloader(data["origin_train"], 640, 32, gs, opt, pad=0.5, rect=True,
                                     prefix=colorstr(f'train: '))[0]
     imgs_num = 0
     for batch_i, (img, targets, paths, shapes) in enumerate(dataloader):
         imgs_num += img.shape[0]
-    print(f"总共图像数量:{imgs_num}")
+    print(f"Total image count:{imgs_num}")
     collectprobs_one_epoch(model,dataloader,conf_thres=0.25,iou_thres=0.65)
 
 
 if __name__ == "__main__":
     config = read_yaml("config.yaml")
     exp_root_dir = config["exp_data_dir"]
-    dataset_name = "voc" # voc|kitti|visdrone
-    model_name = "yolov7" # yolov7|frcnn|rtdetr
+    dataset_name = "voc"                     
+    model_name = "yolov7"                      
     epoch = 49
     if model_name == "rtdetr":
         epoch = 99
@@ -376,17 +376,17 @@ if __name__ == "__main__":
                                      dataset_name,model_name,"for_baselines",
                                      "collected_predict_boxes_withprobs")
     os.makedirs(collect_p_box_dir,exist_ok=True)
-    # collect
-    # collect_p()
+             
+                 
 
     g_json_path = get_collected_gt_box_json_path(dataset_name)
     p_json_path = os.path.join(collect_p_box_dir,
         f"epoch_{epoch}_predicted_bboxs.json"
     )
-    offset = (model_name not in ["yolov7","rtdetr"] ) # 是否会对预测标签进行offset(-1)
+    offset = (model_name not in ["yolov7","rtdetr"] )                 
     match_save_dir = os.path.join(exp_root_dir,"collection_process_info",
                                   dataset_name,model_name,"for_baselines")
     os.makedirs(match_save_dir,exist_ok=True)
     match_save_path = os.path.join(match_save_dir,"match.json")
-    # match
-    # match(g_json_path,p_json_path,offset)
+           
+                                           

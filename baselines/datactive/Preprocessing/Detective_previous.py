@@ -16,7 +16,7 @@ params = parameters()
 fault_type_dict = parameters().fault_type
 
 metric = Metric()
-# convert fault_type_dict to number2fault
+                                         
 number2fault = {}
 for key in fault_type_dict.keys():
     number2fault[fault_type_dict[key]] = key
@@ -49,7 +49,7 @@ class FaultDetective:
 
         self.fault_num = fault_num
 
-        # findable missing fault ratio
+                                      
         self._findable_missing_fault_ratio(gt)
 
         print("fault_num: ", fault_num)
@@ -57,21 +57,21 @@ class FaultDetective:
 
     def Wrongcls(self):
         print("Wrong class")
-        cls_gt = []  # ./data/classification/classification_VOCgt_inferences.json
-        dec = []  # ./data/detection_results/ssd_VOCval_inferences.json
+        cls_gt = []                                                              
+        dec = []                                                       
         with open(self.clsgt_path, 'r') as f:
             cls_gt = json.load(f)
         with open(self.det_path, 'r') as f:
             dec = json.load(f)
-        # get inference results score > m_t
+                                           
 
         dec = [i for i in dec if i["score"] > params.m_t]
 
-        # print cls_gt length and dec length
+                                            
         print("cls_gt length: ", len(cls_gt))
         print("dec length: ", len(dec))
 
-        # transform dec to {imagename:[]} format dict
+                                                     
         dec_dict = {}
         for i in range(len(dec)):
             if dec[i]["image_name"] in dec_dict:
@@ -81,29 +81,29 @@ class FaultDetective:
 
         results = []
         for i in tqdm(range(len(cls_gt))):
-            # image name of this instance
+                                         
             image_name = cls_gt[i]["image_name"]
             box = cls_gt[i]["bbox"]
             cls_full_score = cls_gt[i]["full_scores"]
             detectiongt_category = cls_gt[i]["detectiongt_category_id"]
             fault_type = cls_gt[i]["fault_type"]
-            # if this image is in dec_dict
+                                          
             if image_name in dec_dict:
-                # boxes of this image in dec_dict
+                                                 
                 boxes = [j["bbox"] for j in dec_dict[image_name]]
-                # IoU of this instance and boxes in dec_dict
+                                                            
                 IoU = self.cal_IoU(box, boxes)
-                # if IoU > params.t_f and full_score.max category != detectiongt_category
+                                                                                         
                 if torch.max(IoU) > params.t_f and torch.argmax(torch.tensor(cls_full_score)) != detectiongt_category:
-                    # cal cross_entropy loss of cls_full_score and detectiongt_category
+                                                                                       
                     loss = self.cross_entropy_loss(cls_full_score, detectiongt_category)
 
-                    # save this instance and loss to results
+                                                            
                     results.append(
                         {"image_name": image_name, "wrongcls_loss": loss, "bbox": box, "full_scores": cls_full_score,
                          "detectiongt_category_id": detectiongt_category, "fault_type": fault_type})
 
-        # sort results by loss from large to small
+                                                  
         results = sorted(results, key=lambda x: x["wrongcls_loss"], reverse=True)
 
         metric.RAUC(results, self.fault_num, rauc_num=params.rauc_num)
@@ -112,25 +112,25 @@ class FaultDetective:
         return results
 
     def PoorLoc(self):
-        cls_gt = []  # ./data/classification/classification_VOCgt_inferences.json
-        cls_inf = []  # ./data/classification/classification_VOCssdinf0.5_inferences.json
-        dec = []  # ./data/detection_results/ssd_VOCval_inferences.json
+        cls_gt = []                                                              
+        cls_inf = []                                                                     
+        dec = []                                                       
         with open(self.clsgt_path, 'r') as f:
             cls_gt = json.load(f)
         with open(self.clsinf_path, 'r') as f:
             cls_inf = json.load(f)
         with open(self.det_path, 'r') as f:
             dec = json.load(f)
-        # get inference results score > m_t
+                                           
 
         dec = [i for i in dec if i["score"] > params.m_t]
 
-        # print cls_inf length, cls_gt length and dec length
+                                                            
         print("cls_inf length: ", len(cls_inf))
         print("cls_gt length: ", len(cls_gt))
         print("dec length: ", len(dec))
 
-        # transform dec to {imagename:[]} format dict
+                                                     
         dec_dict = {}
         for i in range(len(dec)):
             if dec[i]["image_name"] in dec_dict:
@@ -138,7 +138,7 @@ class FaultDetective:
             else:
                 dec_dict[dec[i]["image_name"]] = [dec[i]]
 
-        # transform cls_inf to {imagename:[]} format dict
+                                                         
         cls_inf_dict = {}
         for i in range(len(cls_inf)):
             if cls_inf[i]["image_name"] in cls_inf_dict:
@@ -148,39 +148,39 @@ class FaultDetective:
 
         results = []
 
-        # for every instance in cls_gt
+                                      
         for i in tqdm(range(len(cls_gt))):
-            # image name of this instance
+                                         
             image_name = cls_gt[i]["image_name"]
             box = cls_gt[i]["bbox"]
             cls_gt_full_score = cls_gt[i]["full_scores"]
             detectiongt_category = cls_gt[i]["detectiongt_category_id"]
             fault_type = cls_gt[i]["fault_type"]
 
-            # if this image is in dec_dict
+                                          
             if image_name in dec_dict:
                 assert len(dec_dict[image_name]) == len(
                     cls_inf_dict[image_name]), "dec_dict[image_name] != cls_inf_dict[image_name]"
                 for j in range(len(dec_dict[image_name])):
                     assert dec_dict[image_name][j]["bbox"] == cls_inf_dict[image_name][j]["bbox"], "bbox not match"
-                # boxes of this image in dec_dict
+                                                 
                 boxes = [j["bbox"] for j in dec_dict[image_name]]
                 categorys = [j["category_id"] for j in dec_dict[image_name]]
-                # IoU of this instance and boxes in dec_dict
+                                                            
                 IoU = self.cal_IoU(box, boxes)
-                # max_IoU corresponding score
+                                             
 
                 max_IoU = torch.max(IoU)
                 P_k = dec_dict[image_name][torch.argmax(IoU).item()]["score"]
 
-                # max_IoU corresponding cls_inf
+                                               
                 cls_inf_item = cls_inf_dict[image_name][torch.argmax(IoU).item()]
                 cls_max_p = torch.max(torch.tensor(cls_inf_item["full_scores"]))
 
                 assert categorys[torch.argmax(IoU).item()] == cls_inf_item[
                     "detectioninf_category_id"], "category not match"
 
-                # if t_b < max_IoU <= t_f and max_IoU_score > t_p
+                                                                 
                 if params.t_b < max_IoU <= params.t_f and P_k > params.t_p:
                     loss = max_IoU * cls_max_p
                     results.append({"image_name": image_name, "gtbox": box, "infbox": boxes[torch.argmax(IoU).item()],
@@ -190,7 +190,7 @@ class FaultDetective:
                                     "cls_inf_category": torch.argmax(torch.tensor(cls_inf_item["full_scores"])).item(),
                                     "poorloc_loss": loss,
                                     "fault_type": fault_type})
-        # sort results by loss from large to small
+                                                  
         results = sorted(results, key=lambda x: x["poorloc_loss"], reverse=True)
 
         metric.RAUC(results, self.fault_num, rauc_num=params.rauc_num)
@@ -201,21 +201,21 @@ class FaultDetective:
 
     def Redundancy(self):
         print("Redundancy")
-        cls_gt = []  # ./data/classification/classification_VOCgt_inferences.json
-        dec = []  # ./data/detection_results/ssd_VOCval_inferences.json
+        cls_gt = []                                                              
+        dec = []                                                       
         with open(self.clsgt_path, 'r') as f:
             cls_gt = json.load(f)
         with open(self.det_path, 'r') as f:
             dec = json.load(f)
-        # get inference results score > m_t
+                                           
         params = parameters()
         dec = [i for i in dec if i["score"] > params.m_t]
 
-        # print cls_gt length and dec length
+                                            
         print("cls_gt length: ", len(cls_gt))
         print("dec length: ", len(dec))
 
-        # transform dec to {imagename:[]} format dict
+                                                     
         dec_dict = {}
         for i in range(len(dec)):
             if dec[i]["image_name"] in dec_dict:
@@ -224,31 +224,31 @@ class FaultDetective:
                 dec_dict[dec[i]["image_name"]] = [dec[i]]
 
         results = []
-        # for every instance in cls_gt
+                                      
         for i in tqdm(range(len(cls_gt))):
-            # image name of this instance
+                                         
             image_name = cls_gt[i]["image_name"]
             box = cls_gt[i]["bbox"]
             cls_full_score = cls_gt[i]["full_scores"]
             detectiongt_category = cls_gt[i]["detectiongt_category_id"]
             fault_type = cls_gt[i]["fault_type"]
-            # if this image is in dec_dict
+                                          
             if image_name in dec_dict:
-                # boxes of this image in dec_dict
+                                                 
                 boxes = [j["bbox"] for j in dec_dict[image_name]]
-                # IoU of this instance and boxes in dec_dict
+                                                            
                 IoU = self.cal_IoU(box, boxes)
-                # if IoU < params.t_b
+                                     
                 if torch.max(IoU) < params.t_b:
-                    # cal cross_entropy loss of cls_full_score and detectiongt_category
+                                                                                       
                     loss = self.cross_entropy_loss(cls_full_score, detectiongt_category)
 
-                    # save this instance and loss to results
+                                                            
                     results.append(
                         {"image_name": image_name, "redundancy_loss": loss, "bbox": box, "full_scores": cls_full_score,
                          "detectiongt_category_id": detectiongt_category, "fault_type": fault_type})
 
-        # sort results by loss from large to small
+                                                  
         results = sorted(results, key=lambda x: x["redundancy_loss"], reverse=True)
 
         metric.RAUC(results, self.fault_num, rauc_num=params.rauc_num)
@@ -259,21 +259,21 @@ class FaultDetective:
 
     def Missing(self):
         print("Missing")
-        cls_inf = []  # ./data/classification/classification_VOCssdinf0.5_inferences.json
-        cls_gt = []  # ./data/lassification/classification_VOCgt_inferences.json
+        cls_inf = []                                                                     
+        cls_gt = []                                                             
         with open(self.clsinf_path, 'r') as f:
             cls_inf = json.load(f)
         with open(self.clsgt_path, 'r') as f:
             cls_gt = json.load(f)
 
-        # missing list
+                      
         missing_list = []
         with open(self.gt_path, 'r') as f:
             full_list = json.load(f)
         for i in range(len(full_list)):
             if full_list[i]["fault_type"] == fault_type_dict['missing fault']:
                 missing_list.append(full_list[i])
-        # transform missing list to {imagename:[]} format dict
+                                                              
         missing_dict = {}
         for i in range(len(missing_list)):
             if missing_list[i]["image_name"] in missing_dict:
@@ -281,11 +281,11 @@ class FaultDetective:
             else:
                 missing_dict[missing_list[i]["image_name"]] = [missing_list[i]]
 
-        # print cls_inf length and cls_gt length
+                                                
         print("cls_inf length: ", len(cls_inf))
         print("cls_gt length: ", len(cls_gt))
 
-        # transform cls_gt to {imagename:[]} format dict
+                                                        
         cls_gt_dict = {}
         for i in range(len(cls_gt)):
             if cls_gt[i]["image_name"] in cls_gt_dict:
@@ -294,40 +294,40 @@ class FaultDetective:
                 cls_gt_dict[cls_gt[i]["image_name"]] = [cls_gt[i]]
 
         results = []
-        # for every instance in cls_inf
+                                       
         for i in tqdm(range(len(cls_inf))):
-            # image name of this instance
+                                         
             image_name = cls_inf[i]["image_name"]
             box = cls_inf[i]["bbox"]
             cls_full_score = cls_inf[i]["full_scores"]
             detectioninf_category = cls_inf[i]["detectioninf_category_id"]
             fault_type = fault_type_dict['no fault']
-            # if this image is in cls_gt_dict
+                                             
             if image_name in cls_gt_dict:
-                # boxes of this image in cls_gt_dict
+                                                    
                 boxes = [j["bbox"] for j in cls_gt_dict[image_name]]
-                # IoU of this instance and boxes in cls_gt_dict
+                                                               
                 IoU = self.cal_IoU(box, boxes)
-                # if IoU < params.t_f
+                                     
 
                 if torch.max(IoU) < params.t_f:
-                    # loss = max(cls_full_score)
+                                                
                     loss = torch.max(torch.tensor(cls_full_score))
 
-                    # if this image is in missing_dict
+                                                      
                     if image_name in missing_dict:
                         missing_boxes = [j["boxes"] for j in missing_dict[image_name]]
-                        # max IoU of this box and missing boxes
+                                                               
                         missing_max_IoU = torch.max(self.cal_IoU(box, missing_boxes))
                         if missing_max_IoU > params.missing_threshold:
                             fault_type = fault_type_dict['missing fault']
 
-                    # save this instance and loss to results
+                                                            
                     results.append(
                         {"image_name": image_name, "missing_loss": loss, "bbox": box, "full_scores": cls_full_score,
                          "detectioninf_category_id": detectioninf_category, "fault_type": fault_type})
 
-        # sort results by loss from large to small
+                                                  
         results = sorted(results, key=lambda x: x["missing_loss"], reverse=True)
 
         metric.RAUC(results, self.fault_num, rauc_num=params.rauc_num)
@@ -348,23 +348,23 @@ class FaultDetective:
             cls_inf = json.load(f)
 
         print("\n========GT-Set========")
-        # results=random shuffle cls_gt
+                                       
         results = random.sample(cls_gt, len(cls_gt))
 
         metric.RAUC(results, self.fault_num, rauc_num=params.rauc_num)
 
         print("\n========Obser-Set========")
-        # random_cls_inf = random shuffle cls_inf
+                                                 
         random_cls_inf = random.sample(cls_inf, len(cls_inf))
 
-        # missing list
+                      
         missing_list = []
         with open(self.gt_path, 'r') as f:
             full_list = json.load(f)
         for i in range(len(full_list)):
             if full_list[i]["fault_type"] == fault_type_dict['missing fault']:
                 missing_list.append(full_list[i])
-        # transform missing list to {imagename:[]} format dict
+                                                              
         missing_dict = {}
         for i in range(len(missing_list)):
             if missing_list[i]["image_name"] in missing_dict:
@@ -373,10 +373,10 @@ class FaultDetective:
                 missing_dict[missing_list[i]["image_name"]] = [missing_list[i]]
         results = []
         for i in tqdm(range(len(random_cls_inf))):
-            # if this image is in missing_dict
+                                              
             if random_cls_inf[i]["image_name"] in missing_dict:
                 missing_boxes = [j["boxes"] for j in missing_dict[random_cls_inf[i]["image_name"]]]
-                # max IoU of this box and missing boxes
+                                                       
                 missing_max_IoU = torch.max(self.cal_IoU(random_cls_inf[i]["bbox"], missing_boxes))
                 if missing_max_IoU > params.missing_threshold:
                     results.append({"fault_type": fault_type_dict['missing fault']})
@@ -426,7 +426,7 @@ class FaultDetective:
         }
 
         for epoch in range(params.adaptive_epoch):
-            # print process bar
+                               
             print("\rAdaptive epoch: {}/{}".format(epoch + 1, params.adaptive_epoch), end="")
 
             for key in rk_list.keys():
@@ -440,9 +440,9 @@ class FaultDetective:
                     for i in range(int(params.adaptive_batchsize * (len_rk_list[key] / sum(len_rk_list.values())))):
                         results[key].append(rk_list[key].pop(0))
 
-            # update fault_ratio
+                                
             for key in rk_list.keys():
-                # fault_ratio[key] = number of results[key]['fault_type'] == key / len(results[key])
+                                                                                                    
                 fault_ratio[key] = len([i for i in results[key] if i["fault_type"] == fault_type_dict[key]]) / len(
                     results[key])
 
@@ -452,7 +452,7 @@ class FaultDetective:
         print("FaultDetectionRate - missing fault: " + str(fault_ratio["missing fault"]))
 
         print('\n')
-        # print results fault_num / self.fault_num
+                                                  
         for key in results.keys():
             fault_num = len([i for i in results[key] if i["fault_type"] == fault_type_dict[key]])
             print("Inclusiveness - " + key + ": ", fault_num / self.fault_num[key])
@@ -467,7 +467,7 @@ class FaultDetective:
         red_rk_list = self.Redundancy()
         miss_rk_list = self.Missing()
 
-        # results = cls_rk_list + loc_rk_list + red_rk_list + miss_rk_list
+                                                                          
         results = cls_rk_list + loc_rk_list + red_rk_list + miss_rk_list
 
         fault_ratio, fault_inclusiveness = metric.RateAndInclusiveness(results, self.fault_num)
@@ -480,16 +480,16 @@ class FaultDetective:
 
     def cross_entropy_loss(self, cls_full_score, detectiongt_category):
         loss = torch.nn.CrossEntropyLoss()(torch.tensor(cls_full_score), torch.tensor(detectiongt_category))
-        # loss to float
+                       
         loss = loss.item()
         return loss
 
     def plt_cruve(self, results, fault_type):
         x = [i for i in range(len(results))]
-        # y = accumulate the number of fault instances
+                                                      
         y = [0 for i in range(len(results))]
 
-        # z = accumulate the number of any fault instances
+                                                          
         z = [0 for i in range(len(results))]
 
         fault_type_dict = params.fault_type
@@ -509,15 +509,15 @@ class FaultDetective:
         totalfault_num = self.fault_num['class fault'] + self.fault_num['location fault'] + self.fault_num[
             'redundancy fault'] + self.fault_num['missing fault']
 
-        # print('ratio:', y[-1] / self.fault_num[fault_type])
-        # print('ratio:', z[-1] / totalfault_num)
+                                                             
+                                                 
 
         plt.title(fault_type)
         plt.plot(x, y, label=fault_type)
         plt.plot(x, z, label='any fault')
         plt.xlabel('instances')
         plt.ylabel('fault instances')
-        # draw the ratio with 3 floats in the center of the curve line
+                                                                      
         plt.text(len(results) / 2, y[-1] / 2, fault_type + ' ratio: %.3f' % (y[-1] / self.fault_num[fault_type]),
                  fontsize=10)
 
@@ -532,12 +532,12 @@ class FaultDetective:
         plt.show()
 
     def _findable_missing_fault_ratio(self, gt):
-        # findable missing fault ratio
+                                      
         dec = []
         with open(self.det_path, 'r') as f:
             dec = json.load(f)
 
-        # transform dec to {imagename:[]} format dict
+                                                     
         dec_dict = {}
         for i in range(len(dec)):
             if dec[i]["image_name"] in dec_dict:

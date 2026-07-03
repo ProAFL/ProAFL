@@ -1,4 +1,4 @@
-# plt visdrone
+              
 import os
 import json
 
@@ -36,12 +36,12 @@ def visdronelabel2x1y1x2y2(runtype='train'):
     path = '../dataset/VisDrone2019-DET-' + runtype + '/annotations'
 
     results = []
-    # all text in path
+                      
     txts = os.listdir(path)
     for i, txt in enumerate(txts):
-        # print progress bar
+                            
         print('\r' + '[%s%s]' % ('=' * int(i / len(txts) * 20), ' ' * (20 - int(i / len(txts) * 20))), end='')
-        # read one line data split by , without \n
+                                                  
         targets = {'image_name': txt[:-4] + '.jpg', 'boxes': [], 'categories': []}
         with open(os.path.join(path, txt), 'r') as f:
             lines = f.readlines()
@@ -49,11 +49,11 @@ def visdronelabel2x1y1x2y2(runtype='train'):
                 line = line.split(',')
                 line = line[:8]
                 line = [int(i) for i in line]
-                # transform [x1, y1, w, h] to [x1, y1, x2, y2]
+                                                              
                 line[2] = line[0] + line[2]
                 line[3] = line[1] + line[3]
 
-                # if x1==x2 or y1==y2, skip this box
+                                                    
                 if line[0] == line[2] or line[1] == line[3]:
                     continue
 
@@ -62,14 +62,14 @@ def visdronelabel2x1y1x2y2(runtype='train'):
 
         results.append(targets)
 
-        # plt visdrone
+                      
         img = plt.imread(os.path.join('../dataset/VisDrone2019-DET-' + runtype + '/images', txt[:-4] + '.jpg'))
         _plot_visdrone(targets, img)
 
-    # save to json file
+                       
 
-    # with open('../dataset/VisDrone2019-DET-' + runtype + '/annotations.json', 'w') as f:
-    #     json.dump(results, f, indent=4)
+                                                                                          
+                                         
 
 
 if __name__ == '__main__':

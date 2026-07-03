@@ -104,9 +104,9 @@ class QuantizableResNet(ResNet):
 
     def forward(self, x: Tensor) -> Tensor:
         x = self.quant(x)
-        # Ensure scriptability
-        # super(QuantizableResNet,self).forward(x)
-        # is not scriptable
+                              
+                                                  
+                           
         x = self._forward_impl(x)
         x = self.dequant(x)
         return x
@@ -460,9 +460,9 @@ def resnext101_64x4d(
     return _resnet(QuantizableBottleneck, [3, 4, 23, 3], weights, progress, quantize, **kwargs)
 
 
-# The dictionary below is internal implementation detail and will be removed in v0.15
+                                                                                     
 from .._utils import _ModelURLs
-from ..resnet import model_urls  # noqa: F401
+from ..resnet import model_urls              
 
 
 quant_model_urls = _ModelURLs(

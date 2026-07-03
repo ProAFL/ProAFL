@@ -6,7 +6,7 @@ import torch
 import torchvision
 from PIL import Image
 from matplotlib import pyplot as plt
-# tensorboard
+             
 from torch.utils.tensorboard import SummaryWriter
 
 from TruncatedLoss import TruncatedLoss
@@ -25,47 +25,47 @@ def train_model(mask_type='crop', class_num=9, img_root="./autodl-tmp/dataset/CO
                              std=[0.229, 0.224, 0.225])
     ])
 
-    # parameters
+                
 
     tensorboardpath = "./casestudy/" + mask_type
 
     is_LNL = True
     ''
-    #############
+                 
 
-    # train dataset
+                   
     train_dataset = classificationDataSet(root=img_root, transforms=data_transform,
                                           txt_name="", mask_type=mask_type,
                                           dirty_path=trainlabel_root,
                                           datatype='COCO')
 
-    # train dataloader
+                      
     train_dataloader = DataLoader(train_dataset, batch_size=32, shuffle=True, num_workers=0)
 
-    # test dataset
+                  
     test_dataset = classificationDataSet(root=img_root, transforms=data_transform,
                                          txt_name="", mask_type=mask_type,
                                          dirty_path=testlabel_root,
                                          datatype='COCO')
 
-    # test dataloader
+                     
     test_dataloader = DataLoader(test_dataset, batch_size=1, shuffle=False, num_workers=0)
 
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
-    # ResNet50
+              
     model = torchvision.models.resnet50(pretrained=True)
     model.fc = torch.nn.Linear(2048, class_num)
     model.to(device)
 
-    # loss function
-    # loss_func = torch.nn.CrossEntropyLoss()
+                   
+                                             
     if is_LNL:
         criterion = TruncatedLoss(trainset_size=len(train_dataset)).cuda()
     else:
         criterion = torch.nn.CrossEntropyLoss()
 
-    # optimizer
+               
     optimizer = torch.optim.SGD(model.parameters(), lr=0.001, momentum=0.9)
 
     if is_LNL:
@@ -75,19 +75,19 @@ def train_model(mask_type='crop', class_num=9, img_root="./autodl-tmp/dataset/CO
         lr_scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=[7, 11], gamma=0.1)
         epoches = 13
 
-    # resume
-    # checkpoint = torch.load('./models/resnet50_voc_epoch_10.pth', map_location="cpu")
-    # model.load_state_dict(checkpoint["model"])
-    # optimizer.load_state_dict(checkpoint["optimizer"])
-    # epoch = checkpoint["epoch"]
-    # loss = checkpoint["loss"]
-    # acc=checkpoint["acc"]
-    # print("checkpoint acc = ",acc)
+            
+                                                                                       
+                                                
+                                                        
+                                 
+                               
+                           
+                                    
 
-    # tensorboard
+                 
     writer = SummaryWriter(log_dir=tensorboardpath, comment="resnet50_voc")
     best_acc = 0.0
-    # train
+           
     for epoch in range(epoches):
         print("epoch: %d, lr: %f" % (epoch, optimizer.param_groups[0]["lr"]))
         model.train()
@@ -110,7 +110,7 @@ def train_model(mask_type='crop', class_num=9, img_root="./autodl-tmp/dataset/CO
         for i, (inputs, labels, indexes) in enumerate(train_dataloader):
             inputs, labels = inputs.to(device), labels.to(device)
 
-            # forward
+                     
             outputs = model(inputs)
 
             if is_LNL:
@@ -119,25 +119,25 @@ def train_model(mask_type='crop', class_num=9, img_root="./autodl-tmp/dataset/CO
                 loss = criterion(outputs, labels)
             loss_sum += loss.item()
 
-            # backward
+                      
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
 
-            # Training progress bar
+                                   
             print("\rEpoch: {}/{} | Step: {}/{} | Loss: {:.4f}".format(epoch + 1, epoches, i + 1, len(train_dataloader),
                                                                        loss.item()), end="")
 
         lr_scheduler.step()
 
-        # tensorboard epoch loss
+                                
         writer.add_scalar('Train/Loss', loss_sum / len(train_dataloader), epoch)
 
-        # loss average
+                      
         loss_avg = loss_sum / len(train_dataloader)
         print(" | Loss_avg: {:.4f}".format(loss_avg))
 
-        # test
+              
         correct = 0
         total = 0
         model.eval()
@@ -149,7 +149,7 @@ def train_model(mask_type='crop', class_num=9, img_root="./autodl-tmp/dataset/CO
                 total += labels.size(0)
                 correct += (predicted == labels).sum().item()
 
-                # test progress bar
+                                   
                 print("\rTest: {}/{}".format(total, len(test_dataloader)), end="")
 
         print("Accuracy of the test images: {} %".format(100 * correct / total))
@@ -166,16 +166,16 @@ def train_model(mask_type='crop', class_num=9, img_root="./autodl-tmp/dataset/CO
             }, './models/best.pth')
 
         print("Now best acc: {} %".format(best_acc))
-        # tensorboard epoch acc
+                               
         writer.add_scalar('Test/Acc', 100 * correct / total, epoch)
 
-        # save checkpoint
+                         
         torch.save({
             "epoch": epoch,
             "model": model.state_dict(),
             "optimizer": optimizer.state_dict(),
             "loss": loss_avg,
-            "acc": 100 * correct  # / total
+            "acc": 100 * correct           
         }, model_save_path.format(epoch + 1))
 
     writer.close()
@@ -198,7 +198,7 @@ def inf_model(root_path='./autodl-tmp/dataset/COCO', mask_type='mask others',
 
     loss_func = torch.nn.CrossEntropyLoss()
     model_path = modelpath
-    # load model
+                
     modelState = torch.load(model_path, map_location="cpu")
     model = torchvision.models.resnet50()
 
@@ -214,19 +214,19 @@ def inf_model(root_path='./autodl-tmp/dataset/COCO', mask_type='mask others',
             images, targets = data
 
             outputs = model(images.to(device))
-            # softmax outputs
+                             
             labels = targets['category_id'].to(device)
             outputs = torch.nn.functional.softmax(outputs, dim=1)
 
-            # print(label,labels)
+                                 
             loss = loss_func(outputs, labels).item()
-            # print(loss)
+                         
             _, predicted = torch.max(outputs.data, 1)
 
-            # progress bar
+                          
             print("\rInference: {}/{}".format(i + 1, len(dataloader)), end="")
 
-            # save softmax outputs image_name category_id boxes
+                                                               
             for j in range(len(predicted)):
                 content_dic = {
                     "image_name": targets["image_name"][j],
@@ -272,8 +272,8 @@ def detective(crop_path='./casestudydata/crop_test_inf.json',
     crop_list.extend(mask_others_list)
     results = sorted(crop_list, key=lambda x: x['loss'], reverse=True)
 
-    # random.seed(2023)
-    # random.shuffle(results) # 随机500
+                       
+                                       
 
     falut_imagename2boxes = {}
 
@@ -312,11 +312,11 @@ def detective(crop_path='./casestudydata/crop_test_inf.json',
                 continue
             plt.gca().add_patch(
                 plt.Rectangle((box[0], box[1]), box[2] - box[0], box[3] - box[1], fill=False, edgecolor='green',
-                              linewidth=1))  # xmin, ymin, w, h\
+                              linewidth=1))                     
             plt.gca().text(box[0], box[1] - 2, labelmap[label],
                            fontsize=6, color='green')
 
-        # save plt as image without x y axis
+                                            
         plt.axis('off')
         plt.imshow(img)
         if have_missing:

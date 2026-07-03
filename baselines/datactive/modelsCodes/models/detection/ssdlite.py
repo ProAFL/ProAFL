@@ -26,12 +26,12 @@ __all__ = [
 ]
 
 
-# Building blocks of SSDlite as described in section 6.2 of MobileNetV2 paper
+                                                                             
 def _prediction_block(
     in_channels: int, out_channels: int, kernel_size: int, norm_layer: Callable[..., nn.Module]
 ) -> nn.Sequential:
     return nn.Sequential(
-        # 3x3 depthwise with stride 1 and padding 1
+                                                   
         Conv2dNormActivation(
             in_channels,
             in_channels,
@@ -40,7 +40,7 @@ def _prediction_block(
             norm_layer=norm_layer,
             activation_layer=nn.ReLU6,
         ),
-        # 1x1 projetion to output channels
+                                          
         nn.Conv2d(in_channels, out_channels, 1),
     )
 
@@ -49,11 +49,11 @@ def _extra_block(in_channels: int, out_channels: int, norm_layer: Callable[..., 
     activation = nn.ReLU6
     intermediate_channels = out_channels // 2
     return nn.Sequential(
-        # 1x1 projection to half output channels
+                                                
         Conv2dNormActivation(
             in_channels, intermediate_channels, kernel_size=1, norm_layer=norm_layer, activation_layer=activation
         ),
-        # 3x3 depthwise with stride 2 and padding 1
+                                                   
         Conv2dNormActivation(
             intermediate_channels,
             intermediate_channels,
@@ -63,7 +63,7 @@ def _extra_block(in_channels: int, out_channels: int, norm_layer: Callable[..., 
             norm_layer=norm_layer,
             activation_layer=activation,
         ),
-        # 1x1 projetion to output channels
+                                          
         Conv2dNormActivation(
             intermediate_channels, out_channels, kernel_size=1, norm_layer=norm_layer, activation_layer=activation
         ),
@@ -129,12 +129,12 @@ class SSDLiteFeatureExtractorMobileNet(nn.Module):
             raise ValueError("backbone[c4_pos].use_res_connect should be False")
 
         self.features = nn.Sequential(
-            # As described in section 6.3 of MobileNetV3 paper
-            nn.Sequential(*backbone[:c4_pos], backbone[c4_pos].block[0]),  # from start until C4 expansion layer
-            nn.Sequential(backbone[c4_pos].block[1:], *backbone[c4_pos + 1 :]),  # from C4 depthwise until end
+                                                              
+            nn.Sequential(*backbone[:c4_pos], backbone[c4_pos].block[0]),                                       
+            nn.Sequential(backbone[c4_pos].block[1:], *backbone[c4_pos + 1 :]),                               
         )
 
-        get_depth = lambda d: max(min_depth, int(d * width_mult))  # noqa: E731
+        get_depth = lambda d: max(min_depth, int(d * width_mult))              
         extra = nn.ModuleList(
             [
                 _extra_block(backbone[-1].out_channels, get_depth(512), norm_layer),
@@ -148,7 +148,7 @@ class SSDLiteFeatureExtractorMobileNet(nn.Module):
         self.extra = extra
 
     def forward(self, x: Tensor) -> Dict[str, Tensor]:
-        # Get feature maps from backbone and extra. Can't be refactored due to JIT limitations.
+                                                                                               
         output = []
         for block in self.features:
             x = block(x)
@@ -167,12 +167,12 @@ def _mobilenet_extractor(
     norm_layer: Callable[..., nn.Module],
 ):
     backbone = backbone.features
-    # Gather the indices of blocks which are strided. These are the locations of C1, ..., Cn-1 blocks.
-    # The first and last blocks are always included because they are the C0 (conv1) and Cn.
+                                                                                                      
+                                                                                           
     stage_indices = [0] + [i for i, b in enumerate(backbone) if getattr(b, "_is_cn", False)] + [len(backbone) - 1]
     num_stages = len(stage_indices)
 
-    # find the index of the layer from which we wont freeze
+                                                           
     if not 0 <= trainable_layers <= num_stages:
         raise ValueError("trainable_layers should be in the range [0, {num_stages}], instead got {trainable_layers}")
     freeze_before = len(backbone) if trainable_layers == 0 else stage_indices[num_stages - trainable_layers]
@@ -275,7 +275,7 @@ def ssdlite320_mobilenet_v3_large(
         weights is not None or weights_backbone is not None, trainable_backbone_layers, 6, 6
     )
 
-    # Enable reduced tail if no pretrained backbone is selected. See Table 6 of MobileNetV3 paper.
+                                                                                                  
     reduce_tail = weights_backbone is None
 
     if norm_layer is None:
@@ -285,7 +285,7 @@ def ssdlite320_mobilenet_v3_large(
         weights=weights_backbone, progress=progress, norm_layer=norm_layer, reduced_tail=reduce_tail, **kwargs
     )
     if weights_backbone is None:
-        # Change the default initialization scheme if not pretrained
+                                                                    
         _normal_init(backbone)
     backbone = _mobilenet_extractor(
         backbone,
@@ -307,8 +307,8 @@ def ssdlite320_mobilenet_v3_large(
         "nms_thresh": 0.55,
         "detections_per_img": 300,
         "topk_candidates": 300,
-        # Rescale the input in a way compatible to the backbone:
-        # The following mean/std rescale the data from [0, 1] to [-1, 1]
+                                                                
+                                                                        
         "image_mean": [0.5, 0.5, 0.5],
         "image_std": [0.5, 0.5, 0.5],
     }
@@ -328,7 +328,7 @@ def ssdlite320_mobilenet_v3_large(
     return model
 
 
-# The dictionary below is internal implementation detail and will be removed in v0.15
+                                                                                     
 from .._utils import _ModelURLs
 
 

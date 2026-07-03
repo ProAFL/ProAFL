@@ -13,7 +13,7 @@ class FocalLoss(nn.Module):
 
     def forward(self, inputs, targets):
 
-        # convert labels to one-hot encoding
+                                            
         targets = F.one_hot(targets, num_classes=inputs.shape[0])
         targets = targets.type_as(inputs)
 
