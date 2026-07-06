@@ -2,7 +2,7 @@
 
 fault_inject.py
 
-## Ours method.
+## Our method.
 
 ### Training process info collection
 
@@ -61,3 +61,6 @@ For rtdetr: rtdetr/for_baseline_collect.py
 (2) match: yolov7/for_baseline_collect_and_match.py
 
 (3) rank: baselines/other_baselines/rank.py
+
+## Datasets and experimental data
+As the ZIP files containing the datasets (including those with injected errors) and the complete experimental results are large—approximately 70 GB—the upload is currently in progress and is expected to be completed by July 7.
