@@ -63,4 +63,4 @@ For rtdetr: rtdetr/for_baseline_collect.py
 (3) rank: baselines/other_baselines/rank.py
 
 ## Datasets and experimental data
-As the ZIP files containing the datasets (including those with injected errors) and the complete experimental results are large—approximately 70 GB—the upload is currently in progress and is expected to be completed by July 7.
+A ZIP file (approximately 70 GB) containing the dataset (including the dataset with injected errors) and complete experimental results has been shared on OneDrive. [Download link](https://1drv.ms/u/c/266b7ba6976b4fe5/IQBxQE0JXHmzS4HFm69rEpxuAYr5-ziX-Iym3BI_6wVDrrA?e=WxXnyy)
