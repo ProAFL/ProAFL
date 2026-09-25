@@ -1,7 +1,5 @@
 
-'''
-textrankingtextcocotextannoid/imgname
-'''
+
 import os
 
 import joblib

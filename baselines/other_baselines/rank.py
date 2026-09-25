@@ -113,9 +113,9 @@ if __name__ == "__main__":
     PID = os.getpid()
     print("PID:",PID)
     exp_root_dir = config["exp_data_dir"]
-    dataset_name = "voc"                     
-    model_name = "yolov7"                      
-    baseline_name = "entropy"                                
+    dataset_name = "voc"
+    model_name = "yolov7"
+    baseline_name = "entropy"
     g_json_path = get_collected_gt_box_json_path(dataset_name)
     
     match_json_path = os.path.join(exp_root_dir, "collection_process_info",

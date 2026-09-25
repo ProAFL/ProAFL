@@ -18,11 +18,6 @@ fault_type_map = {
     'missing_fault': 4,
 }
 
-
-
-
-
-
 def get_repair_ann_file_path(dataset_name,
                              method_name,
                              model_name:None):
@@ -118,6 +113,12 @@ def get_img_to_nomatched_pboxs_json_path(dataset_name,model_name):
 def get_all_trainimgs_dir(dataset_name):
     return os.path.join(exp_data_root_dir,"datasets", f"{dataset_name}-yolo","train","images")
 
+def get_origin_tainimgs_dir(dataset_name):
+    return os.path.join(exp_data_root_dir,"datasets", f"{dataset_name}-yolo","origin","train","images")
+
+def get_origin_testimgs_dir(dataset_name):
+    return os.path.join(exp_data_root_dir,"datasets", f"{dataset_name}-yolo","origin","val","images")
+
 def get_rank_data_path(dataset_name,method_name,model_name=None):
     rank_data_path = None
     if method_name in baselines:
@@ -156,6 +157,9 @@ def get_nc_by_datasetname(dataset_name) -> int:
         return 8
     elif dataset_name == "visdrone":
         return 10
+    
+def get_correct_anno_json_path(dataset_name):
+    return os.path.join(exp_data_root_dir,"datasets", f"{dataset_name}-coco","train","_annotations.coco_correct.json")
 
 if __name__ == "__main__":
     pass

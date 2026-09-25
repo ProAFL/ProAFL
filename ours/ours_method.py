@@ -1105,7 +1105,6 @@ if __name__ == "__main__":
         gt_box_metric_collection(match_json_save_path,metric_save_path)
         print("metric END")
     if mode == 0 or mode == 3:
-                 
         print("Ranking...")
         if mode == 3:
             match_json_save_path = os.path.join(save_dir,"match.json")         

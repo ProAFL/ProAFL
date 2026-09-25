@@ -11,7 +11,15 @@ from torchvision.ops import boxes as box_ops
 import pandas as pd
 import copy
 from utils.common import read_yaml
+from helper.base_data_manager import get_correct_anno_json_path
 
+FAULT_TYPE = {
+    'no_fault': 0,
+    'cls_fault': 1,
+    'loc_fault': 2,
+    'redundancy_fault': 3,
+    'missing_fault': 4,
+}
 
 def cal_IoU(X, Y):
     return box_ops.box_iou(torch.tensor([X]), torch.tensor([Y]))
@@ -24,10 +32,10 @@ def gen_missing_fault(object_id_list, anno_list):
                     "obj_id":object_id,
                     "img_id":anno["image_id"],
                     "img_name": coco.loadImgs(anno["image_id"])[0]["file_name"],
-                    "fault_type":fault_type["missing_fault"]
+                    "fault_type":FAULT_TYPE["missing_fault"]
                 }
                 fault_recorder.append(fault_info)
-                anno["fault_type"] = fault_type["missing_fault"]
+                anno["fault_type"] = FAULT_TYPE["missing_fault"]
     return anno_list
 
 def gen_class_fault(object_id_list,anno_list):
@@ -39,12 +47,12 @@ def gen_class_fault(object_id_list,anno_list):
                 candi_cls_list = [cls for cls in catIds if cls != original_cls]
                 error_cls = random.choice(candi_cls_list)
                 anno["category_id"] = error_cls
-                anno["fault_type"] = fault_type["cls_fault"]
+                anno["fault_type"] = FAULT_TYPE["cls_fault"]
                 fault_info = {
                     "obj_id":object_id,
                     "img_id":anno["image_id"],
                     "img_name": coco.loadImgs(anno["image_id"])[0]["file_name"],
-                    "fault_type":fault_type["cls_fault"]
+                    "fault_type":FAULT_TYPE["cls_fault"]
                 }
                 fault_recorder.append(fault_info)
     return anno_list
@@ -79,12 +87,12 @@ def gen_loc_fault(object_id_list,anno_list):
                     if 0.1 <= IoU <= 0.5:
                         break
                 anno["bbox"] = [new_x1, new_y1, new_x2-new_x1, new_y2-new_y1]
-                anno["fault_type"] = fault_type["loc_fault"]
+                anno["fault_type"] = FAULT_TYPE["loc_fault"]
                 fault_info = {
                     "obj_id":object_id,
                     "img_id":anno["image_id"],
                     "img_name": coco.loadImgs(anno["image_id"])[0]["file_name"],
-                    "fault_type":fault_type["loc_fault"]
+                    "fault_type":FAULT_TYPE["loc_fault"]
                 }
                 fault_recorder.append(fault_info)
     return anno_list
@@ -115,14 +123,14 @@ def gen_redundancy_fault(object_id_list, anno_list):
                     "image_id":anno["image_id"],
                     "category_id":new_cls,
                     "bbox":new_bbox,
-                    "fault_type":fault_type["redundancy_fault"]
+                    "fault_type":FAULT_TYPE["redundancy_fault"]
                 }
                 new_obj_list.append(new_obj)
                 fault_info = {
                     "obj_id":new_id,
                     "img_id":anno["image_id"],
                     "img_name": coco.loadImgs(anno["image_id"])[0]["file_name"],
-                    "fault_type":fault_type["redundancy_fault"]
+                    "fault_type":FAULT_TYPE["redundancy_fault"]
                 }
                 fault_recorder.append(fault_info)
                 new_id += 1
@@ -132,33 +140,35 @@ def gen_redundancy_fault(object_id_list, anno_list):
 
 def add_fault_type_attr(anno_list):
     for anno in anno_list:
-        anno["fault_type"] = fault_type["no_fault"]       
+        anno["fault_type"] = FAULT_TYPE["no_fault"]
     return anno_list
 
 def remove_miss_fault_anno(anno_list):
     new_anno_list = []
     for anno in anno_list:
-        if anno["fault_type"] != fault_type["missing_fault"]:
+        if anno["fault_type"] != FAULT_TYPE["missing_fault"]:
             new_anno_list.append(anno)
     return new_anno_list
-        
+
+
+
 
 if __name__ == "__main__":
-          
-    random.seed(42)
-          
+
+    random.seed(42) # random seed
+    fault_ratio = 0.01 # fault ratio: 0.01,0.05,0.1,0.2
+
     config = read_yaml("config.yaml")
     exp_data_root = config["exp_data_dir"]
           
-    dataset_name = config["dataset_name"]
+    dataset_name = "voc"
                            
-    correct_anno_json_path = os.path.join(exp_data_root,"datasets", f"{dataset_name}-coco","train","_annotations.coco_correct.json")
+    correct_anno_json_path = get_correct_anno_json_path(dataset_name)
                   
     coco = COCO(correct_anno_json_path)
-                   
-    fault_rate = 0.1          
-                                  
-    save_dir = os.path.join(exp_data_root,"fault_anno",f"{fault_rate}",dataset_name,"coco_format")
+
+    
+    save_dir = os.path.join(exp_data_root,"fault_inject",f"{fault_ratio}",dataset_name,"coco_format")
     os.makedirs(save_dir,exist_ok=True)
 
                      
@@ -166,90 +176,76 @@ if __name__ == "__main__":
                                   
     annotations = coco.loadAnns(ann_ids)
                           
-    catIds = coco.getCatIds()
-          
-    fault_type = {
-            'no_fault': 0,
-            'cls_fault': 1,
-            'loc_fault': 2,
-            'redundancy_fault': 3,
-            'missing_fault': 4,
-    }
+    catIds = coco.getCatIds() 
                
     fault_recorder = []
 
-          
-                   
-    total_object_num = len(ann_ids)
-    sample_num = int(total_object_num*fault_rate)
-                               
-    candi_id_set = set(ann_ids)
-
+    total_object_num = len(ann_ids) # Total anno quantity
+    candi_id_set = set(ann_ids) # All anno id set
+    sample_num = int(total_object_num*fault_ratio) # Each fault num is a fault ratio of the total number
+    
+    # First sample the obj id of the miss fault (i.e. anno id)
     missing_fault_obj_id_list = random.sample(list(candi_id_set),sample_num)       
 
-                           
+    # Update the candidate anno id set to facilitate sampling of the following faults
     candi_id_set = set(ann_ids) - set(missing_fault_obj_id_list)
-    cls_fault_obj_id_list = random.sample(list(candi_id_set),sample_num)
+    cls_fault_obj_id_list = random.sample(list(candi_id_set),sample_num) # class fault sampling
 
                            
-    candi_id_set = set(ann_ids) - set(missing_fault_obj_id_list) - set(cls_fault_obj_id_list)
-    loc_fault_obj_id_list = random.sample(list(candi_id_set),sample_num)
+    candi_id_set = set(ann_ids) - set(missing_fault_obj_id_list) - set(cls_fault_obj_id_list) # Continue to update
+    loc_fault_obj_id_list = random.sample(list(candi_id_set),sample_num) # loc fault sampling
 
                                   
-    candi_id_set = set(ann_ids) - set(missing_fault_obj_id_list) - set(cls_fault_obj_id_list) - set(loc_fault_obj_id_list)
-    redundancy_fault_obj_id_list = random.sample(list(candi_id_set),sample_num)
+    candi_id_set = set(ann_ids) - set(missing_fault_obj_id_list) - set(cls_fault_obj_id_list) - set(loc_fault_obj_id_list) # Continue to update
+    redundancy_fault_obj_id_list = random.sample(list(candi_id_set),sample_num) # redun fault sampling
 
-    annotations = add_fault_type_attr(annotations)
-    print("miss(4)Injecting faults...")
+    annotations = add_fault_type_attr(annotations) # Add 'fault type' attribute to all annotations
+    print("Missing Fault(4): inject...")
     annotations = gen_missing_fault(missing_fault_obj_id_list,annotations)
-    print("cls(1)Injecting faults...")
+    print("Class Fault(1): inject...")
     annotations = gen_class_fault(cls_fault_obj_id_list,annotations)
-    print("loc(2)Injecting faults...")
+    print("Loc Fault(2): inject...")
     annotations = gen_loc_fault(loc_fault_obj_id_list,annotations)
-    print("redundancy(3)Injecting faults...")
+    print("Redunc Fault(3): inject...")
     annotations = gen_redundancy_fault(redundancy_fault_obj_id_list,annotations)
     
-    print(f"text: {dataset_name} text")
-
+    
+    # Remove the annotation based on the 'fault type' attribute
     annotations_no_miss = remove_miss_fault_anno(annotations)
 
              
     img_ids = coco.getImgIds()
-                     
     images = coco.loadImgs(img_ids)
-                               
     categories = coco.loadCats(catIds)
 
     _json = {
         "images":images,
         "categories":categories,
-        "annotations":annotations
+        "annotations":annotations # Contains miss anno
     }
     
     anno_save_path = os.path.join(save_dir,"annotations_with_miss.json")
     with open(anno_save_path, "w", encoding="utf-8") as f:
         json.dump(_json, f, ensure_ascii=False, indent=4)
-    print(f"text(textmis)Saved at:{anno_save_path}")
+    print(f"Contains miss anno is saved at:{anno_save_path}")
 
     _json = {
         "images":images,
         "categories":categories,
-        "annotations":annotations_no_miss
+        "annotations":annotations_no_miss # No contains miss anno
     }
-                                  
-    save_dir = os.path.join(exp_data_root,"error_anno",dataset_name,"coco_format")
-    os.makedirs(save_dir,exist_ok=True)
+
     anno_save_path = os.path.join(save_dir,"annotations_no_miss.json")
     with open(anno_save_path, "w", encoding="utf-8") as f:
         json.dump(_json, f, ensure_ascii=False, indent=4)
-    print(f"text(textmis)Saved at:{anno_save_path}")
+    print(f"Does not contain miss anno is saved at: {anno_save_path}")
 
-                                    
+
     df = pd.DataFrame(fault_recorder)
     record_save_path = os.path.join(save_dir,"fault_records.csv")
     df.to_csv(record_save_path, index=False, encoding="utf-8")
 
-    print(f"textSaved at:{record_save_path}")
+    print(f"Fault recorder is saved at: {record_save_path}")
 
 
 

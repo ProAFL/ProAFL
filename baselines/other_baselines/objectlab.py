@@ -47,8 +47,6 @@ def get_imgname2pboxs():
 
 
 def objectlab_score(imgname,gboxs,pboxs):
-    
-
     res = {}
     iou_map = {}
     for gbox in gboxs:
@@ -109,20 +107,19 @@ def objectlab_score(imgname,gboxs,pboxs):
 def main():
     imgname2gboxs = get_imgname2gboxs()
     imgname2pboxs = get_imgname2pboxs()
-    print("gboxs and pboxs text")
+    print("gboxs and pboxs")
     res = {}
     for imgname in imgname2gboxs.keys():
-        gboxs = imgname2gboxs[imgname]
-        pboxs = imgname2pboxs[imgname]
+        gboxs = imgname2gboxs[imgname] # 该图像所有的gboxes
+        pboxs = imgname2pboxs[imgname] # 该图像所有的pboxes
         score_res = objectlab_score(imgname,gboxs,pboxs)
         for key,value in score_res.items():
             res[key] = value
-    print("object labtext")
-             
+    print("object lab")
+
     _dict = {}
     for key in res.keys():
         if type(key) == int:
-                 
             gid = key
             score = min(res[key]["badloc_score"],res[key]["badcls_score"])
             _dict[gid] = score
@@ -139,7 +136,7 @@ def main():
     save_file_name = "rank.joblib"
     save_path = os.path.join(save_dir,save_file_name)
     joblib.dump(rank,save_path)
-    print(f"ranktext:{len(rank)}")
+    print(f"rank:{len(rank)}")
     print(f'rankResult saved at:{save_path}')
 
 
@@ -149,7 +146,7 @@ if __name__ == "__main__":
     exp_root_dir = config["exp_data_dir"]
     dataset_name = "voc"                     
     model_name = "yolov7"                      
-    epoch = 99 if model_name == "rtdetr" else 49
+    epoch = 99 if model_name == "rtdetr" else 49 # 最后一个epoch
     train_img_dir = os.path.join(exp_root_dir,"datasets",f"{dataset_name}-yolo","origin","train","images")
     g_json_path = get_collected_gt_box_json_path(dataset_name)
     g_json = read_json(g_json_path)

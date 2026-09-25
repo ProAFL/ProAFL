@@ -813,9 +813,9 @@ if __name__ == "__main__":
     exp_data_root_dir = config["exp_data_dir"]
                     
     _args = {
-        "dataset_name":"voc",                     
-        "model_name":"frcnn",                     
-        "alpha":1.5,                              
+        "dataset_name":"voc",
+        "model_name":"frcnn",
+        "alpha":1.5,
     }
     _args["epochs"] = 50
     if _args["model_name"] == "rtdetr":
@@ -829,10 +829,8 @@ if __name__ == "__main__":
     os.makedirs(_args["save_dir"],exist_ok=True)
 
     pprint.pprint(_args)
-    
-          
 
-                              
+
     gt_json_path = get_collected_gt_box_json_path(dataset_name)
                 
     match_json_path = get_ours_gt_box_metric_path(dataset_name,model_name)

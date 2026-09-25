@@ -3,6 +3,7 @@ from helper.base_data_manager import  get_all_img_name
 from collections import defaultdict
 from pycocotools.coco import COCO
 import json
+
 def get_g_id_to_g_box(g_boxes_json:dict) -> dict:
     g_id_to_g_box = {}
     for img_name, g_boxes in g_boxes_json.items():
@@ -136,7 +137,7 @@ def get_all_error_imgset(anno_error_with_miss:dict)->set:
     return error_imgset
 
 
-def get_all_error_idd_set(anno_error_with_miss:dict)->set:
+def get_all_positive_idd_set(anno_error_with_miss:dict)->set:
     error_annoid_set = set()
     annos = anno_error_with_miss["annotations"]
     for anno in annos:
@@ -145,6 +146,27 @@ def get_all_error_idd_set(anno_error_with_miss:dict)->set:
     missfault_imgname_set = get_all_miss_error_img_name_set(anno_error_with_miss)
     error_idd_set = error_annoid_set | missfault_imgname_set
     return error_idd_set
+
+def get_all_negtive_idd_set(anno_error_with_miss:dict)->set:
+    clean_annoid_set = set()
+    annos = anno_error_with_miss["annotations"]
+    for anno in annos:
+         if anno["fault_type"] == 0:
+            clean_annoid_set.add(anno["id"])
+    nomiss_imgname_set = get_all_nomiss_img_name_set(anno_error_with_miss)
+    clean_annoid_set = clean_annoid_set | nomiss_imgname_set
+    return clean_annoid_set
+
+def get_all_nomiss_img_name_set(anno_error_with_miss:dict) -> set:
+    missfault_imgname_set = get_all_miss_error_img_name_set(anno_error_with_miss)
+    images = anno_error_with_miss["images"]
+    image_name_set = set()
+    for image in images:
+        image_name_set.add(image["file_name"])
+    nomiss_img_name_set = image_name_set - missfault_imgname_set
+    return nomiss_img_name_set
+
+
 
 def get_all_annoids_detail(anno_error_with_miss:dict) -> list:
     all_annoids_detail = {
@@ -192,11 +214,11 @@ def get_all_error_clean_set(anno_error_with_miss:dict) -> dict:
             image_name = imgId_to_imgName[image_id]
             all_miss_img_name_set.add(image_name)
     all_error_clean_set = {
-        "miss_set":all_miss_img_name_set,
+        "miss_imgname_set":all_miss_img_name_set,
         "cls_set":cls_error_annoid_set,
         "loc_set":loc_error_annoid_set,
         "redun_set":redun_error_annoid_set,
-        "clean_set":clean_annoid_set
+        "clean_annoid_set":clean_annoid_set
     }
     return all_error_clean_set
 
