@@ -80,7 +80,7 @@ def read_json(json_path:str):
 def read_yaml(yaml_path):
     with open(yaml_path, "r", encoding="utf-8") as f:
         config = yaml.safe_load(f)
-    return 
+    return config
 
 def save_json_file(data, file_path):
     """

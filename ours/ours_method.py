@@ -1040,9 +1040,6 @@ def eval_apfd(rank_res):
     apfd = round(apfd,4)
     print(f"APFD:{apfd}")
 
-
-
-
 if __name__ == "__main__":
     PID = os.getpid()
     print("PID:",PID)

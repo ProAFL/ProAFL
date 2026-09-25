@@ -42,13 +42,11 @@ if __name__ == "__main__":
     splitted_val_imgs_dir = os.path.join(exp_root_dir, "retrain_dataset_split", dataset_name, 
                                        "images", "split", "val")
     
-                           
     method_name = "ours"                                                         
 
     if method_name == "ours":
         source_labels_dir = os.path.join(exp_root_dir,"ours",dataset_name,"yolov7","repair","yolo_format","labels")
         splitted_train_labels_dir = os.path.join(exp_root_dir,"ours",dataset_name,"yolov7","retrain/splitted_labels/train")
-                                    
         splitted_val_labels_dir = os.path.join(exp_root_dir,"ours",dataset_name,"yolov7","retrain/splitted_labels/val")
     elif method_name in config["baselines"]:
         if method_name == "datactive":

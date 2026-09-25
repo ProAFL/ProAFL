@@ -9,7 +9,7 @@ import torch
 import yaml
 from tqdm import tqdm
 
-from yolov7.models.experimental import attempt_load
+from models.experimental import attempt_load
 from utils.datasets import create_dataloader
 from utils.general import coco80_to_coco91_class, check_dataset, check_file, check_img_size, check_requirements,\
     box_iou, non_max_suppression, scale_coords, xyxy2xywh, xywh2xyxy, set_logging, increment_path, colorstr
@@ -358,10 +358,7 @@ if __name__ == '__main__':
     dataset_name = "VisDrone"                           
     gpu_id = 1
     parser = argparse.ArgumentParser(prog='test.py')
-    parser.add_argument('--weights', nargs='+', type=str, 
-                                                                                            
-                        default=f'trained_models/best.pt', 
-                        help='model.pt path(s)')
+    parser.add_argument('--weights', nargs='+', type=str, default='yolov7.pt', help='model.pt path(s)')
     parser.add_argument('--data', type=str, default=f'data/{dataset_name}.yaml', help='*.data path')
     parser.add_argument('--batch-size', type=int, default=32, help='size of each image batch')
     parser.add_argument('--img-size', type=int, default=640, help='inference size (pixels)')

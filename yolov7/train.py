@@ -21,10 +21,9 @@ from torch.cuda import amp
 from torch.nn.parallel import DistributedDataParallel as DDP
 from torch.utils.tensorboard import SummaryWriter
 from tqdm import tqdm
-from custom_utils.common import read_yaml
 import test                                              
-from yolov7.models.experimental import attempt_load
-from yolov7.models.yolo import Model
+from models.experimental import attempt_load
+from models.yolo import Model
 from utils.autoanchor import check_anchors
 from utils.datasets import create_dataloader
 from utils.general import labels_to_class_weights, increment_path, labels_to_image_weights, init_seeds,\
@@ -35,9 +34,16 @@ from utils.loss import ComputeLoss, ComputeLossOTA
 from utils.plots import plot_images, plot_labels, plot_results, plot_evolution
 from utils.torch_utils import ModelEMA, select_device, intersect_dicts, torch_distributed_zero_first, is_parallel
 from utils.wandb_logging.wandb_utils import WandbLogger, check_wandb_resume
-from ours.small_utils import is_directory_exists
+
 logger = logging.getLogger(__name__)
 
+def read_yaml(yaml_path):
+    with open(yaml_path, "r", encoding="utf-8") as f:
+        config = yaml.safe_load(f)
+    return config
+
+def is_directory_exists(path):
+    return os.path.exists(path) and os.path.isdir(path)
 
 def train(hyp, opt, device, tb_writer=None):
     logger.info(colorstr('hyperparameters: ') + ', '.join(f'{k}={v}' for k, v in hyp.items()))
@@ -478,7 +484,7 @@ def train(hyp, opt, device, tb_writer=None):
                                             
                 torch.save(ckpt, last)
                                                           
-                if save_each_epoch:
+                if is_save_each_epoch:
                     torch.save(ckpt['model'].float().state_dict(), wdir /f'epoch_{epoch}.pt')
                 if best_fitness == fi:
                     torch.save(ckpt, best)
@@ -546,10 +552,7 @@ def train(hyp, opt, device, tb_writer=None):
     return results
 
 
-def label_replace(dataset_name):
-    '''
-    Replace labels for training and validation label sets
-    '''
+def label_replace(dataset_name,train_labels_dir,val_labels_dir):
     cur_train_labels_dir = f"{exp_data_root}/datasets/{dataset_name}-yolo/train/labels"
     cur_val_labels_dir = f"{exp_data_root}/datasets/{dataset_name}-yolo/val/labels"
     if is_directory_exists(cur_train_labels_dir):
@@ -558,6 +561,11 @@ def label_replace(dataset_name):
     if is_directory_exists(cur_val_labels_dir):
         shutil.rmtree(cur_val_labels_dir)
         print("Val labels directory exists and is now removed")
+    shutil.copytree(train_labels_dir, cur_train_labels_dir)
+    shutil.copytree(val_labels_dir, cur_val_labels_dir)
+    print("Training label directory replacement completed")
+
+    '''
     if _args["trainset_stat"] == "ours":
         new_train_labels_dir = os.path.join(exp_data_root,"ours",dataset_name,"yolov7","retrain","splitted_labels","train")
         new_val_labels_dir = os.path.join(exp_data_root,"ours",dataset_name,"yolov7","retrain","splitted_labels","val")
@@ -573,22 +581,35 @@ def label_replace(dataset_name):
                     
     shutil.copytree(new_train_labels_dir, cur_train_labels_dir)
     shutil.copytree(new_val_labels_dir, cur_val_labels_dir)
-    print("Training label directory replacement completed")
+    '''
+    
+
 
 
 if __name__ == '__main__':
-                      
-    config = read_yaml("config.yaml")
-                               
     PID = os.getpid()
     print("PID:",PID)
+    config = read_yaml("../config.yaml") # 读取主项目的配置
     exp_data_root = config["exp_data_dir"]
-                               
+    dataset_name = "voc"
+    model_save_dir = f"{exp_data_root}/models"
+    is_save_each_epoch = True # 是否每个epoch的checkpoint都保存
+    is_resume = False
+    if is_resume == True:
+        resume_pt_file = ""
+        resume_opt_yaml_path = ""
+        resume_end_epoch = 75
+    # labels 文件夹
+    train_labels_dir = f"{exp_data_root}/fault_inject/0.01/{dataset_name}/yolo_fomat/labels_train"
+    val_labels_dir = f"{exp_data_root}/fault_inject/0.01/{dataset_name}/yolo_fomat/labels_val"
+    label_replace(dataset_name, train_labels_dir, val_labels_dir)
+
+    '''
     _args = {
-        "dataset_name":"VisDrone",                           
-        "model_name":"yolov7",                                 
-        "gpu_id":1,
-        "trainset_stat":"ours",                                                        
+        "dataset_name":"voc",
+        "model_name":"yolov7",
+        "gpu_id":0,
+        "trainset_stat":"ours", # "clean", "fault", "ours","datactive","entropy","loss","deepgini","margin","objectlab"
         "save_each_epoch":False                                                               
     }
     baselines = config["baselines"]
@@ -602,7 +623,7 @@ if __name__ == '__main__':
                  
         os.makedirs(_args["model_save_dir"],exist_ok=True)
 
-    elif _args["trainset_stat"] in config["baselines"]:
+    elif _args["trainset_stat"] in baselines:
         if _args["trainset_stat"] == "datactive":
                                                                                                               
             _args["model_save_dir"] = os.path.join(exp_data_root,"baselines", "datactive",
@@ -614,8 +635,7 @@ if __name__ == '__main__':
         os.makedirs(_args["model_save_dir"],exist_ok=True)
     else:
         raise Exception("Invalid train-set state")
-
-    pprint.pprint(_args, sort_dicts=False)
+    '''
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--weights', type=str, default='yolov7.pt', help='initial weights path')
@@ -623,7 +643,7 @@ if __name__ == '__main__':
     parser.add_argument('--data', type=str, default=f'data/{dataset_name}.yaml', help='data.yaml path')
     parser.add_argument('--hyp', type=str, default='data/hyp.scratch.p5.yaml', help='hyperparameters path')
     parser.add_argument('--epochs', type=int, default=50)
-    parser.add_argument('--batch-size', type=int, default=32, help='total batch size for all GPUs')
+    parser.add_argument('--batch-size', type=int, default=128, help='total batch size for all GPUs')
     parser.add_argument('--img-size', nargs='+', type=int, default=[640, 640], help='[train, test] image sizes')
     parser.add_argument('--rect', action='store_true', help='rectangular training')
     parser.add_argument('--resume', nargs='?', const=True, default=False, help='resume most recent training')
@@ -634,13 +654,13 @@ if __name__ == '__main__':
     parser.add_argument('--bucket', type=str, default='', help='gsutil bucket')
     parser.add_argument('--cache-images', action='store_true', help='cache images for faster training')
     parser.add_argument('--image-weights', action='store_true', help='use weighted image selection for training')
-    parser.add_argument('--device', default=f'{_args["gpu_id"]}', help='cuda device, i.e. 0 or 0,1,2,3 or cpu')
+    parser.add_argument('--device', default='0', help='cuda device, i.e. 0 or 0,1,2,3 or cpu') # '0','0,1'
     parser.add_argument('--multi-scale', action='store_true', help='vary img-size +/- 50%')
     parser.add_argument('--single-cls', action='store_true', help='train multi-class data as single-class')
     parser.add_argument('--adam', action='store_true', help='use torch.optim.Adam() optimizer')
     parser.add_argument('--sync-bn', action='store_true', help='use SyncBatchNorm, only available in DDP mode')
     parser.add_argument('--local_rank', type=int, default=-1, help='DDP parameter, do not modify')
-    parser.add_argument('--workers', type=int, default=8, help='maximum number of dataloader workers')
+    parser.add_argument('--workers', type=int, default=16, help='maximum number of dataloader workers')
     parser.add_argument('--project', default='runs/train', help='save to project/name')
     parser.add_argument('--entity', default=None, help='W&B entity')
     parser.add_argument('--name', default='exp', help='save to project/name')
@@ -656,10 +676,12 @@ if __name__ == '__main__':
     parser.add_argument('--v5-metric', action='store_true', help='assume maximum recall as 1.0 in AP calculation')
 
     opt = parser.parse_args()
-
-                                                
-    model_save_dir = _args["model_save_dir"]
-
+    if is_resume:
+        opt.resume = resume_pt_file # 权重文件pt
+        opt.opt_yaml_path = resume_opt_yaml_path # 优化的相关配置
+        opt.epochs = 75
+    
+    '''
     ours_and_baselines = config["all_methods"]
     if _args["trainset_stat"] in ours_and_baselines:
         error_resume_dir = os.path.join(config["exp_data_dir"],"ProAFL_data",_args["dataset_name"])
@@ -670,20 +692,12 @@ if __name__ == '__main__':
                                            
         epochs = 75
         label_replace(dataset_name)
-    
-    
-    save_each_epoch = _args["save_each_epoch"]
-
+    '''
                        
     opt.world_size = int(os.environ['WORLD_SIZE']) if 'WORLD_SIZE' in os.environ else 1
                                                                                     
     opt.global_rank = int(os.environ['RANK']) if 'RANK' in os.environ else -1
     set_logging(opt.global_rank)
-
-                                   
-                           
-                             
-            
 
     wandb_run = check_wandb_resume(opt)                                      
     if opt.resume and not wandb_run:                             
@@ -695,9 +709,7 @@ if __name__ == '__main__':
             opt = argparse.Namespace(**yaml.load(f, Loader=yaml.SafeLoader))           
         opt.cfg, opt.weights, opt.resume, opt.batch_size, opt.global_rank, opt.local_rank = '', ckpt, True, opt.total_batch_size, *apriori             
                                                         
-        opt.save_dir = _args["model_save_dir"]                             
-        opt.epochs = epochs                    
-        opt.device = str(_args["gpu_id"])                         
+        opt.save_dir = model_save_dir                             
         logger.info('Resuming training from %s' % ckpt)
     else:
                                                                                            
@@ -705,7 +717,6 @@ if __name__ == '__main__':
         assert len(opt.cfg) or len(opt.weights), 'either --cfg or --weights must be specified'
         opt.img_size.extend([opt.img_size[-1]] * (2 - len(opt.img_size)))                                   
         opt.name = 'evolve' if opt.evolve else opt.name
-                                                                                                                          
         opt.save_dir = model_save_dir
 
               

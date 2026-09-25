@@ -18,7 +18,7 @@ from helper.base_data_manager import (get_collected_gt_box_json_path,
 from helper.data_organization_tools import (conver_ours_rank,conver_datactive_rank,
                                           get_img_name_to_ann_ids,get_annoId_to_anno,
                                           get_all_error_annoids,get_annoid_to_imgname)
-from helper.conver_label_style import coco2yolo
+from helper.convert_labels import coco2yolo
 from ours.small_utils import read_json,read_yaml
 import pprint
 from pycocotools.coco import COCO

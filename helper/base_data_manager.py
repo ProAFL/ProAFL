@@ -9,8 +9,7 @@ baselines = config["baselines"]
                            
 exp_data_root_dir = config["exp_data_dir"]
 
-                
-fault_type_map = {
+FAULT_TYPE = {
     'no_fault': 0,
     'cls_fault': 1,
     'loc_fault': 2,

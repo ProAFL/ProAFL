@@ -365,22 +365,18 @@ def collect_metrics_for_gboxs(match_json:dict, save_path:str):
 
 def main():
     mode = 0
-    print("textgttextjsontext...")
     gt_json = get_json(gt_json_path)
-    print("textepochtextjsontext...")
     epoch_to_p_boxs = get_epoch_to_pboxs(predicted_bboxs_dir)
     offset = False
     if model_name not in ["YOLOv7","rtdetr"]:                                         
         offset = True
     if mode == 0 or mode == 1:
         print("match START")
-                  
         save_path = os.path.join(exp_data_root_dir,"collection_bbox_level",dataset_name,model_name,"match.json")
         matched_gbox = match(gt_json, epoch_to_p_boxs, offset, save_path)
         print("match END")
     if mode == 0 or mode == 2:
         print("metrics START")
-                         
         if mode == 2:
             match_json_path = os.path.join(exp_data_root_dir,"collection_bbox_level",dataset_name,model_name,"match.json")
             with open(match_json_path, "r") as f:
@@ -392,14 +388,10 @@ def main():
 if __name__ == "__main__":
     pid = os.getpid()
     print(f"pid:{pid}")
-    dataset_name = "KITTI_8"                           
-    model_name = "rtdetr"                          
-    epochs = 50
-    if model_name == "rtdetr":
-        epochs = 100
-                              
-                
-    gt_json_path = get_collected_gt_box_json_path(dataset_name)
+    dataset_name = "voc"
+    model_name = "yolov7"
+    epochs = 50 if model_name != "rtdetr" else 100
+    gt_json_path = get_collected_gt_box_json_path(dataset_name) # 拿到ground truth box json filepath 
                   
     predicted_bboxs_dir = os.path.join(exp_data_root_dir,"collection_bbox_level",
                                        dataset_name,model_name,

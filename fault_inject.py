@@ -156,7 +156,7 @@ def remove_miss_fault_anno(anno_list):
 if __name__ == "__main__":
 
     random.seed(42) # random seed
-    fault_ratio = 0.01 # fault ratio: 0.01,0.05,0.1,0.2
+    fault_ratio = 0.15 # fault ratio: 0.01,0.05,0.1,0.15
 
     config = read_yaml("config.yaml")
     exp_data_root = config["exp_data_dir"]

@@ -20,7 +20,7 @@ def coco2yolo(coco_anno_json_path:Path,yolo_output_dir:Path,tvt:str):
         output_split=tvt
     )
     yolo_output.save(label_input=coco_input)
-    print("Conversion from COCO to YOLOv7 completed successfully!")
+    print(f"coco to yolo is saved in {yolo_output_dir}")
 
 def coco2voc(coco_anno_json_path:Path,voc_output_dir:Path):
     '''
@@ -36,4 +36,10 @@ def coco2voc(coco_anno_json_path:Path,voc_output_dir:Path):
 
 
 if __name__ == "__main__":
-    pass
+
+    inject_ratio = 0.15 # 0.01,0.05,0.1,0.15
+    dataset_name = "voc"
+    coco_anno_json_path = Path(f"/data/mml/data_debugging_data/ProAFL_data/fault_inject/{inject_ratio}/{dataset_name}/coco_format/annotations_no_miss.json")
+    yolo_output_dir = Path(f"/data/mml/data_debugging_data/ProAFL_data/fault_inject/{inject_ratio}/{dataset_name}/yolo_fomat")
+    coco2yolo(coco_anno_json_path,yolo_output_dir,"train")
+    
