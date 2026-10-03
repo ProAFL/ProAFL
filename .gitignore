@@ -2,3 +2,4 @@ ours/yolov7/trained_models
 *.jpg
 *.png
 *.pt
+yolov7/*.log

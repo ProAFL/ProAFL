@@ -5,10 +5,10 @@ import os
 import json
 import joblib
 from pycocotools.coco import COCO
-from helper.base_data_manager import (exp_data_root_dir, get_datactive_rank_res_path,
+from helper.base_data_manager import (exp_data_root_dir,
                                     get_error_ann_file_path,get_annotations_with_miss_json_path)
 from ours.rank.analyse.common import *
-from helper.data_organization_tools import conver_datactive_rank,get_all_error_imgset,get_all_error_idd_set
+from helper.data_organization_tools import conver_datactive_rank,get_all_error_imgset,get_all_error_annoids
 
 from ours.small_utils import read_json
 
@@ -65,12 +65,12 @@ def vis_rank(rank_res,errored_annoid_set, miss_img_set, pic_save_path):
 def main():
     coco = COCO(anno_coco_error_json_path)
     catIds = coco.getCatIds()
-    bg_id = catIds[-1]+1
-    converted_rank_list = conver_datactive_rank(ranked_list,bg_id)
-    print(f"rank list text:{len(converted_rank_list)}")
+    # bg_id = catIds[-1]+1
+    # converted_rank_list = conver_datactive_rank(ranked_list,bg_id)
+    print(f"rank长度:{len(rank_list)}")
     ranked_annid_list = []
     ranked_img_name_list = []
-    for idd in converted_rank_list:
+    for idd in rank_list:
         if type(idd) is str:
             ranked_img_name_list.append(idd)
         else:
@@ -80,39 +80,28 @@ def main():
     with open(annotations_with_miss_json_path,'r') as f:
         annotations_with_miss_json = json.load(f)
     missed_img_name_set =  get_missed_img_name_set(annotations_with_miss_json)
-                                                          
-                                                              
-                                                                               
     total_error_set = error_ann_id_set | missed_img_name_set
 
-                                  
-    APFD = compute_apfd(total_error_set, converted_rank_list)
-    FPR,FNR,F1 =calc_fpr_fnr_f1(converted_rank_list, total_error_set, cut_off=0.5)
+    APFD = compute_apfd(total_error_set, rank_list)
+    print(f"APFD:{APFD}")
+
+    FPR,FNR,F1 =calc_fpr_fnr_f1(rank_list, total_error_set, cut_off=0.5)
     print(f"APFD:{APFD},FPR:{FPR},FNR:{FNR},F1:{F1}")
     annos_with_miss_json = read_json(annotations_with_miss_json_path)
-    error_idd_set = get_all_error_idd_set(annos_with_miss_json)
+    error_annoid_set = set(get_all_error_annoids(annos_with_miss_json))
     error_imgset = get_all_error_imgset(annos_with_miss_json)
-    top1 = calc_top1(annos_with_miss_json,converted_rank_list,error_idd_set,error_imgset)
-    exam=calc_exam(annos_with_miss_json,converted_rank_list)
+    error_idd_set = error_annoid_set | error_imgset
+    top1 = calc_top1(annos_with_miss_json,rank_list,error_idd_set,error_imgset)
+    exam=calc_exam(annos_with_miss_json,rank_list)
     print(f"top1:{top1},exam:{exam}")
-                                
-                                                                        
-                                             
-                                          
-                                                                   
 
-                                                                                        
-
-
-
+'''
 def xiufu_rank_res():
-    '''
-    text
-    '''
+    # 一次性函数
     coco = COCO(anno_coco_error_json_path)
-    catIds = coco.getCatIds()
-    bg_id = catIds[-1]+1
-    converted_rank = conver_datactive_rank(ranked_list, bg_id)
+    # catIds = coco.getCatIds()
+    # bg_id = catIds[-1]+1
+    # converted_rank = conver_datactive_rank(rank_list, bg_id)
                                                
     assert 61921 in converted_rank, "failed"
     removed_idx_list = []
@@ -123,19 +112,26 @@ def xiufu_rank_res():
             removed_idx_list.append(idx)
     for idx in removed_idx_list:
         del ranked_list[idx]
-                                                                                                                           
+'''
 
 if __name__ == "__main__":
-    dataset_name = "VisDrone"                           
-    exp_id = "exp_02"
-                              
-    ranked_list = joblib.load(f"{exp_data_root_dir}/Results/datactive/{dataset_name}/YOLOv7/{exp_id}/rank/rank.joblib")
-    anno_coco_error_json_path = get_error_ann_file_path(dataset_name)
-    annotations_with_miss_json_path =get_annotations_with_miss_json_path(dataset_name)
+    dataset_name = "voc"
+    model_name = "yolov7"
+    inject_ratio = 0.1 # 0.01,0.05,0.1,0.15
+    repeat_id = 10
+    rank_list = joblib.load(os.path.join(exp_data_root_dir,"rank","ours",
+                                         dataset_name,model_name,
+                                         f"{str(inject_ratio)}_repeat",f"repeat_{repeat_id}","rank.joblib"))
+    # rank_list = joblib.load(os.path.join(exp_data_root_dir,"rank","ours",
+    #                                      dataset_name,model_name,
+    #                                      str(inject_ratio),"rank.joblib"))
+    # # rank_list = joblib.load(os.path.join(exp_data_root_dir,"rank","datactive",
+    #                                      dataset_name,str(inject_ratio),f"repeat_{repeat_id}", "converted_rank.joblib"))
+    
+    anno_coco_error_json_path = os.path.join(exp_data_root_dir,"fault_inject",
+                                             str(inject_ratio),dataset_name,"coco_format","annotations_no_miss.json")
+    annotations_with_miss_json_path =os.path.join(exp_data_root_dir,"fault_inject",
+                                                  str(inject_ratio),dataset_name,"coco_format","annotations_with_miss.json")
     main()
-                      
-
-
-
 
 

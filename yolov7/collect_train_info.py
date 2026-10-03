@@ -4,6 +4,7 @@ Collect gt_box and p_box information.
 import os
 import argparse
 import torch
+import time
 from utils.datasets import create_dataloader
 from models.yolo import Model
 import yaml
@@ -13,6 +14,12 @@ from collections import defaultdict
 
 from custom_module.base_data_manager import get_fault_train_model_weight_file_path,get_error_ann_file_path,get_nc_by_datasetname
 from custom_module.small_utils import read_yaml
+
+def get_cost_time(cost_timetamp)->str:
+    hours = int(cost_timetamp // 3600)                   
+    minutes = int((cost_timetamp % 3600) // 60)                     
+    seconds = cost_timetamp % 60                               
+    return f"{hours:02d}:{minutes:02d}:{seconds:02.0f}"
 
 def collect_one_epoch(model, dataloader, epoch, device, save_dir,
                       conf_thres=0.25, iou_thres=0.65):
@@ -26,26 +33,27 @@ def collect_one_epoch(model, dataloader, epoch, device, save_dir,
             out, _ = model(imgs, augment=False)
             out = non_max_suppression(out, conf_thres, iou_thres, labels=[], multi_label=True)
             for si, preds in enumerate(out):
-                if len(preds) == 0:
-                    continue
                 img_name = os.path.basename(paths[si])
-                predn = preds.clone()
-                scale_coords(imgs[si].shape[1:], predn[:, :4], shapes[si][0], shapes[si][1])
                 predicted_bbox_list = []
-                for *xyxy, conf, cls in predn.tolist():
-                    predicted_bbox_list.append({
-                        "predicted_box_id": predicted_box_id,
-                        "img_name": img_name,
-                        "predicted_cls": int(cls),
-                        "conf": conf,
-                        "bbox": xyxy,
-                    })
-                    predicted_box_id += 1
-                predicted_box_dict[img_name] = {
-                    "predicted_bboxs": predicted_bbox_list,
-                    "height": shapes[si][0][0],
-                    "weight": shapes[si][0][1],
-                }
+                if len(preds) == 0:
+                    predicted_box_dict[img_name] = {
+                        "predicted_bboxs": []
+                    }
+                else:
+                    predn = preds.clone()
+                    scale_coords(imgs[si].shape[1:], predn[:, :4], shapes[si][0], shapes[si][1])
+                    for *xyxy, conf, cls in predn.tolist():
+                        predicted_bbox_list.append({
+                            "predicted_box_id": predicted_box_id,
+                            "img_name": img_name,
+                            "predicted_cls": int(cls),
+                            "conf": conf,
+                            "bbox": xyxy,
+                        })
+                        predicted_box_id += 1
+                    predicted_box_dict[img_name] = {
+                        "predicted_bboxs": predicted_bbox_list
+                    }
 
     os.makedirs(save_dir,exist_ok=True)
     save_json_file_name = f"epoch_{epoch}_predicted_bboxs.json"
@@ -62,14 +70,15 @@ def collect_predicted_box(model, device, batch_size, workers,
         data = yaml.load(f, Loader=yaml.SafeLoader)
     gs = max(int(model.stride.max()), 32)
     opt = argparse.Namespace(single_cls=False)
-    dataloader, dataset = create_dataloader(data["train"], 640, batch_size, gs, opt,
+    dataloader, dataset = create_dataloader(data["origin_train"], 640, batch_size, gs, opt,
                                              pad=0.5, rect=True, workers=workers,
                                              prefix=colorstr('train: '))
-    print(f"Total image count:{len(dataset)}")
+    print(f"总共的图像数量:{len(dataset)}")
 
     for epoch in range(epochs):
         # 加载权重
-        weights_path = get_fault_train_model_weight_file_path(dataset_name,model_name,inject_ratio,epoch)
+        # weights_path = get_fault_train_model_weight_file_path(dataset_name,model_name,inject_ratio,epoch)
+        weights_path = get_fault_train_model_weight_file_path(dataset_name,model_name,inject_ratio,repeat_id,epoch)
         state_dict = torch.load(weights_path, map_location=device)
         model.load_state_dict(state_dict, strict=True)
         # eval mode
@@ -140,13 +149,14 @@ if __name__ == "__main__":
     parser.add_argument('--batch-size', type=int, default=256, help='inference batch size')
     parser.add_argument('--workers', type=int, default=16, help='data loader workers')
     args = parser.parse_args()
-    device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
-
+    device = torch.device('cuda:1' if torch.cuda.is_available() else 'cpu')
+    ts = int(time.time()) # 时间戳
     config = read_yaml("../config.yaml")
     exp_data_root = config["exp_data_dir"]
     dataset_name = "voc"
     model_name = "yolov7"
-    inject_ratio = 0.01
+    inject_ratio = 0.1 # 0.01,0.05,0.1,0.15
+    repeat_id = 1
     nc = get_nc_by_datasetname(dataset_name) # 数据集分类数
     # 基于yaml配置加载出model:Model,并放到device
     model = Model("cfg/training/yolov7.yaml", ch=3, nc=nc, anchors=3).to(device)
@@ -156,10 +166,15 @@ if __name__ == "__main__":
     epochs = 50
 
     collect_p_box_dir = os.path.join(exp_data_root,
-                                     "collection_process_info",dataset_name,model_name,"collected_predict_boxes_test",f"inject_{inject_ratio}")
+                                     "collection_process_info",dataset_name,model_name,
+                                     "collected_predict_boxes",f"inject_{inject_ratio}_repeat", f"repeat_{repeat_id}_{ts}")
+    start_time = time.time()
     # 收集整个训练轮次的预测框
     collect_predicted_box(model, device, args.batch_size, args.workers,
                           conf_thres=pbox_confi_thres, iou_thres=iou_thres)
+    end_time = time.time()
+    cost_time = end_time -start_time
+    print(get_cost_time(cost_time))
 
     '''
     不需要重新收集这个gt_box信息

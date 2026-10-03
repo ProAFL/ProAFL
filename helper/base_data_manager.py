@@ -67,6 +67,13 @@ def get_annotations_with_miss_json_path(dataset_name):
     return os.path.join(exp_data_root_dir,"error",
                         dataset_name,"labels","coco_format","annotations_with_miss.json")
 
+def get_annotations_no_miss_json_path(dataset_name,inject_ratio:float):
+    '''
+    Get the faulty annotation JSON for this dataset, not including miss faults.
+    '''
+    return os.path.join(exp_data_root_dir,"fault_inject",str(inject_ratio),
+                        dataset_name,"coco_format","annotations_no_miss.json")
+
 def get_error_ann_file_path(dataset_name):
     '''
     Get the injected-fault annotation JSON path for the train set (COCO style).
@@ -112,7 +119,7 @@ def get_img_to_nomatched_pboxs_json_path(dataset_name,model_name):
 def get_all_trainimgs_dir(dataset_name):
     return os.path.join(exp_data_root_dir,"datasets", f"{dataset_name}-yolo","train","images")
 
-def get_origin_tainimgs_dir(dataset_name):
+def get_origin_trainimgs_dir(dataset_name):
     return os.path.join(exp_data_root_dir,"datasets", f"{dataset_name}-yolo","origin","train","images")
 
 def get_origin_testimgs_dir(dataset_name):

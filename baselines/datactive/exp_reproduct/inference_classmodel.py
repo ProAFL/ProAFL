@@ -4,9 +4,9 @@ import torch
 import torchvision
 from torchvision import transforms
 from torch.utils.data import DataLoader
-from exp_reproduct.inference_disassemble_dataset import Inference_classificationDataSet
+from inference_disassemble_dataset import Inference_classificationDataSet
 from custom_module.small_utils import read_yaml
-from custom_module.base_data_manager import get_all_trainimgs_dir
+
 
 def build_dataset(mask_type):
     data_transform = transforms.Compose(
@@ -31,23 +31,22 @@ def build_model():
 
 def infer():
     dataset = build_dataset(mask_type)
-    dataloader = DataLoader(dataset, batch_size=1, shuffle=False, num_workers=4)
+    dataloader = DataLoader(dataset, batch_size=32, shuffle=False, num_workers=4)
     model = build_model()
     model.eval()
     device = torch.device(f"cuda:{gpu_id}")
     model.to(device)
-    loss_func = torch.nn.CrossEntropyLoss()
-                          
+    loss_func = torch.nn.CrossEntropyLoss(reduction="none")
     results = []
     with torch.no_grad():
         for i, data in enumerate(dataloader):
             images, targets = data
-            outputs = model(images.to(device))
+            logits = model(images.to(device))
                              
             labels = targets['category_id'].to(device)
-            outputs = torch.nn.functional.softmax(outputs, dim=1)
+            losses = loss_func(logits, labels)
+            outputs = torch.nn.functional.softmax(logits, dim=1)
                                  
-            loss = loss_func(outputs, labels).item()
             _, predicted = torch.max(outputs.data, 1)                     
                           
             print("\rInference: {}/{}".format(i + 1, len(dataloader)), end="")
@@ -60,8 +59,8 @@ def infer():
                     "pred_category_id":predicted[j].item(),
                     "gt_category_id": int(targets["category_id"][j]),
                     "bbox": targets["boxes"][j].numpy().tolist(),
-                    "loss": loss,                                                           
-                    "fault_type":targets["fault_type"].item()
+                    "loss": losses[j].item(),
+                    "fault_type":targets["fault_type"][j].item()
                 }
                 results.append(content_dic)
     json_str = json.dumps(results, indent=4)
@@ -72,9 +71,10 @@ def infer():
 if __name__ == "__main__":
     config = read_yaml("config.yaml")
     exp_data_root = config["exp_data_dir"]
-    dataset_name = "voc"                     
-    img_root = get_all_trainimgs_dir(dataset_name)
-    annotation_path = f"{exp_data_root}/datasets/{dataset_name}-coco/train/_annotations.coco_error.json"
+    dataset_name = "voc"
+    img_root = f"{exp_data_root}/datasets/{dataset_name}-coco/train"
+    inject_ratio = 0.1
+    annotation_path = annotation_path = f"{exp_data_root}/fault_inject/{str(inject_ratio)}/{dataset_name}/coco_format/annotations_no_miss.json"
     if dataset_name == "voc":
         class_num = 21               
     elif dataset_name == "visdrone":
@@ -82,10 +82,16 @@ if __name__ == "__main__":
     elif dataset_name == "kitti":
         class_num = 9               
     gpu_id = 0
-    mask_type = "other_objects"                                                
-    trained_model_path = f"{exp_data_root}/baselines/datactive/{dataset_name}/rank/models/{mask_type}/epoch_12.pt"
-    results_save_path = f"{exp_data_root}/baselines/datactive/{dataset_name}/rank/infer/{mask_type}.json"
-    infer()
+    for repeat_id in [7,8,9,10]:
+        for mask_type in ["crop","other_objects"]:
+            # trained_model_path = f"{exp_data_root}/baselines/datactive/{dataset_name}/rank/models/{mask_type}/epoch_12.pt"
+            # results_save_path = f"{exp_data_root}/baselines/datactive/{dataset_name}/rank/infer/{mask_type}.json"
+            trained_model_path = os.path.join(exp_data_root,"datactive_models",dataset_name,str(inject_ratio),
+                                            f"repeat_{repeat_id}",mask_type,"epoch_12.pt")
+            result_save_dir = os.path.join(exp_data_root,"datactive_infer_res",dataset_name,str(inject_ratio),f"repeat_{repeat_id}")
+            os.makedirs(result_save_dir,exist_ok=True)
+            results_save_path = os.path.join(result_save_dir,f"{mask_type}.json")
+            infer()
 
 
 '''

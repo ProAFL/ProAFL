@@ -26,8 +26,10 @@ def get_repair_ann_file_path(dataset_name,
         ann_file_path = os.path.join(exp_data_root_dir,"datasets",f"{dataset_name}-coco","train",f"_annotations.coco_repair_datactive.json")
     return ann_file_path
 
-def get_fault_train_model_weight_file_path(dataset_name,model_name,inject_ratio:float,epoch):
-    return os.path.join(exp_data_root_dir,"models",dataset_name,model_name,"fault_train",str(inject_ratio),"weights",f"epoch_{epoch}.pt")
+def get_fault_train_model_weight_file_path(dataset_name,model_name,inject_ratio:float,repeat_id:int, epoch):
+    return os.path.join(exp_data_root_dir,"models",dataset_name,model_name,"fault_train",
+                        f"{str(inject_ratio)}_repeat", f"repeat_{repeat_id}",
+                         "weights",f"epoch_{epoch}.pt")
     '''
     # 2026-7-1版本
     model_weight_file_path = ""
@@ -37,8 +39,6 @@ def get_fault_train_model_weight_file_path(dataset_name,model_name,inject_ratio:
         model_weight_file_path = os.path.join(exp_data_root_dir,"models",f"{dataset_name.lower()}", model_name.lower(), "error", f"epoch_{epoch}.pth")
     return model_weight_file_path
     '''
-
-
 
 
 def get_repair_train_model_weight_file_path(dataset_name,model_name, method_name):

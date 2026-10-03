@@ -20,7 +20,7 @@ from helper.base_data_manager import (exp_data_root_dir,
 
 from helper.data_organization_tools import (get_all_errored_g_box_id_set,get_all_miss_error_img_name_set,
                                           get_img_name_to_missed_annids,get_all_error_annoids,get_annoId_to_anno,
-                                          conver_ours_rank,get_all_error_idd_set,get_all_error_imgset)
+                                          conver_ours_rank,get_all_error_annoids,get_all_error_imgset)
 from ours.small_utils import read_json
 from ours.repair.repair_analyse import count_repair_rate
 
@@ -1089,8 +1089,9 @@ def analyse_rank(gt_json_path:str, annos_with_miss_json_path:str, rank_res:list,
     anno_error_json = read_json(anno_error_json_path)
     converted_rank_list = conver_ours_rank(rank_res,g_boxes_json,anno_error_json)
     annos_with_miss_json = read_json(annos_with_miss_json_path)
-    error_idd_set = get_all_error_idd_set(annos_with_miss_json)
+    error_annid_set = set(get_all_error_annoids(annos_with_miss_json))
     error_imgset = get_all_error_imgset(annos_with_miss_json)
+    error_idd_set = error_annid_set | error_imgset
     top1 = calc_top1(annos_with_miss_json,converted_rank_list,error_idd_set,error_imgset)
     exam=calc_exam(annos_with_miss_json,converted_rank_list)
     print(f"top1:{top1},exam:{exam}")

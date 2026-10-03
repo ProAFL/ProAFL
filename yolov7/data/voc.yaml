@@ -1,10 +1,9 @@
 # train and val data as 1) directory: path/images/, 2) file: path/images.txt, or 3) list: [path1/images/, path2/images/]
 
-origin_train: /data/mml/data_debugging_data//ProAFL_data/datasets/voc-yolo/origin/train/images
-
-train: /data/mml/data_debugging_data/ProAFL_data/datasets/voc-yolo/train/images
-val: /data/mml/data_debugging_data/ProAFL_data/datasets/voc-yolo/val/images
-test: /data/mml/data_debugging_data/ProAFL_data/datasets/voc-yolo/test/images
+origin_train: /data/mml/data_debugging_data//ProAFL_data/datasets/voc-yolo/origin/train/images # 5717张图像
+train: /data/mml/data_debugging_data/ProAFL_data/datasets/voc-yolo/train/images # 4574张图像
+val: /data/mml/data_debugging_data/ProAFL_data/datasets/voc-yolo/val/images # 1143张图像
+test: /data/mml/data_debugging_data/ProAFL_data/datasets/voc-yolo/test/images # 5823张图像
 
 # number of classes
 nc: 20

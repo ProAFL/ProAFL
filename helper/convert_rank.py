@@ -64,6 +64,22 @@ def convert_datactive():
         joblib.dump(converted_rank_list,save_file)
 
 
+def convert_datactive_temp():
+    dataset_name = "voc"
+    inject_ratio = 0.1
+    repeat_id = 1
+    print(f"{dataset_name}|dataactive converting...")
+    "/data/mml/data_debugging_data/ProAFL_data/rank/datactive/voc/0.1/repeat_1/rank.joblib"
+    rank_path = os.path.join()
+    rank_res = joblib.load(rank_path)
+    anno_coco_error_json_path = get_error_ann_file_path(dataset_name)
+    coco = COCO(anno_coco_error_json_path)
+    catIds = coco.getCatIds()
+    bg_id = catIds[-1]+1
+    converted_rank_list = conver_datactive_rank(rank_res,bg_id)
+    save_file = f"{exp_data_root_dir}/Results/datactive/{dataset_name}/YOLOv7/{exp_id}/rank/converted_rank.joblib"
+    joblib.dump(converted_rank_list,save_file)
+
 if __name__ == "__main__":
                     
     convert_otherbaselines()

@@ -4,6 +4,7 @@ Get ranking results of our method based on collected data
 '''
 import os
 import json
+import csv
 import joblib
 import pprint
 
@@ -16,11 +17,12 @@ from helper.base_data_manager import (exp_data_root_dir,
                                     get_ours_gt_box_metric_path,
                                     get_ours_match_path,
                                     get_collected_predict_boxes_dir,
-                                    get_all_trainimgs_dir,
-                                    get_img_to_nomatched_pboxs_json_path
+                                    get_origin_trainimgs_dir,
+                                    get_img_to_nomatched_pboxs_json_path,
+                                    get_annotations_no_miss_json_path
                                     )
 from ours.small_utils import read_json,read_yaml
-from ours.rank.img_rank import img_rank
+from pycocotools.coco import COCO
 
 
 def get_all_gids(gt_json:dict) -> list[int]:
@@ -234,47 +236,50 @@ def epoch_freq(boxes,last_epoch):
 
 
 def get_cluster_feaure(cluster,last_epoch):
-    conf = conf_score(cluster)         
-    stab = stability_pairwise_mean_iou(cluster)        
-    cls_consis = cls_consis_score(cluster)        
-    e_freq = epoch_freq(cluster,last_epoch)        
+    feature_name_list = ["conf_mean","iou_mean","cls_consis","epoch_span"]
     sign = [1,1,1,1]
-    feature = [conf,stab,cls_consis,e_freq]
-    return feature, sign
+    if cluster is None or len(cluster) == 0:
+        conf_mean = 0.0
+        iou_mean = 0.0
+        cls_consis = 0.0
+        epoch_span = 0.0
+        feature = [conf_mean,iou_mean,cls_consis,epoch_span]
+    else:
+        conf_mean = conf_score(cluster) 
+        iou_mean = stability_pairwise_mean_iou(cluster)
+        cls_consis = cls_consis_score(cluster)
+        epoch_span = epoch_freq(cluster,last_epoch)
+        feature = [conf_mean,iou_mean,cls_consis,epoch_span]
+    return feature, sign, feature_name_list
 
-def get_img_to_topsis_score(img_to_clusters:dict,last_epoch:int):
+def get_img_to_topsis_score(all_img_name_list,img_to_clusters:dict,last_epoch:int):
     '''
     Get img_name -> topsis score
     
     Parameters:
     ---
     img_to_clusters : dict
-        Data format
         {img_name:[[pbox1,pbox3],...]}
     last_epoch : int
     '''
                                      
     clusters_features = []
-                                   
     features_signs = []
 
-                                             
     img_name_to_cluster_ids = defaultdict(list)
 
-                                     
     cluster_idx = 0
-                                         
-    for img_name,clusters in img_to_clusters.items():
-                                            
+    clusterIdx_to_cluster = defaultdict(list)
+    for img_name in all_img_name_list:
+        clusters = img_to_clusters.get(img_name,[[]])
         for cluster in clusters:
-                                                                           
-            features,signs = get_cluster_feaure(cluster,last_epoch)
+            features, signs, feature_name_list = get_cluster_feaure(cluster,last_epoch)
             clusters_features.append(features)
             features_signs = signs
             img_name_to_cluster_ids[img_name].append(cluster_idx)
+            clusterIdx_to_cluster[cluster_idx] = cluster
             cluster_idx += 1
 
-                           
     data_array = np.array(clusters_features)
     n_features = data_array.shape[1]
     assert data_array.shape[1] == len(features_signs), "Invalid data"
@@ -284,17 +289,21 @@ def get_img_to_topsis_score(img_to_clusters:dict,last_epoch:int):
                                         
     best_cluster_id, score_array = tp.topsis(data_array, weights, features_signs)
     score_array = np.nan_to_num(score_array, nan=0.0, posinf=1.0, neginf=0.0)
-                                        
-                                                       
-                                                                   
+
     img_name_to_max_score = {}
+    img_name_to_feature = {}
+    img_name_to_bestcluster = defaultdict(list)
     for img_name,cluster_ids in img_name_to_cluster_ids.items():
-        max_score = 0
+        max_score = float('-inf')
         for cluster_id in cluster_ids:
             if score_array[cluster_id] > max_score:
                 max_score = score_array[cluster_id]
+                feature = clusters_features[cluster_id]
+                best_cluster = clusterIdx_to_cluster[cluster_id]
         img_name_to_max_score[img_name] = max_score
-    return img_name_to_max_score
+        img_name_to_feature[img_name] = feature
+        img_name_to_bestcluster[img_name] = best_cluster
+    return img_name_to_max_score,img_name_to_feature,feature_name_list,img_name_to_bestcluster
 
 
 def get_img_name_to_epoch_to_unmatched_p_boxs(epoch_to_matched_p_ids:dict,last_epoch: int=5, conf_threshold: float=0.6):
@@ -320,25 +329,17 @@ def get_img_name_to_epoch_to_unmatched_p_boxs(epoch_to_matched_p_ids:dict,last_e
         }
     '''
     img_name_to_no_match_p = {}
-                                                    
     for epoch in range(epochs-last_epoch,epochs):
-                                                      
         predicted_epoch_json_path = os.path.join(predicted_bboxs_dir, f"epoch_{epoch}_predicted_bboxs.json")
         with open(predicted_epoch_json_path,mode="r") as f:
             predicted_epoch_dict = json.load(f)
-                                                                                     
         for img_name in sorted(predicted_epoch_dict.keys()):
-                                                          
             p_box_list = predicted_epoch_dict[img_name]["predicted_bboxs"]
-                                     
             for p_box in p_box_list:
                 p_id = p_box["predicted_box_id"]
                 if p_id not in epoch_to_matched_p_ids[epoch] and p_box["conf"] > conf_threshold:
                     add_path_value(img_name_to_no_match_p,keys=[img_name,epoch],value=p_box)
     return img_name_to_no_match_p
-
-
-
 
 def get_all_img_name(imgs_dir:str) -> list[str]:
     img_name_list = []
@@ -348,13 +349,10 @@ def get_all_img_name(imgs_dir:str) -> list[str]:
             img_name_list.append(filename)
     return img_name_list
 
-def get_epoch_to_matched_p_boxs(gt_match_dict):
-                                       
-    epoch_to_match_info = {}
-                         
-    for g_box_id in gt_match_dict.keys():
-                                                
-        match_info_list = gt_match_dict[g_box_id]
+def get_epoch_to_matched_p_boxs(match_dict):
+    epoch_to_match_info = {} # epoch/pid/p_box
+    for annoid_str in match_dict.keys():
+        match_info_list = match_dict[annoid_str]
         for match_info in match_info_list:
             epoch = match_info["epoch"]
             p_box = match_info["p_box"]
@@ -365,27 +363,32 @@ def get_epoch_to_matched_p_boxs(gt_match_dict):
                 epoch_to_match_info[epoch] = {p_box_id:p_box}
     return epoch_to_match_info
 
-def rank_img_name(all_img_name_list:list[str], gt_match_json:dict, last_epoch=5, conf_threshold=0.6):
-    epoch_to_matched_p_ids = get_epoch_to_matched_p_boxs(gt_match_json)
-
-                                                                                        
+def rank_img_name(all_img_name_list:list[str], match_json:dict, last_epoch=5, conf_threshold=0.6):
+    '''
+    conf_threshold=0.6: 簇中的预测框的conf>0.6
+    '''
+    # epoch:matched_pid:pox
+    epoch_to_matched_p_ids = get_epoch_to_matched_p_boxs(match_json)
+    # imgname:epoch:nomatched_pboxs
     img_name_to_epoch_no_match_p_boxs = get_img_name_to_epoch_to_unmatched_p_boxs(epoch_to_matched_p_ids,last_epoch,conf_threshold)
+    # imgname:nomatched_pboxs
     img_name_to_no_matched_p_boxs  = get_img_name_to_no_matched_p_boxs(img_name_to_epoch_no_match_p_boxs)
-
-                                                                                                                         
-    img_to_clusters = get_img_to_clusters(img_name_to_no_matched_p_boxs,iou_thre=0.6)
-    img_name_to_topsis_score = get_img_to_topsis_score(img_to_clusters,last_epoch)
+    img_to_clusters = get_img_to_clusters(img_name_to_no_matched_p_boxs,iou_thre=conf_threshold)
+    img_name_to_topsis_score,img_name_to_feature,feature_name_list,img_name_to_bestcluster = get_img_to_topsis_score(all_img_name_list,img_to_clusters,last_epoch)
+    assert len(all_img_name_list) == len(img_name_to_topsis_score.keys()), "rank img 数量不对"
+    '''
     no_clusters_image_name_set = sorted(set(all_img_name_list) - set(img_name_to_topsis_score.keys()))
     print(f"Number of images without predicted clusters:{len(no_clusters_image_name_set)}")
     for img_name in no_clusters_image_name_set:
-        img_name_to_topsis_score[img_name] = 0.0
+        img_name_to_topsis_score[img_name] = 0.0 # 这里是不是要优化。
+    '''
     sorted_items = sorted(img_name_to_topsis_score.items(),key=lambda x: (-float(x[1]), x[0]))                
     ranked_image_name_list = []
     ranked_score_list = []
     for image_name,score in sorted_items:
         ranked_image_name_list.append(image_name)
         ranked_score_list.append(score)
-    return ranked_image_name_list, ranked_score_list
+    return ranked_image_name_list, ranked_score_list, img_name_to_feature, feature_name_list,img_name_to_bestcluster
 
 
 def build_feature_beta(all_gids:list[int],g_box_id_to_metric:dict, K:float=0.2) -> tuple:
@@ -559,32 +562,30 @@ def build_feature_beta(all_gids:list[int],g_box_id_to_metric:dict, K:float=0.2) 
     }
     return (g_id_to_features,feature_name_to_sign)
 
-def build_feature_orignal(all_gids:list[int],g_box_id_to_metric:dict, K:float=0.2) -> tuple:
-    g_id_to_features = {}
-    for g_id in g_box_id_to_metric.keys():
-        conf_list = g_box_id_to_metric[g_id]["conf_list"]
-        iou_list = g_box_id_to_metric[g_id]["iou_list"]
+def build_feature_orignal(all_annoids,annoid2metric, K:float=0.2) -> tuple:
+    annoid2features = {}
+    for annoid_str,metric in annoid2metric.items():
+        conf_list = metric["conf_list"]
+        iou_list = metric["iou_list"]
         epochs = len(conf_list)
         W_e = int(K*epochs)
         W_l = int(K*epochs)
-                                                              
-        early_conf_mean = np.mean(conf_list[0:W_e])
-                                                             
-        lastly_conf_mean = np.mean(conf_list[-W_l:])
-                                                       
-        early_iou_mean = np.mean(iou_list[0:W_e])
-                                                      
-        lastly_iou_mean = np.mean(iou_list[-W_l:])
 
-                                                    
+        # 置信度过程度量特征
         conf_mean = np.mean(conf_list)
+        early_conf_mean = np.mean(conf_list[0:W_e])
+        lastly_conf_mean = np.mean(conf_list[-W_l:])
+        # IoU过程度量特征
         iou_mean = np.mean(iou_list)
+        early_iou_mean = np.mean(iou_list[0:W_e])
+        lastly_iou_mean = np.mean(iou_list[-W_l:])
 
         conf_threshold = 0.5*lastly_conf_mean
         iou_threshold = 0.5*lastly_iou_mean
 
-        min_e_conf = 0
-        min_e_iou = 0
+
+        min_e_conf = epochs
+        min_e_iou = epochs
         for e in range(epochs):
             if conf_list[e] > conf_threshold:
                 min_e_conf = e
@@ -593,49 +594,48 @@ def build_feature_orignal(all_gids:list[int],g_box_id_to_metric:dict, K:float=0.
             if iou_list[e] > iou_threshold:
                 min_e_iou = e
                 break
-                                                       
-                                      
+
         D_conf = min_e_conf / epochs
         D_iou = min_e_iou / epochs
 
-        g_id_to_features[g_id] = {
-            "early_conf_mean":early_conf_mean,                                                                           
-            "early_iou_mean":early_iou_mean,                                                                          
-            "lastly_conf_mean":lastly_conf_mean,                                                                           
-            "lastly_iou_mean":lastly_iou_mean,                                                                          
-            "conf_mean":conf_mean,                                                                           
-            "iou_mean":iou_mean,                                                                          
-            "D_conf":D_conf,                                                                    
-            "D_iou":D_iou,                                                                   
+        annoid2features[int(annoid_str)] = {
+            "conf_mean":conf_mean,
+            "early_conf_mean":early_conf_mean,
+            "lastly_iou_mean":lastly_iou_mean,
+            "D_conf":D_conf,
+            "iou_mean":iou_mean,
+            "early_iou_mean":early_iou_mean,
+            "lastly_conf_mean":lastly_conf_mean,
+            "D_iou":D_iou
         }
     feature_name_to_sign = {
-        "early_conf_mean":-1,                                
-        "early_iou_mean":-1,
-        "lastly_conf_mean":-1,
-        "lastly_iou_mean":-1,
         "conf_mean":-1,
+        "early_conf_mean":-1,
+        "lastly_conf_mean":-1,
+        "D_conf":1, # decay越大越bug
         "iou_mean":-1,
-        "D_conf":1,
+        "early_iou_mean":-1,
+        "lastly_iou_mean":-1,
         "D_iou":1
     }
 
-    print(f"all gboxCount:{len(all_gids)}")
-    print(f"matched gboxCount:{len(g_id_to_features)}")
+    print(f"all anno数量:{len(all_annoids)}")
+    print(f"matched anno数量:{len(annoid2features)}")
     
-    for g_id in all_gids:
-        if g_id not in g_id_to_features:
-                                                    
-            g_id_to_features[g_id] = {
-                "early_conf_mean":0,
-                "early_iou_mean":0,
-                "lastly_conf_mean":0,
-                "lastly_iou_mean":0,
+    for annoid in all_annoids:
+        if int(annoid) not in annoid2features:
+            # 这个annoid在所有的训练轮次中都没有被预测框匹配过，很可疑，特征直接拉满
+            annoid2features[int(annoid)] = {
                 "conf_mean":0,
+                "early_conf_mean":0,
+                "lastly_conf_mean":0,
                 "iou_mean":0,
+                "early_iou_mean":0,
+                "lastly_iou_mean":0,
                 "D_conf":1,
                 "D_iou":1, 
             }
-    return (g_id_to_features,feature_name_to_sign)
+    return (annoid2features,feature_name_to_sign)
 
 def rank_gid_beta(g_id_to_features, feature_name_to_sign: dict):
     """
@@ -693,91 +693,61 @@ def entropy_weight(data):
 
 
 
-def rank_gid_original(g_id_to_features,feature_name_to_sign:dict):
-    '''
-    g_id_to_features:{g_id:{attr:(value,flag),},}
-    '''
-    g_id_list = list(g_id_to_features.keys())
-    g_id_list.sort()            
+def rank_annoid_original(annoid_to_features:dict,feature_name_to_sign:dict):
     data = []
-    id_to_gid ={}
-    id = 0
+    idx_to_annoid ={}
+    idx = 0
     sign_list = []
     feature_name_list = []
     for feature_name,sign in feature_name_to_sign.items():
         sign_list.append(sign)
         feature_name_list.append(feature_name)
-    for g_id in g_id_list:
-        feature_dict = g_id_to_features[g_id]
+    for annoid in annoid_to_features.keys():
+        feature_dict = annoid_to_features[annoid]
         feature_list = [feature_dict[name] for name in feature_name_list]
         data.append(feature_list)
-        id_to_gid[id]= g_id
-        id += 1
-    
-    for id,gid in id_to_gid.items():
-        assert id == gid, "Invalid data"
-    
-    assert len(sign_list) > 0, "Invalid data"
+        idx_to_annoid[idx]= annoid
+        idx += 1
 
     data_array = np.array(data)
     n_features = data_array.shape[1]
     assert data_array.shape[1] == len(sign_list), "Invalid data"
 
-          
-                                          
     weights = np.ones(n_features) / n_features
     best_id, score_array = tp.topsis(data_array, weights, sign_list)
-                                        
-    sorted_gt_id = np.argsort(score_array, kind="mergesort")[::-1]
 
-    ranked_gid_list = [int(g_id) for g_id in sorted_gt_id]
-    ranked_score_list = []
-    for gid in ranked_gid_list:
-        ranked_score_list.append(score_array[gid])
-    return ranked_gid_list, ranked_score_list
+    ranked_idx_list = np.argsort(score_array, kind="mergesort")[::-1]
+    ranked_annoid = []
+    ranked_score = []
+    for idx in ranked_idx_list:
+        ranked_annoid.append(idx_to_annoid[idx])
+        ranked_score.append(score_array[idx])
+    return ranked_annoid, ranked_score
 
-def get_gid_level_rank(gt_json:dict,g_box_metrics_json_path:str):
-    '''
-    ourstextgid rank
-    '''
-              
-    all_gids = get_all_gids(gt_json)
-                        
-    g_box_id_to_metric = get_g_id_to_metric(g_box_metrics_json_path)
-                                  
-    g_id_to_features,feature_name_to_sign = build_feature_orignal(all_gids,g_box_id_to_metric)
-                                 
-    ranked_gid_list, ranked_gid_score_list = rank_gid_original(g_id_to_features,feature_name_to_sign)
-                                                                          
-                                                        
-                                                                                             
-                                                                                                   
-    '''
-    new_ranked_gid_list = []
-    new_ranked_gid_score_list = []
-    for gid in direct_erro_gid_set:
-        new_ranked_gid_list.append(gid)
-        new_ranked_gid_score_list.append(1)
-    new_ranked_gid_list.extend(ranked_gid_list)
-    new_ranked_gid_score_list.extend(ranked_gid_score_list)
-    '''
-    return ranked_gid_list, ranked_gid_score_list
+def get_annoid_level_rank(anno_json_file:dict,metircs_json_file:str):
+    coco = COCO(anno_json_file)
+    all_annoids = coco.getAnnIds()
+    annoid2metric = read_json(metircs_json_file)
+    annoid2features,feature_name_to_sign = build_feature_orignal(all_annoids,annoid2metric)
+    ranked_annoid_list, ranked_annoid_score_list = rank_annoid_original(annoid2features,feature_name_to_sign)
+    assert len(ranked_annoid_list) == len(all_annoids), "rank annid 数量不对"
+    return ranked_annoid_list, ranked_annoid_score_list, annoid2features
 
 def get_img_level_rank(imgs_dir:str,match_json_path:str):
-    '''clustertext'''
-    '''Get image ranking of our method'''
+    '''cluster_level_feature img rank'''
     all_img_name_list = get_all_img_name(imgs_dir)
-    gt_match_json = read_json(match_json_path)
-    ranked_image_name_list,ranked_img_score_list = rank_img_name(all_img_name_list, gt_match_json)
-    return ranked_image_name_list,ranked_img_score_list
+    match_json = read_json(match_json_path)
+    ranked_image_name_list,ranked_img_score_list,img_name_to_feature, feature_name_list,img_name_to_bestcluster \
+          = rank_img_name(all_img_name_list, match_json)
+    return ranked_image_name_list,ranked_img_score_list,img_name_to_feature, feature_name_list,img_name_to_bestcluster
 
 
-def merge_rank(ranked_gid_list,ranked_gid_score_list,ranked_image_name_list,ranked_img_score_list,
+def merge_rank(ranked_annoid_list,ranked_annoid_score_list,ranked_image_name_list,ranked_img_score_list,
                alpha:float=1.5) -> list:
     merged_rank = []
     idd_to_score = {}
-    for gid,score in zip(ranked_gid_list,ranked_gid_score_list):
-        idd_to_score[gid] = score
+    for annoid,score in zip(ranked_annoid_list,ranked_annoid_score_list):
+        idd_to_score[annoid] = score
     for img_name,score in zip(ranked_image_name_list,ranked_img_score_list):
         idd_to_score[img_name] = alpha*score
     
@@ -787,23 +757,66 @@ def merge_rank(ranked_gid_list,ranked_gid_score_list,ranked_image_name_list,rank
     return merged_rank
 
 
+def annoid_feature_csv(ranked_annoid_list,ranked_annoid_score_list,annoid2features):
+    feature_names = [
+        "conf_mean", "early_conf_mean", "lastly_conf_mean", "D_conf",
+        "iou_mean", "early_iou_mean", "lastly_iou_mean", "D_iou",
+    ]
+    if len(ranked_annoid_list) != len(ranked_annoid_score_list):
+        raise ValueError("annoid 和 TOPSIS 分数数量不一致")
+
+    save_path = os.path.join(_args["save_dir"], "annoid_features.csv")
+    os.makedirs(_args["save_dir"], exist_ok=True)
+    with open(save_path, "w", encoding="utf-8", newline="") as f:
+        writer = csv.writer(f)
+        writer.writerow(["annoid", *feature_names, "topsis_score"])
+        for annoid, score in zip(ranked_annoid_list, ranked_annoid_score_list):
+            features = annoid2features[annoid]
+            writer.writerow([annoid, *(features[name] for name in feature_names), float(score)])
+
+    print(f"annoid features saved at: {save_path}")
+    return save_path
+
+def img_feature_csv(ranked_image_name_list,ranked_img_score_list,img_name_to_feature, feature_name_list):
+    if len(ranked_image_name_list) != len(ranked_img_score_list):
+        raise ValueError("图片名和 TOPSIS 分数数量不一致")
+
+    save_path = os.path.join(_args["save_dir"], "img_features.csv")
+    os.makedirs(_args["save_dir"], exist_ok=True)
+    with open(save_path, "w", encoding="utf-8", newline="") as f:
+        writer = csv.writer(f)
+        writer.writerow(["imgname", *feature_name_list, "topsis_score"])
+        for img_name, score in zip(ranked_image_name_list, ranked_img_score_list):
+            features = img_name_to_feature[img_name]
+            if len(features) != len(feature_name_list):
+                raise ValueError(f"图片 {img_name} 的特征数量不一致")
+            writer.writerow([img_name, *features, float(score)])
+    print(f"image features saved at: {save_path}")
+    return save_path
+
 def rank()->list:
-              
-    gt_json = read_json(gt_json_path)
-                    
-    ranked_gid_list,ranked_gid_score_list = get_gid_level_rank(gt_json,g_box_metrics_json_path)
-    if _args["feature_level"] == "imgLevel":
-                        
+    ranked_annoid_list,ranked_annoid_score_list,annoid2features = get_annoid_level_rank(anno_file,metircs_json_file)
+    annoid_feature_csv(ranked_annoid_list,ranked_annoid_score_list,annoid2features)
+    if _args["feature_level"] == "cluster_level": 
+        ranked_image_name_list,ranked_img_score_list,img_name_to_feature, feature_name_list,img_name_to_bestcluster = get_img_level_rank(imgs_dir,match_json_path)
+        img_feature_csv(ranked_image_name_list,ranked_img_score_list,img_name_to_feature, feature_name_list)
+        json_save_path = os.path.join(_args["save_dir"], "imgname2bestcluster.json")
+        with open(json_save_path, "w", encoding="utf-8") as f:
+            json.dump(img_name_to_bestcluster, f, ensure_ascii=False, indent=4)
+        print(f"imgname2bestcluster saved at: {json_save_path}")
+
+    elif _args["feature_level"] == "img_level":
+        '''
         img_rank_res = img_rank(img_to_nomatched_pboxs_json_path)                                       
         ranked_image_name_list = img_rank_res["ranked_imgs"]
         ranked_img_score_list = img_rank_res["ranked_scores"]
-    elif _args["feature_level"] == "clusterLevel": 
-        ranked_image_name_list,ranked_img_score_list = get_img_level_rank(imgs_dir,match_json_path)          
+        '''
+        pass
     else:
-        raise Exception("textimg ranktextlevel feature")
-                 
+        raise Exception("<feature_level>参数错误")
+    
     alpha = _args["alpha"]
-    total_rank = merge_rank(ranked_gid_list,ranked_gid_score_list,ranked_image_name_list,
+    total_rank = merge_rank(ranked_annoid_list,ranked_annoid_score_list,ranked_image_name_list,
                             ranked_img_score_list,alpha)
     return total_rank
 
@@ -811,11 +824,14 @@ def rank()->list:
 if __name__ == "__main__":
     config = read_yaml("config.yaml")
     exp_data_root_dir = config["exp_data_dir"]
-                    
     _args = {
         "dataset_name":"voc",
-        "model_name":"frcnn",
+        "model_name":"yolov7", # yolov7|rtdetr|frcnn
         "alpha":1.5,
+        "inject_ratio":0.1, # 0.01,0.05,0.1,0.15
+        "repeat_id":10,
+        "method_name":"ours",
+        "feature_level":"cluster_level"
     }
     _args["epochs"] = 50
     if _args["model_name"] == "rtdetr":
@@ -823,30 +839,28 @@ if __name__ == "__main__":
     dataset_name = _args["dataset_name"]
     model_name = _args["model_name"]
     epochs = _args["epochs"]
-
-                     
-    _args["save_dir"] = os.path.join(exp_data_root_dir,"ours",dataset_name,model_name,"rank")
+    inject_ratio = _args["inject_ratio"]
+    repeat_id = _args["repeat_id"]
+    _args["save_dir"] = os.path.join(exp_data_root_dir,"rank","ours",dataset_name,model_name,
+                                    f"{str(inject_ratio)}_repeat", f"repeat_{repeat_id}" )
     os.makedirs(_args["save_dir"],exist_ok=True)
 
     pprint.pprint(_args)
+    
+    anno_file = get_annotations_no_miss_json_path(dataset_name,inject_ratio)
+    match_json_path = os.path.join(exp_data_root_dir,"match_metrics",dataset_name,model_name,
+                                    f"{str(inject_ratio)}_repeat",f"repeat_{repeat_id}", "match.json")
+    metircs_json_file = os.path.join(exp_data_root_dir,"match_metrics",dataset_name,model_name,
+                                     f"{str(inject_ratio)}_repeat",f"repeat_{repeat_id}", "metrics.json")
 
-
-    gt_json_path = get_collected_gt_box_json_path(dataset_name)
-                
-    match_json_path = get_ours_gt_box_metric_path(dataset_name,model_name)
-                  
-    g_box_metrics_json_path = get_ours_match_path(dataset_name,model_name)
-
-    annos_with_miss_json_path = get_annotations_with_miss_json_path(dataset_name)
-    predicted_bboxs_dir = get_collected_predict_boxes_dir(dataset_name,model_name)
-                          
-    img_to_nomatched_pboxs_json_path = get_img_to_nomatched_pboxs_json_path(dataset_name,model_name)
-
-    imgs_dir = get_all_trainimgs_dir(dataset_name)
-
-          
+    
+    predicted_bboxs_dir = os.path.join(exp_data_root_dir,"collection_process_info",dataset_name,model_name,
+                                       "collected_predict_boxes",f"inject_{inject_ratio}")
+    imgs_dir = get_origin_trainimgs_dir(dataset_name)
     total_rank = rank()
     print(f"Total ranking length:{len(total_rank)}")
     save_path = os.path.join(_args["save_dir"], "rank.joblib")
     joblib.dump(total_rank,save_path)
-    print(f"rankingResult saved at:{save_path}")
+    print(f"rank is saved at:{save_path}")
+
+    # img_to_nomatched_pboxs_json_path = get_img_to_nomatched_pboxs_json_path(dataset_name,model_name)

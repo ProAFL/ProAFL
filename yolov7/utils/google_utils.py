@@ -18,24 +18,27 @@ def gsutil_getsize(url=''):
 
 def attempt_download(file, repo='WongKinYiu/yolov7'):
                                              
-    file = Path(str(file).strip().replace("'", '').lower())
+    file = Path(str(file).strip().replace("'", ''))
 
     if not file.exists():
         try:
-            response = requests.get(f'https://api.github.com/repos/{repo}/releases/latest').json()              
+            response = requests.get(f'https://api.github.com/repos/{repo}/releases/latest', timeout=10)
+            response.raise_for_status()
+            response = response.json()
             assets = [x['name'] for x in response['assets']]                  
             tag = response['tag_name']               
-        except:                 
+        except (requests.RequestException, ValueError, KeyError, TypeError):
             assets = ['yolov7.pt', 'yolov7-tiny.pt', 'yolov7x.pt', 'yolov7-d6.pt', 'yolov7-e6.pt', 
                       'yolov7-e6e.pt', 'yolov7-w6.pt']
-            tag = subprocess.check_output('git tag', shell=True).decode().split()[-1]
+            tag = None
 
         name = file.name
         if name in assets:
             msg = f'{file} missing, try downloading from https://github.com/{repo}/releases/'
             redundant = False                          
             try:          
-                url = f'https://github.com/{repo}/releases/download/{tag}/{name}'
+                release = f'download/{tag}' if tag else 'latest/download'
+                url = f'https://github.com/{repo}/releases/{release}/{name}'
                 print(f'Downloading {url} to {file}...')
                 torch.hub.download_url_to_file(url, file)
                 assert file.exists() and file.stat().st_size > 1E6         

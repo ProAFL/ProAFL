@@ -227,7 +227,9 @@ def train(hyp, opt, device, tb_writer=None):
         start_epoch = ckpt['epoch'] + 1
         if opt.resume:
             assert start_epoch > 0, '%s training to %g epochs is finished, nothing to resume.' % (weights, epochs)
-        if epochs < start_epoch:
+            assert start_epoch < epochs, \
+                f'Resume checkpoint has completed {start_epoch} epochs; target epochs ({epochs}) must be greater.'
+        elif epochs < start_epoch:
             logger.info('%s has been trained for %g epochs. Fine-tuning for %g additional epochs.' %
                         (weights, ckpt['epoch'], epochs))
             epochs += ckpt['epoch']                              
@@ -582,9 +584,6 @@ def label_replace(dataset_name,train_labels_dir,val_labels_dir):
     shutil.copytree(new_train_labels_dir, cur_train_labels_dir)
     shutil.copytree(new_val_labels_dir, cur_val_labels_dir)
     '''
-    
-
-
 
 if __name__ == '__main__':
     PID = os.getpid()
@@ -592,16 +591,26 @@ if __name__ == '__main__':
     config = read_yaml("../config.yaml") # 读取主项目的配置
     exp_data_root = config["exp_data_dir"]
     dataset_name = "voc"
-    model_save_dir = f"{exp_data_root}/models"
     is_save_each_epoch = True # 是否每个epoch的checkpoint都保存
-    is_resume = False
+    inject_ratio = 0.1 # 0.01,0.05,0.1,0.15
+    repeat_id = 1
+    gpu_id = 1
+    is_resume = True
     if is_resume == True:
-        resume_pt_file = ""
-        resume_opt_yaml_path = ""
+        resume_pt_file = os.path.join(exp_data_root,"models",dataset_name,"yolov7","fault_train",
+                     f"{inject_ratio}_repeat", f"repeat_{repeat_id}","weights","last.pt")
+        resume_opt_yaml_path = os.path.join(exp_data_root,"models",dataset_name,"yolov7","fault_train",
+                     f"{inject_ratio}_repeat", f"repeat_{repeat_id}","logs","opt.yaml")
         resume_end_epoch = 75
     # labels 文件夹
-    train_labels_dir = f"{exp_data_root}/fault_inject/0.01/{dataset_name}/yolo_fomat/labels_train"
-    val_labels_dir = f"{exp_data_root}/fault_inject/0.01/{dataset_name}/yolo_fomat/labels_val"
+    
+    model_save_dir = f"{exp_data_root}/models/{dataset_name}/yolov7/corrected_train/{inject_ratio}_repeat/repeat_{str(repeat_id)}"
+    os.makedirs(model_save_dir,exist_ok=True)
+    # train_labels_dir = f"{exp_data_root}/inject_ratio/{inject_ratio}/{dataset_name}/yolo_fomat/labels_train"
+    # val_labels_dir = f"{exp_data_root}/inject_ratio/{inject_ratio}/{dataset_name}/yolo_fomat/labels_val"
+    
+    train_labels_dir = f"{exp_data_root}/corrected_anno/ours/{dataset_name}/yolov7/{inject_ratio}_repeat/repeat_{repeat_id}/yolo_format/labels_train"
+    val_labels_dir = f"{exp_data_root}/corrected_anno/ours/{dataset_name}/yolov7/{inject_ratio}_repeat/repeat_{repeat_id}/yolo_format/labels_val"
     label_replace(dataset_name, train_labels_dir, val_labels_dir)
 
     '''
@@ -654,7 +663,7 @@ if __name__ == '__main__':
     parser.add_argument('--bucket', type=str, default='', help='gsutil bucket')
     parser.add_argument('--cache-images', action='store_true', help='cache images for faster training')
     parser.add_argument('--image-weights', action='store_true', help='use weighted image selection for training')
-    parser.add_argument('--device', default='0', help='cuda device, i.e. 0 or 0,1,2,3 or cpu') # '0','0,1'
+    parser.add_argument('--device', default=f'{gpu_id}', help='cuda device, i.e. 0 or 0,1,2,3 or cpu') # '0','0,1'
     parser.add_argument('--multi-scale', action='store_true', help='vary img-size +/- 50%')
     parser.add_argument('--single-cls', action='store_true', help='train multi-class data as single-class')
     parser.add_argument('--adam', action='store_true', help='use torch.optim.Adam() optimizer')
@@ -679,7 +688,7 @@ if __name__ == '__main__':
     if is_resume:
         opt.resume = resume_pt_file # 权重文件pt
         opt.opt_yaml_path = resume_opt_yaml_path # 优化的相关配置
-        opt.epochs = 75
+        opt.epochs = resume_end_epoch
     
     '''
     ours_and_baselines = config["all_methods"]
@@ -704,9 +713,11 @@ if __name__ == '__main__':
         ckpt = opt.resume if isinstance(opt.resume, str) else get_latest_run()                                 
         assert os.path.isfile(ckpt), 'ERROR: --resume checkpoint does not exist'
         apriori = opt.global_rank, opt.local_rank
+        resume_epochs = opt.epochs
                                                                 
         with open(opt.opt_yaml_path) as f:
             opt = argparse.Namespace(**yaml.load(f, Loader=yaml.SafeLoader))           
+        opt.epochs = resume_epochs
         opt.cfg, opt.weights, opt.resume, opt.batch_size, opt.global_rank, opt.local_rank = '', ckpt, True, opt.total_batch_size, *apriori             
                                                         
         opt.save_dir = model_save_dir                             

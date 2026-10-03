@@ -3,7 +3,7 @@ import torch
 import torchvision
 from torchvision import transforms
 from torch.utils.data import DataLoader
-from exp_reproduct.disassemble_dataset import DisassembledDataSet
+from disassemble_dataset import DisassembledDataSet
 from TruncatedLoss import TruncatedLoss
 import time
 from torchvision.models import ResNet50_Weights
@@ -23,7 +23,8 @@ def build_dataset(mask_type,class_num):
         annotation_path,
         class_num = class_num,
         mask_type = mask_type,
-        transforms=data_transform)
+        transforms=data_transform,
+        cache_root=os.path.join(exp_data_root, 'datactive_png_cache', dataset_name))
     return disassembled_dataset
 
 def build_ResNet50(class_num):
@@ -99,10 +100,14 @@ def val_one_epoch(model,val_dataloader,device):
     return acc
 
 def train():
-    start_time = time.time()
+    batch_size = 64
     train_disassembled_dataset = build_dataset(mask_type,class_num)
-    train_dataloader = DataLoader(train_disassembled_dataset, batch_size=32, shuffle=True, num_workers=4)
-    val_dataloader = DataLoader(train_disassembled_dataset, batch_size=32, shuffle=False, num_workers=4)
+    loader_options = dict(num_workers=16, persistent_workers=True,
+                          pin_memory=device.type == 'cuda')
+    train_dataloader = DataLoader(train_disassembled_dataset, batch_size=batch_size, shuffle=True,
+                                  **loader_options)
+    val_dataloader = DataLoader(train_disassembled_dataset, batch_size=batch_size, shuffle=False,
+                                **loader_options)
 
     
     model = build_ResNet50(class_num)
@@ -115,8 +120,9 @@ def train():
     lr_scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=[7, 11], gamma=0.1)
 
     best_acc = 0.0
-           
+
     for epoch in range(epoches):
+        epoch_start_time = time.time()
         loss_avg = train_one_epoch(epoch,model,train_dataloader,
                     optimizer,criterion,
                     is_LNL,
@@ -124,8 +130,9 @@ def train():
                     device)
         lr_scheduler.step()
         print(" | Loss_avg: {:.4}".format(loss_avg))
-        
         val_acc = val_one_epoch(model,val_dataloader,device)
+        
+        
         if val_acc > best_acc:
             best_acc = val_acc
             torch.save({
@@ -135,9 +142,10 @@ def train():
                 "loss": loss_avg,
                 "acc": val_acc
             }, os.path.join(model_save_dir,"best.pt"))
+        
 
         print("Now best acc: {} %".format(best_acc))
-                         
+        
         torch.save({
             "epoch": epoch,
             "model": model.state_dict(),
@@ -145,35 +153,37 @@ def train():
             "loss": loss_avg,
             "acc": val_acc
         }, os.path.join(model_save_dir,f"epoch_{epoch}.pt"))
-        end_time = time.time()
-        elapsed_time = end_time - start_time                                     
+        epoch_end_time = time.time()
+        elapsed_time = epoch_end_time - epoch_start_time                                     
         hours = int(elapsed_time // 3600)                   
         minutes = int((elapsed_time % 3600) // 60)                     
         seconds = elapsed_time % 60                               
-        print(f"Elapsed time: {hours:02d}:{minutes:02d}:{seconds:02.0f}")
+        print(f"Epoch({epoch+1}/{epoches}) cost time: {hours:02d}:{minutes:02d}:{seconds:02.0f}")
         now_str = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-        print(f"text: {now_str}")
-        
+        print(f"完成时刻({epoch+1}/{epoches}): {now_str}")
 
 
 if __name__ == "__main__":
     config = read_yaml("config.yaml")
     exp_data_root = config["exp_data_dir"]
     dataset_name = "voc"                     
-    img_root_dir = f"{exp_data_root}/datasets/{dataset_name}-coco/train"
-    annotation_path = f"{exp_data_root}/datasets/{dataset_name}-coco/train/_annotations.coco_error.json"
-    mask_type = "crop"                       
+    img_root_dir = os.path.join(exp_data_root,"datasets",f"{dataset_name}-coco","train")
+    # annotation_path = f"{exp_data_root}/datasets/{dataset_name}-coco/train/_annotations.coco_error.json"
+    inject_ratio = 0.1
+    repeat_id = 10
+    annotation_path = os.path.join(exp_data_root,"fault_inject",str(inject_ratio),dataset_name,"coco_format","annotations_no_miss.json")
+    mask_type = "other_objects" # crop|other_objects
     if dataset_name == "voc":
-        class_num = 21         
+        class_num = 21
     elif dataset_name == "visdrone":
-        class_num = 11         
+        class_num = 11
     elif dataset_name == "kitti":
-        class_num = 9        
+        class_num = 9
     else:
         raise Exception("text")
     epoches = 13
-    device = torch.device("cuda:0")
-    model_save_dir = f"{exp_data_root}/baselines/datactive/{dataset_name}/rank/models/{mask_type}"
+    device = torch.device("cuda:1")
+    model_save_dir = os.path.join(exp_data_root,"datactive_models",dataset_name,str(inject_ratio),f"repeat_{str(repeat_id)}",mask_type)
     os.makedirs(model_save_dir,exist_ok=True)
     train()
 

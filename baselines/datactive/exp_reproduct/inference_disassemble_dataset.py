@@ -160,7 +160,7 @@ class Inference_classificationDataSet(Dataset):
         target["image_name"] = instance["image_name"]
         target["anno_id"] = instance["anno_id"]
         target["category_id"] = torch.tensor(instance["label"])
-        target["boxes"] = torch.tensor(cur_instance_bbox)
+        target["boxes"] = torch.tensor(cur_instance_bbox, dtype=torch.float64)
         target["fault_type"] = instance["fault_type"]
         img = img.resize((224, 224))
         if self.transforms is not None:

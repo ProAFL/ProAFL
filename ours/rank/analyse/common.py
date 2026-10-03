@@ -98,7 +98,6 @@ def calc_top1(annos_with_miss_json:dict,rank_list,error_set,error_imageset):
         rankedcomponents = imgname2rankedcompoents[imgname]
         img_nums += 1
         if len(rankedcomponents) == 0:
-                             
             continue
         if rankedcomponents[0] in error_set:
             mingzhong_count+=1         
