@@ -9,7 +9,7 @@ from utils.datasets import create_dataloader
 from models.yolo import Model
 import yaml
 import json
-from utils.general import colorstr,non_max_suppression,scale_coords
+from utils.general import colorstr,non_max_suppression,scale_coords,non_max_suppression_with_probs
 from collections import defaultdict
 
 from custom_module.base_data_manager import get_fault_train_model_weight_file_path,get_error_ann_file_path,get_nc_by_datasetname
@@ -62,6 +62,53 @@ def collect_one_epoch(model, dataloader, epoch, device, save_dir,
         json.dump(predicted_box_dict, f, indent=4)
     print(f"Data saved at:{save_json_path}")
 
+
+def collect_one_epoch_withprobs(model, dataloader, epoch, device, save_dir,
+                      conf_thres=0.25, iou_thres=0.65):
+    """Save NMS detections and their objectness-weighted scores for every class."""
+    predicted_box_dict = {}
+    predicted_box_id = 0
+    for batch_i, (imgs, targets, paths, shapes) in enumerate(dataloader):
+        imgs = imgs.to(device, non_blocking=True)
+        imgs = imgs.float()
+        imgs /= 255.0
+        with torch.no_grad():
+            out, _ = model(imgs, augment=False)
+            out = non_max_suppression_with_probs(out, conf_thres, iou_thres, labels=[], multi_label=True)
+            for si, result in enumerate(out):
+                if result is None:
+                    raise RuntimeError("NMS did not process every image in the batch; try a smaller batch size")
+                preds, probs = result
+                if len(preds) != len(probs):
+                    raise ValueError("NMS detections and class scores are not aligned")
+
+                img_name = os.path.basename(paths[si])
+                predicted_bbox_list = []
+                if len(preds):
+                    predn = preds.clone()
+                    scale_coords(imgs[si].shape[1:], predn[:, :4], shapes[si][0], shapes[si][1])
+                    for detection, class_confidences in zip(predn.tolist(), probs.tolist()):
+                        *xyxy, conf, cls = detection
+                        predicted_bbox_list.append({
+                            "predicted_box_id": predicted_box_id,
+                            "img_name": img_name,
+                            "predicted_cls": int(cls),
+                            "conf": round(conf, 4),
+                            "bbox": xyxy,
+                            "probs": [round(score, 4) for score in class_confidences],
+                        })
+                        predicted_box_id += 1
+                predicted_box_dict[img_name] = {
+                    "predicted_bboxs": predicted_bbox_list
+                }
+
+    os.makedirs(save_dir,exist_ok=True)
+    save_json_file_name = f"epoch_{epoch}_predicted_bboxs.json"
+    save_json_path = os.path.join(save_dir,save_json_file_name)
+    with open(save_json_path, "w", encoding="utf-8") as f:
+        json.dump(predicted_box_dict, f, separators=(",", ":"))
+    print(f"Data saved at:{save_json_path}")
+
 def collect_predicted_box(model, device, batch_size, workers,
                           conf_thres=0.25, iou_thres=0.65):
                         
@@ -84,8 +131,10 @@ def collect_predicted_box(model, device, batch_size, workers,
         # eval mode
         model.eval()
         # 收集epoch_i
-        collect_one_epoch(model, dataloader, epoch, device, collect_p_box_dir,
-                          conf_thres, iou_thres)
+        collect_one_epoch_withprobs(model, dataloader, epoch, device, collect_p_box_dir,
+                                    conf_thres, iou_thres)
+        # collect_one_epoch(model, dataloader, epoch, device, collect_p_box_dir,
+        #                             conf_thres, iou_thres)
 
 '''
 def collect_gt_box():

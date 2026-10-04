@@ -707,6 +707,7 @@ def non_max_suppression(prediction, conf_thres=0.25, iou_thres=0.45, classes=Non
 
     Returns:
          list of detections, on (n,6) tensor per image [xyxy, conf, cls]
+         (1) obj_score > conf_thres;(2)obj_score * cls_score = cls_confidence > conf_thres,满足这两个条件才会保留一条。
     """
 
     nc = prediction.shape[2] - 5                     
