@@ -160,23 +160,6 @@ def build_image_features(metrics, late_epochs):
     return features_by_image, epochs
 
 
-def topsis_scores(feature_matrix):
-    """Equal-weight topsispy scores; constant columns carry no ranking signal."""
-    variable = np.ptp(feature_matrix, axis=0) > 0
-    used_names = [name for name, use in zip(FEATURE_NAMES, variable) if use]
-    if not used_names:
-        return np.zeros(len(feature_matrix), dtype=np.float64), used_names
-
-    data = feature_matrix[:, variable]
-    weights = np.ones(data.shape[1], dtype=np.float64) / data.shape[1]
-    signs = np.ones(data.shape[1], dtype=int)
-    _, score_array = tp.topsis(data, weights, signs)
-    scores = np.asarray(score_array, dtype=np.float64)
-    if scores.shape != (len(feature_matrix),) or not np.all(np.isfinite(scores)):
-        raise ValueError("topsispy returned invalid image scores")
-    return scores, used_names
-
-
 def build_ranking(features_by_image):
     names = sorted(features_by_image)
     matrix = np.asarray(
@@ -186,7 +169,19 @@ def build_ranking(features_by_image):
     )
     if not np.all(np.isfinite(matrix)) or np.any((matrix < 0) | (matrix > 1)):
         raise ValueError("Image features must be finite and in [0, 1]")
-    scores, used_names = topsis_scores(matrix)
+    # A constant column has no ranking information; omit it before calling topsispy.
+    variable = np.ptp(matrix, axis=0) > 0
+    used_names = [name for name, use in zip(FEATURE_NAMES, variable) if use]
+    if used_names:
+        data = matrix[:, variable]
+        weights = np.ones(data.shape[1], dtype=np.float64) / data.shape[1]
+        signs = np.ones(data.shape[1], dtype=int)
+        _, score_array = tp.topsis(data, weights, signs)
+        scores = np.asarray(score_array, dtype=np.float64)
+        if scores.shape != (len(names),) or not np.all(np.isfinite(scores)):
+            raise ValueError("topsispy returned invalid image scores")
+    else:
+        scores = np.zeros(len(names), dtype=np.float64)
     order = sorted(range(len(names)), key=lambda index: (-scores[index], names[index]))
 
     ranking = []
