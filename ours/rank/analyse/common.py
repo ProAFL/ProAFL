@@ -14,7 +14,6 @@ def draw_rank_hot(isError_list,save_path):
           
     distribution = [1 if flag else 0 for flag in isError_list]
           
-          
     plt.style.use(['science','ieee'])
     plt.rcParams.update({
         'font.family': 'serif',
@@ -42,21 +41,14 @@ def compute_apfd(fault_set:set, rankded_list):
     fault_set: set/list, textidd(box_id/anno_id|img_name)
     rankded_list: list, textrankingtextImage path
     """
-                    
     n = len(rankded_list)
-    
     TF_positions = []
-
-                            
     for idx, ID in enumerate(rankded_list, start=1):             
         if ID in fault_set:
-            TF_positions.append(idx)
-
-            
+            TF_positions.append(idx)     
     m = len(fault_set)
     if m == 0:
         return 0.0        
-
     apfd = 1 - sum(TF_positions) / (n * m) + 1 / (2 * n)
     apfd = round(apfd,3)
     return apfd
@@ -91,12 +83,11 @@ def calc_fpr_fnr_f1(rank_list,error_set,cut_off=0.4):
 def calc_top1(annos_with_miss_json:dict,rank_list,error_set,error_imageset):
     annoid2imgname = get_annoid_to_imgname(annos_with_miss_json)
     imgname2rankedcompoents = get_imgname_to_ranked_components(rank_list,annoid2imgname)
-
     mingzhong_count = 0
     img_nums = 0
     for imgname in error_imageset:
-        rankedcomponents = imgname2rankedcompoents[imgname]
         img_nums += 1
+        rankedcomponents = imgname2rankedcompoents[imgname]
         if len(rankedcomponents) == 0:
             continue
         if rankedcomponents[0] in error_set:

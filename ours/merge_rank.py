@@ -116,6 +116,9 @@ def build_merged_rank(anno_source, image_source):
             raise ValueError("Image no_candidate_images disagrees with ranking flags")
 
     merged = merge_evidence(annos, images)
+    all_ranking = no_overlap_annos + merged + no_candidate_images
+    for position, entry in enumerate(all_ranking, start=1):
+        entry["total_rank"] = position
     return {
         "merge_rule": {
             "description": "Sort evidence-backed items by within-group TOPSIS midrank percentile, ascending",
@@ -123,6 +126,7 @@ def build_merged_rank(anno_source, image_source):
             "group_rank_direction": "1 is most suspicious within its own group",
             "percentile_direction": "smaller is more suspicious",
             "cross_group_ties": "share merged_rank; anno is displayed first",
+            "total_rank_order": "never_overlapped_annos, merged_ranking, no_candidate_images",
             "note": "Percentiles express relative group position, not fault probabilities.",
         },
         "counts": {
@@ -131,10 +135,12 @@ def build_merged_rank(anno_source, image_source):
             "merged_evidence_items": len(merged),
             "never_overlapped_annos": len(no_overlap_annos),
             "no_candidate_images": len(no_candidate_images),
+            "total_items": len(all_ranking),
         },
         "merged_ranking": merged,
         "never_overlapped_annos": no_overlap_annos,
         "no_candidate_images": no_candidate_images,
+        "all_ranking": all_ranking,
     }
 
 

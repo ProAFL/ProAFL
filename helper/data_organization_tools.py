@@ -127,6 +127,14 @@ def get_all_error_annoids(anno_error_with_miss:dict) -> list:
             all_error_annoids.append(anno["id"])
     return all_error_annoids
 
+def get_all_explicit_fault_annoids(anno_error_with_miss:dict) -> list:
+    all_explicit_fault_annoids = []
+    annos = anno_error_with_miss["annotations"]
+    for anno in annos:
+        if anno["fault_type"] in [1,2,3]:
+            all_explicit_fault_annoids.append(anno["id"])
+    return all_explicit_fault_annoids
+
 def get_all_error_imgset(anno_error_with_miss:dict)->set:
     error_imgset = set()
     all_error_annoids = get_all_error_annoids(anno_error_with_miss)
@@ -301,21 +309,13 @@ def get_image_id_to_image_name_for_coco(annos_with_miss_json:dict) -> dict:
         id2name[image["id"]] = image["file_name"] 
     return id2name
 
-def get_all_miss_error_img_name_set(annos_with_miss_json_path:str) -> set[str]:
+def get_all_miss_error_img_name_set(annos_with_miss_fault_json:dict) -> set[str]:
     '''
     Get the set of image names with miss faults
     '''
-    if type(annos_with_miss_json_path) is str:
-        with open(annos_with_miss_json_path, "r") as f:
-            annos_with_miss_json = json.load(f)
-    elif type(annos_with_miss_json_path) is dict:
-        annos_with_miss_json = annos_with_miss_json_path
-    else:
-        raise Exception("Invalid parameter type")
-    
-    imageid_2_imagename = get_image_id_to_image_name_for_coco(annos_with_miss_json)
-    anns = annos_with_miss_json["annotations"]
-    all_miss_error_img_name_set = set()
+    imageid_2_imagename = get_image_id_to_image_name_for_coco(annos_with_miss_fault_json)
+    anns = annos_with_miss_fault_json["annotations"]
+    all_miss_error_img_name_set = set[str]()
     for ann in anns:
         if ann["fault_type"] == 4:
             image_name = imageid_2_imagename[ann["image_id"]]
