@@ -95,7 +95,7 @@ def calc_top1(annos_with_miss_json:dict,rank_list,error_set,error_imageset):
     return round(mingzhong_count/img_nums,3)
 
 def calc_exam(annos_with_miss_json:dict,rank_list):
-    imgs_group = get_imgs_group_by_fault(annos_with_miss_json)
+    imgs_group = get_imgs_group_by_fault(annos_with_miss_json) # 各种错误类型（1（cls fault），2(loc fault)，3(redun fault),4(miss fault)）图片分组
     annoid2imgname = get_annoid_to_imgname(annos_with_miss_json)
     imgname2rankedcompoents = get_imgname_to_ranked_components(rank_list,annoid2imgname)
 
