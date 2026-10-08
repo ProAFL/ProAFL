@@ -24,7 +24,7 @@ def build_dataset(mask_type,class_num):
         class_num = class_num,
         mask_type = mask_type,
         transforms=data_transform,
-        cache_root=os.path.join(exp_data_root, 'datactive_png_cache', dataset_name))
+        cache_root=os.path.join(exp_data_root, 'datactive_png_cache', dataset_name)) # 开启cache机制
     return disassembled_dataset
 
 def build_ResNet50(class_num):
@@ -166,13 +166,14 @@ def train():
 if __name__ == "__main__":
     config = read_yaml("config.yaml")
     exp_data_root = config["exp_data_dir"]
-    dataset_name = "voc"                     
+    dataset_name = "visdrone"                     
     img_root_dir = os.path.join(exp_data_root,"datasets",f"{dataset_name}-coco","train")
     # annotation_path = f"{exp_data_root}/datasets/{dataset_name}-coco/train/_annotations.coco_error.json"
     inject_ratio = 0.1
     repeat_id = 10
-    annotation_path = os.path.join(exp_data_root,"fault_inject",str(inject_ratio),dataset_name,"coco_format","annotations_no_miss.json")
-    mask_type = "other_objects" # crop|other_objects
+    annotation_path = os.path.join(exp_data_root,"fault_inject",str(inject_ratio),dataset_name,
+                        "coco_format","annotations_no_miss.json")
+    mask_type = "crop" # crop|other_objects
     if dataset_name == "voc":
         class_num = 21
     elif dataset_name == "visdrone":
