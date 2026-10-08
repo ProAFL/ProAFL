@@ -37,6 +37,31 @@ def gen_missing_fault(object_id_list, anno_list):
                 fault_recorder.append(fault_info)
                 anno["fault_type"] = FAULT_TYPE["missing_fault"]
     return anno_list
+    
+'''
+def gen_missing_fault_efficient(object_id_list, anno_list):
+    if not object_id_list:
+        return anno_list
+
+    anno_by_id = {anno["id"]: anno for anno in anno_list}
+    missing_type = FAULT_TYPE["missing_fault"]
+
+    for object_id in object_id_list:
+        anno = anno_by_id.get(object_id)
+        if anno is None:
+            continue
+
+        image_id = anno["image_id"]
+        fault_recorder.append({
+            "obj_id": object_id,
+            "img_id": image_id,
+            "img_name": coco.imgs[image_id]["file_name"],
+            "fault_type": missing_type,
+        })
+        anno["fault_type"] = missing_type
+
+    return anno_list
+'''
 
 def gen_class_fault(object_id_list,anno_list):
     for object_id in object_id_list:
@@ -156,12 +181,12 @@ def remove_miss_fault_anno(anno_list):
 if __name__ == "__main__":
 
     random.seed(42) # random seed
-    fault_ratio = 0.15 # fault ratio: 0.01,0.05,0.1,0.15
+    fault_ratio = 0.1 # fault ratio: 0.01,0.05,0.1,0.15
 
     config = read_yaml("config.yaml")
     exp_data_root = config["exp_data_dir"]
           
-    dataset_name = "voc"
+    dataset_name = "visdrone" # voc|kitti|visdrone
                            
     correct_anno_json_path = get_correct_anno_json_path(dataset_name)
                   
@@ -246,7 +271,6 @@ if __name__ == "__main__":
     df.to_csv(record_save_path, index=False, encoding="utf-8")
 
     print(f"Fault recorder is saved at: {record_save_path}")
-
 
 
 

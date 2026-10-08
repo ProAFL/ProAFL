@@ -12,6 +12,17 @@ from datetime import datetime
 from custom_module.small_utils import read_yaml
 from custom_module.base_data_manager import get_annotations_with_miss_json_path,get_all_trainimgs_dir
 
+def get_cost_time(cost_timetamp)->str:
+    hours = int(cost_timetamp // 3600)                   
+    minutes = int((cost_timetamp % 3600) // 60)                     
+    seconds = cost_timetamp % 60                               
+    return f"{hours:02d}h:{minutes:02d}m:{seconds:02.0f}s"
+
+def get_formatted_time():
+    """Return the current time as a formatted string (YYYY-MM-DD_HH:MM:SS)"""
+    now = datetime.now()
+    return now.strftime("%Y-%m-%d_%H:%M:%S")
+
 def build_dataset(mask_type,class_num):
     data_transform = transforms.Compose(
         [transforms.ToTensor(),
@@ -164,13 +175,16 @@ def train():
 
 
 if __name__ == "__main__":
+    start_time = time.time()
+    pid = os.getpid()
+    print(f"PID: {pid}")
     config = read_yaml("config.yaml")
     exp_data_root = config["exp_data_dir"]
     dataset_name = "visdrone"                     
     img_root_dir = os.path.join(exp_data_root,"datasets",f"{dataset_name}-coco","train")
     # annotation_path = f"{exp_data_root}/datasets/{dataset_name}-coco/train/_annotations.coco_error.json"
     inject_ratio = 0.1
-    repeat_id = 10
+    repeat_id = 1
     annotation_path = os.path.join(exp_data_root,"fault_inject",str(inject_ratio),dataset_name,
                         "coco_format","annotations_no_miss.json")
     mask_type = "crop" # crop|other_objects
@@ -183,11 +197,15 @@ if __name__ == "__main__":
     else:
         raise Exception("text")
     epoches = 13
-    device = torch.device("cuda:1")
+    device = torch.device("cuda:0")
     model_save_dir = os.path.join(exp_data_root,"datactive_models",dataset_name,str(inject_ratio),f"repeat_{str(repeat_id)}",mask_type)
     os.makedirs(model_save_dir,exist_ok=True)
     train()
-
+    end_time = time.time()
+    elapsed_time = end_time - start_time
+    cost_time = get_cost_time(elapsed_time)
+    print(f"Total cost time: {cost_time}")
+    print(f"完成时间:{get_formatted_time()}")
 '''
 train_model(mask_type='crop', class_num=class_num, img_root=img_root,
             trainlabel_root=train_label_path,

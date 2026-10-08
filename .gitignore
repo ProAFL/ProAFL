@@ -3,3 +3,4 @@ ours/yolov7/trained_models
 *.png
 *.pt
 yolov7/*.log
+*.log
