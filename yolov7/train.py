@@ -590,12 +590,12 @@ if __name__ == '__main__':
     print("PID:",PID)
     config = read_yaml("../config.yaml") # 读取主项目的配置
     exp_data_root = config["exp_data_dir"]
-    dataset_name = "voc"
+    dataset_name = "visdrone" # voc|kitti|visdrone
     is_save_each_epoch = True # 是否每个epoch的checkpoint都保存
     inject_ratio = 0.1 # 0.01,0.05,0.1,0.15
     repeat_id = 1
     gpu_id = 1
-    is_resume = True
+    is_resume = False # 是否从故障训练恢复
     if is_resume == True:
         resume_pt_file = os.path.join(exp_data_root,"models",dataset_name,"yolov7","fault_train",
                      f"{inject_ratio}_repeat", f"repeat_{repeat_id}","weights","last.pt")
@@ -604,13 +604,16 @@ if __name__ == '__main__':
         resume_end_epoch = 75
     # labels 文件夹
     
-    model_save_dir = f"{exp_data_root}/models/{dataset_name}/yolov7/corrected_train/{inject_ratio}_repeat/repeat_{str(repeat_id)}"
+    model_save_dir = f"{exp_data_root}/models/{dataset_name}/yolov7/fault_train/{inject_ratio}/repeat_{str(repeat_id)}"
     os.makedirs(model_save_dir,exist_ok=True)
-    # train_labels_dir = f"{exp_data_root}/inject_ratio/{inject_ratio}/{dataset_name}/yolo_fomat/labels_train"
-    # val_labels_dir = f"{exp_data_root}/inject_ratio/{inject_ratio}/{dataset_name}/yolo_fomat/labels_val"
-    
-    train_labels_dir = f"{exp_data_root}/corrected_anno/ours/{dataset_name}/yolov7/{inject_ratio}_repeat/repeat_{repeat_id}/yolo_format/labels_train"
-    val_labels_dir = f"{exp_data_root}/corrected_anno/ours/{dataset_name}/yolov7/{inject_ratio}_repeat/repeat_{repeat_id}/yolo_format/labels_val"
+    train_labels_dir = f"{exp_data_root}/fault_inject/{inject_ratio}/{dataset_name}/yolo_format/labels_train"
+    val_labels_dir = f"{exp_data_root}/fault_inject/{inject_ratio}/{dataset_name}/yolo_format/labels_val"
+
+    # model_save_dir = f"{exp_data_root}/models/{dataset_name}/yolov7/corrected_train/{inject_ratio}_repeat/repeat_{str(repeat_id)}"
+    # os.makedirs(model_save_dir,exist_ok=True)
+    # train_labels_dir = f"{exp_data_root}/corrected_anno/ours/{dataset_name}/yolov7/{inject_ratio}_repeat/repeat_{repeat_id}/yolo_format/labels_train"
+    # val_labels_dir = f"{exp_data_root}/corrected_anno/ours/{dataset_name}/yolov7/{inject_ratio}_repeat/repeat_{repeat_id}/yolo_format/labels_val"
+
     label_replace(dataset_name, train_labels_dir, val_labels_dir)
 
     '''

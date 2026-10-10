@@ -5,10 +5,12 @@
 # train: datasets/KITTI-yolo/train/images
 # val: datasets/KITTI-yolo/val/images
 
-origin_train: /data/mml/ProAFL_data/datasets/kitti-yolo/origin/train/images
-train: /data/mml/ProAFL_data/datasets/kitti-yolo/train/images
-val: /data/mml/ProAFL_data/datasets/kitti-yolo/val/images
-test: /data/mml/ProAFL_data/datasets/kitti-yolo/test/images
+
+origin_train: /data/mml/data_debugging_data/ProAFL_data/datasets/kitti-yolo/origin/train/images # 3740 张图像
+
+train: /data/mml/data_debugging_data/ProAFL_data/datasets/kitti-yolo/train/images # 2992张图像
+val: /data/mml/data_debugging_data/ProAFL_data/datasets/kitti-yolo/val/images # 748张图像
+test: /data/mml/data_debugging_data/ProAFL_data/datasets/kitti-yolo/test/images # 3741张图像
 
 # number of classes
 nc: 8
