@@ -3,6 +3,7 @@
 Only annotations present in the training JSON are used. Saved post-NMS
 predictions are filtered by geometry, then connected across epochs into
 position-based tracks. Missing observations remain null in the output.
+Images absent from an epoch's prediction records have no predicted boxes.
 
 Edit the constants below and run from the repository root with
 ``python -m ours.process_metrics_img``.
@@ -15,14 +16,16 @@ from statistics import median
 
 
 DATA_ROOT = Path("/data/mml/data_debugging_data/ProAFL_data")
-ANNOTATIONS_PATH = DATA_ROOT / "fault_inject/0.1/voc/coco_format/annotations_no_miss.json"
+DATASETNAME = "visdrone" # voc|kitti|visdrone
+ANNOTATIONS_PATH = DATA_ROOT / f"fault_inject/0.1/{DATASETNAME}/coco_format/annotations_no_miss.json"
+EXPID = "1791796185"
 PREDICTIONS_DIR = DATA_ROOT / (
-    "collection_process_info/voc/yolov7/collected_predict_boxes/"
-    "inject_0.1_repeat/repeat_1_1791094449"
+    f"collection_process_info/{DATASETNAME}/yolov7/collected_predict_boxes/"
+    f"inject_0.1_repeat/repeat_1_{EXPID}"
 )
 OUTPUT_PATH = DATA_ROOT / (
-    "process_metrics/voc/yolov7/0.1_repeat/"
-    "repeat_1_1791094449/miss_process_metrics.json"
+    f"process_metrics/{DATASETNAME}/yolov7/0.1_repeat/"
+    f"repeat_1_{EXPID}/miss_process_metrics.json"
 )
 EPOCHS = 50
 
@@ -209,15 +212,13 @@ def collect_metrics(annotation_path, predictions_dir, epochs):
     }
 
     for epoch in range(epochs):
+        print(f"Epoch:{epoch}")
         path = predictions_dir / f"epoch_{epoch}_predicted_bboxs.json"
         with open(path, encoding="utf-8") as file:
             predictions_by_image = json.load(file)
-        missing = result.keys() - predictions_by_image.keys()
-        if missing:
-            raise ValueError(f"Epoch {epoch} has no inference record for {len(missing)} images")
-
         for name, image in images.items():
-            predictions = predictions_by_image[name]["predicted_bboxs"]
+            predictions = (predictions_by_image[name]["predicted_bboxs"]
+                           if name in predictions_by_image else [])
             if not isinstance(predictions, list):
                 raise ValueError(f"Epoch {epoch}, {name}: predicted_bboxs must be a list")
             unique = deduplicate_predictions(predictions, name, epoch)
