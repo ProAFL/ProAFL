@@ -4,7 +4,8 @@ For each annotation and epoch, choose the overlapping prediction with the
 largest IoU, regardless of its predicted class. ``conf_list`` contains that
 prediction's objectness-weighted score for the *annotation* class, rather
 than the prediction's own ``conf``. An epoch without an overlapping box has
-zero support and is identified by ``has_overlap_list``.
+zero support and is identified by ``has_overlap_list``. Images absent from
+an epoch's prediction records are treated as having no predicted boxes.
 
 Edit the settings below, then run ``python ours/process_metrics.py``.
 """
@@ -18,12 +19,14 @@ from ours.small_utils import read_yaml
 config = read_yaml("config.yaml")                           
 exp_data_root_dir = config["exp_data_dir"]
 DATA_ROOT = Path(exp_data_root_dir)
-ANNOTATIONS_PATH = DATA_ROOT / "fault_inject/0.1/voc/coco_format/annotations_no_miss.json"
+DATASETNAME = "visdrone" # voc|kitti|visdrone
+ANNOTATIONS_PATH = DATA_ROOT / f"fault_inject/0.1/{DATASETNAME}/coco_format/annotations_no_miss.json"
+EXPID = 1791796185 # 其实是个时间戳
 PREDICTIONS_DIR = DATA_ROOT / (
-    "collection_process_info/voc/yolov7/collected_predict_boxes/"
-    "inject_0.1_repeat/repeat_1_1791094449"
+    f"collection_process_info/{DATASETNAME}/yolov7/collected_predict_boxes/"
+    f"inject_0.1_repeat/repeat_1_{EXPID}"
 )
-OUTPUT_PATH = DATA_ROOT / "process_metrics/voc/yolov7/0.1_repeat/repeat_1_1791094449/process_metrics.json"
+OUTPUT_PATH = DATA_ROOT / f"process_metrics/{DATASETNAME}/yolov7/0.1_repeat/repeat_1_{EXPID}/process_metrics.json"
 EPOCHS = 50
 
 
@@ -101,26 +104,27 @@ def choose_prediction(annotation_box, predictions):
 
 def collect_process_metrics(annotation_path, predictions_dir:Path, epochs=50):
     """Collect trajectories for every annotation, including never-overlapped ones."""
-    image_names, annotations_by_image, metrics = load_annotations(annotation_path)
+    # metrics[annotation_id] = {
+    #         "conf_list": [],
+    #         "iou_list": [],
+    #         "has_overlap_list": [],
+    #         "selected_predicted_box_id_list": [],
+    #         "selected_predicted_cls_list": [],
+    # }
+    _, annotations_by_image, metrics = load_annotations(annotation_path)
     for epoch in range(epochs):
+        print(f"Epoch:{epoch}")
         prediction_path = predictions_dir / f"epoch_{epoch}_predicted_bboxs.json"
         with open(prediction_path, encoding="utf-8") as file:
             predictions_by_image = json.load(file)
-
-        missing_images = image_names - predictions_by_image.keys()
-        if missing_images:
-            example = sorted(missing_images)[0]
-            raise ValueError(
-                f"Epoch {epoch} has no inference record for {len(missing_images)} "
-                f"annotation images (example: {example})"
-            )
-
         for image_name, annotations in annotations_by_image.items():
-            predictions = predictions_by_image[image_name]["predicted_bboxs"]
+            # The collector may omit images with no post-NMS predictions.
+            predictions = (predictions_by_image[image_name]["predicted_bboxs"]
+                           if image_name in predictions_by_image else [])
             if predictions is None:
                 raise ValueError(f"Epoch {epoch}, {image_name}: prediction list is null")
-            for annotation_id, category_id, annotation_box in annotations:
-                prediction, iou = choose_prediction(annotation_box, predictions)
+            for annotation_id, category_id, annotation_box in annotations: # category_id 是这个anno的类别id
+                prediction, iou = choose_prediction(annotation_box, predictions) # 这张图下的标注框和预测框
                 result = metrics[annotation_id]
                 if prediction is None:
                     class_conf = 0.0
@@ -156,7 +160,6 @@ def main():
     never_overlapped = sum(not any(item["has_overlap_list"]) for item in metrics.values())
     print(f"Saved {len(metrics)} annotations × {EPOCHS} epochs to {OUTPUT_PATH}")
     print(f"Annotations without any overlapping post-NMS box: {never_overlapped}")
-
 
 if __name__ == "__main__":
     main()
