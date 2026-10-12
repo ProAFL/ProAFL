@@ -198,11 +198,11 @@ if __name__ == "__main__":
     parser.add_argument('--batch-size', type=int, default=256, help='inference batch size')
     parser.add_argument('--workers', type=int, default=16, help='data loader workers')
     args = parser.parse_args()
-    device = torch.device('cuda:1' if torch.cuda.is_available() else 'cpu')
+    device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
     ts = int(time.time()) # 时间戳
     config = read_yaml("../config.yaml")
     exp_data_root = config["exp_data_dir"]
-    dataset_name = "voc"
+    dataset_name = "visdrone" # voc|kitti|visdrone
     model_name = "yolov7"
     inject_ratio = 0.1 # 0.01,0.05,0.1,0.15
     repeat_id = 1
@@ -217,6 +217,7 @@ if __name__ == "__main__":
     collect_p_box_dir = os.path.join(exp_data_root,
                                      "collection_process_info",dataset_name,model_name,
                                      "collected_predict_boxes",f"inject_{inject_ratio}_repeat", f"repeat_{repeat_id}_{ts}")
+    os.makedirs(collect_p_box_dir, exist_ok=True)
     start_time = time.time()
     # 收集整个训练轮次的预测框
     collect_predicted_box(model, device, args.batch_size, args.workers,

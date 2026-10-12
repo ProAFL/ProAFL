@@ -28,7 +28,7 @@ def get_repair_ann_file_path(dataset_name,
 
 def get_fault_train_model_weight_file_path(dataset_name,model_name,inject_ratio:float,repeat_id:int, epoch):
     return os.path.join(exp_data_root_dir,"models",dataset_name,model_name,"fault_train",
-                        f"{str(inject_ratio)}_repeat", f"repeat_{repeat_id}",
+                        f"{str(inject_ratio)}", f"repeat_{repeat_id}",
                          "weights",f"epoch_{epoch}.pt")
     '''
     # 2026-7-1版本
