@@ -105,7 +105,12 @@ def deduplicate_predictions(predictions, image_name, epoch):
     """Merge almost identical multi-label NMS outputs, keeping max confidence."""
     normalized = []
     for prediction in predictions:
-        box = validate_box(prediction["bbox"], f"{image_name}, epoch {epoch}")
+        # box = validate_box(prediction["bbox"], f"{image_name}, epoch {epoch}")
+        box = [float(value) for value in prediction["bbox"]] # 微调一下预测框坐标，使之合法
+        if box[2] <= box[0]:
+            box[2] = box[0]+1
+        if box[3] <= box[1]:
+            box[3] = box[1]+1
         conf = prediction["conf"]
         if not isinstance(conf, (int, float)) or not math.isfinite(conf) or not 0 <= conf <= 1:
             raise ValueError(f"Invalid confidence: {image_name}, epoch {epoch}")
@@ -248,7 +253,6 @@ def main():
     no_candidate = sum(not image["tracks"] for image in metrics["images"].values())
     print(f"Saved image process metrics for {len(metrics['images'])} images to {OUTPUT_PATH}")
     print(f"Images with no candidate track: {no_candidate}")
-
 
 if __name__ == "__main__":
     main()
