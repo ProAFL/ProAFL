@@ -187,7 +187,7 @@ if __name__ == "__main__":
     repeat_id = 1
     annotation_path = os.path.join(exp_data_root,"fault_inject",str(inject_ratio),dataset_name,
                         "coco_format","annotations_no_miss.json")
-    mask_type = "crop" # crop|other_objects
+    mask_type = "other_objects" # crop|other_objects
     if dataset_name == "voc":
         class_num = 21
     elif dataset_name == "visdrone":

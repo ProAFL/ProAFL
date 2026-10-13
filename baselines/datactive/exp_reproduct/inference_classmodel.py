@@ -71,7 +71,7 @@ def infer():
 if __name__ == "__main__":
     config = read_yaml("config.yaml")
     exp_data_root = config["exp_data_dir"]
-    dataset_name = "voc"
+    dataset_name = "visdrone" # "visdrone" "kitti" "voc"
     img_root = f"{exp_data_root}/datasets/{dataset_name}-coco/train"
     inject_ratio = 0.1
     annotation_path = annotation_path = f"{exp_data_root}/fault_inject/{str(inject_ratio)}/{dataset_name}/coco_format/annotations_no_miss.json"
@@ -82,7 +82,7 @@ if __name__ == "__main__":
     elif dataset_name == "kitti":
         class_num = 9               
     gpu_id = 0
-    for repeat_id in [7,8,9,10]:
+    for repeat_id in [1]:
         for mask_type in ["crop","other_objects"]:
             # trained_model_path = f"{exp_data_root}/baselines/datactive/{dataset_name}/rank/models/{mask_type}/epoch_12.pt"
             # results_save_path = f"{exp_data_root}/baselines/datactive/{dataset_name}/rank/infer/{mask_type}.json"

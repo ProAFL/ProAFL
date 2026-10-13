@@ -18,13 +18,15 @@ from ours.process_metrics_img import box_iou, validate_box
 
 
 DATA_ROOT = Path("/data/mml/data_debugging_data/ProAFL_data")
+DATASETNAME = "visdrone" # voc|kitti|visdrone 
+EXPID = 1791796185
 METRICS_PATH = DATA_ROOT / (
-    "process_metrics/voc/yolov7/0.1_repeat/"
-    "repeat_1_1791094449/miss_process_metrics.json"
+    f"process_metrics/{DATASETNAME}/yolov7/0.1_repeat/"
+    f"repeat_1_{EXPID}/miss_process_metrics.json"
 )
 OUTPUT_DIR = DATA_ROOT / (
-    "process_features/voc/yolov7/0.1_repeat/"
-    "repeat_1_1791094449"
+    f"process_features/{DATASETNAME}/yolov7/0.1_repeat/"
+    f"repeat_1_{EXPID}"
 )
 LATE_EPOCHS = 10
 

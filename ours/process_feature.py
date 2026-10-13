@@ -12,15 +12,15 @@ from pathlib import Path
 import numpy as np
 import topsispy as tp
 
-
-# Settings for the current VOC / YOLOv7 experiment.
 DATA_ROOT = Path("/data/mml/data_debugging_data/ProAFL_data")
-ANNOTATIONS_PATH = DATA_ROOT / "fault_inject/0.1/voc/coco_format/annotations_no_miss.json"
+DATASETNAME = "visdrone" # voc|kitti|visdrone 
+EXPID = 1791796185
+ANNOTATIONS_PATH = DATA_ROOT / f"fault_inject/0.1/{DATASETNAME}/coco_format/annotations_no_miss.json"
 METRICS_PATH = DATA_ROOT / (
-    "process_metrics/voc/yolov7/0.1_repeat/"
-    "repeat_1_1791094449/process_metrics.json"
+    f"process_metrics/{DATASETNAME}/yolov7/0.1_repeat/"
+    f"repeat_1_{EXPID}/process_metrics.json"
 )
-OUTPUT_DIR = DATA_ROOT / "process_features/voc/yolov7/0.1_repeat/repeat_1_1791094449"
+OUTPUT_DIR = DATA_ROOT / f"process_features/{DATASETNAME}/yolov7/0.1_repeat/repeat_1_{EXPID}"
 EPOCHS = 50
 LATE_EPOCHS = 10
 CONF_THRESHOLD = 0.25

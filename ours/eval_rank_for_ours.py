@@ -18,12 +18,13 @@ from ours.rank.analyse.common import (
 
 
 DATA_ROOT = Path("/data/mml/data_debugging_data/ProAFL_data")
-RANK_DIR = DATA_ROOT / "process_features/voc/yolov7/0.1_repeat/repeat_1_1791094449"
+DATASETNAME = "visdrone" # voc|kitti|visdrone 
+EXPID = 1791796185
+RANK_DIR = DATA_ROOT / f"process_features/{DATASETNAME}/yolov7/0.1_repeat/repeat_1_{EXPID}"
 RANK_PATH = RANK_DIR / "merged_rank.json"
-ANNOTATIONS_PATH = DATA_ROOT / "fault_inject/0.1/voc/coco_format/annotations_with_miss.json"
+ANNOTATIONS_PATH = DATA_ROOT / f"fault_inject/0.1/{DATASETNAME}/coco_format/annotations_with_miss.json"
 RANK_HOT_PATH = RANK_DIR / "rank_hot.png"
 CUTOFF = 0.4
-
 
 def main():
     with open(ANNOTATIONS_PATH, encoding="utf-8") as file:

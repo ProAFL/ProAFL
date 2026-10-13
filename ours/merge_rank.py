@@ -13,8 +13,10 @@ from pathlib import Path
 
 
 DATA_ROOT = Path("/data/mml/data_debugging_data/ProAFL_data")
+DATASETNAME = "visdrone" # voc|kitti|visdrone 
+EXPID = 1791796185
 RANK_DIR = DATA_ROOT / (
-    "process_features/voc/yolov7/0.1_repeat/repeat_1_1791094449"
+    f"process_features/{DATASETNAME}/yolov7/0.1_repeat/repeat_1_{EXPID}"
 )
 ANNO_RANK_PATH = RANK_DIR / "topsis_ranking.json"
 IMAGE_RANK_PATH = RANK_DIR / "miss_image_ranking.json"

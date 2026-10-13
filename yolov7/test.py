@@ -355,10 +355,10 @@ def test(data,
 
 
 if __name__ == '__main__':
-    dataset_name = "VisDrone"                           
+    dataset_name = "visdrone" # voc|kitti|visdrone                          
     gpu_id = 1
     parser = argparse.ArgumentParser(prog='test.py')
-    parser.add_argument('--weights', nargs='+', type=str, default='yolov7.pt', help='model.pt path(s)')
+    parser.add_argument('--weights', nargs='+', type=str, default='best.pt', help='model.pt path(s)')
     parser.add_argument('--data', type=str, default=f'data/{dataset_name}.yaml', help='*.data path')
     parser.add_argument('--batch-size', type=int, default=32, help='size of each image batch')
     parser.add_argument('--img-size', type=int, default=640, help='inference size (pixels)')
@@ -384,8 +384,6 @@ if __name__ == '__main__':
                       
     opt.data = check_file(opt.data)              
     print(opt)
-
-                         
 
     if opt.task in ('train', 'val', 'test'):                
         test(opt.data,
