@@ -108,7 +108,7 @@ if __name__ == "__main__":
             'missing_fault': 4,
     }
     exp_data_root = config["exp_data_dir"]
-    dataset_name = "voc"
+    dataset_name = "visdrone" # voc|kitti|visdrone
     
     # crop_infer_results_path=f'{exp_data_root}/baselines/datactive/{dataset_name}/rank/infer/crop.json'
     # others_infer_results_path=f'{exp_data_root}/baselines/datactive/{dataset_name}/rank/infer/other_objects.json'
@@ -118,11 +118,13 @@ if __name__ == "__main__":
         bg_clss_id = 8 # [0-7]
     elif dataset_name == "visdrone":
         bg_clss_id = 10 # [0-9]
+    else:
+        raise ValueError(f"dataset_name:{dataset_name} not supported")
 
     inject_ratio = 0.1
     annotation_path=f"{exp_data_root}/fault_inject/{str(inject_ratio)}/{dataset_name}/coco_format/annotations_no_miss.json"
     annotation_with_miss_path = f"{exp_data_root}/fault_inject/{str(inject_ratio)}/{dataset_name}/coco_format/annotations_with_miss.json"
-    for repeat_id in [1,2,3,4,5,6,7,8,9,10]:
+    for repeat_id in [1]:
         crop_infer_results_path = os.path.join(exp_data_root,"datactive_infer_res",dataset_name,
                                                str(inject_ratio),f"repeat_{repeat_id}","crop.json")
         others_infer_results_path = os.path.join(exp_data_root,"datactive_infer_res",dataset_name,

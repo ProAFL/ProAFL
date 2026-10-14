@@ -7,8 +7,8 @@ origin_train: /data/mml/data_debugging_data/ProAFL_data/datasets/visdrone-yolo/o
 
 
 train: /data/mml/data_debugging_data/ProAFL_data/datasets/visdrone-yolo/train/images # 5177张图像
-test: /data/mml/data_debugging_data/ProAFL_data/datasets/visdrone-yolo/val/images # 1294张图像
-val: /data/mml/data_debugging_data/ProAFL_data/datasets/visdrone-yolo/test/images # 1610张图像
+val: /data/mml/data_debugging_data/ProAFL_data/datasets/visdrone-yolo/val/images # 1294张图像
+test: /data/mml/data_debugging_data/ProAFL_data/datasets/visdrone-yolo/test/images # 1610张图像
 
 # number of classes
 nc: 10

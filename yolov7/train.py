@@ -311,7 +311,8 @@ def train(hyp, opt, device, tb_writer=None):
     maps = np.zeros(nc)                 
     results = (0, 0, 0, 0, 0, 0, 0)                                                     
     scheduler.last_epoch = start_epoch - 1               
-    scaler = amp.GradScaler(enabled=cuda)
+    # scaler = amp.GradScaler(enabled=cuda)
+    scaler = torch.amp.GradScaler('cuda')
     compute_loss_ota = ComputeLossOTA(model)                   
     compute_loss = ComputeLoss(model)                   
     logger.info(f'Image sizes {imgsz} train, {imgsz_test} test\n'
@@ -370,9 +371,8 @@ def train(hyp, opt, device, tb_writer=None):
                 if sf != 1:
                     ns = [math.ceil(x * sf / gs) * gs for x in imgs.shape[2:]]                                        
                     imgs = F.interpolate(imgs, size=ns, mode='bilinear', align_corners=False)
-
-                     
-            with amp.autocast(enabled=cuda):
+                    
+            with torch.amp.autocast('cuda'):
                 pred = model(imgs)           
                 if 'loss_ota' not in hyp or hyp['loss_ota'] == 1:
                     loss, loss_items = compute_loss_ota(pred, targets.to(device), imgs)                             
