@@ -108,8 +108,10 @@ def deduplicate_predictions(predictions, image_name, epoch):
         # box = validate_box(prediction["bbox"], f"{image_name}, epoch {epoch}")
         box = [float(value) for value in prediction["bbox"]] # 微调一下预测框坐标，使之合法
         if box[2] <= box[0]:
+            print(f"Invalid 预测box(x1x2): {image_name}, epoch {epoch}, {box}")
             box[2] = box[0]+1
         if box[3] <= box[1]:
+            print(f"Invalid 预测box(y1y2): {image_name}, epoch {epoch}, {box}")
             box[3] = box[1]+1
         conf = prediction["conf"]
         if not isinstance(conf, (int, float)) or not math.isfinite(conf) or not 0 <= conf <= 1:

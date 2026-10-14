@@ -66,7 +66,7 @@ def infer():
     json_str = json.dumps(results, indent=4)
     with open(results_save_path,'w') as json_file:
         json_file.write(json_str)
-    print(f"Result saved at:{results_save_path}")
+    print(f"\nResult saved at:{results_save_path}") #\r是回到本行开头，\n是换行
 
 if __name__ == "__main__":
     config = read_yaml("config.yaml")

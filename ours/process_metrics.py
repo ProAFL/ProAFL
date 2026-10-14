@@ -123,6 +123,8 @@ def collect_process_metrics(annotation_path, predictions_dir:Path, epochs=50):
                            if image_name in predictions_by_image else [])
             if predictions is None:
                 raise ValueError(f"Epoch {epoch}, {image_name}: prediction list is null")
+            if predictions == []:
+                print(f"Epoch {epoch}, {image_name}: no post-NMS predictions")
             for annotation_id, category_id, annotation_box in annotations: # category_id 是这个anno的类别id
                 prediction, iou = choose_prediction(annotation_box, predictions) # 这张图下的标注框和预测框
                 result = metrics[annotation_id]
