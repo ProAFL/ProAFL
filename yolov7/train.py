@@ -560,12 +560,17 @@ def label_replace(dataset_name,train_labels_dir,val_labels_dir):
     if is_directory_exists(cur_train_labels_dir):
         shutil.rmtree(cur_train_labels_dir)
         print("Train labels directory exists and is now removed")
+    else:
+        print("训练集中不存在标签目录，无需删除")
     if is_directory_exists(cur_val_labels_dir):
         shutil.rmtree(cur_val_labels_dir)
         print("Val labels directory exists and is now removed")
+    else:
+        print("验证集中不存在标签目录，无需删除")
     shutil.copytree(train_labels_dir, cur_train_labels_dir)
     shutil.copytree(val_labels_dir, cur_val_labels_dir)
     print("Training label directory replacement completed")
+    print("Validation label directory replacement completed")
 
     '''
     if _args["trainset_stat"] == "ours":
@@ -590,11 +595,11 @@ if __name__ == '__main__':
     print("PID:",PID)
     config = read_yaml("../config.yaml") # 读取主项目的配置
     exp_data_root = config["exp_data_dir"]
-    dataset_name = "visdrone" # voc|kitti|visdrone
+    dataset_name = "kitti" # voc|kitti|visdrone
     is_save_each_epoch = True # 是否每个epoch的checkpoint都保存
     inject_ratio = 0.1 # 0.01,0.05,0.1,0.15
     repeat_id = 1
-    gpu_id = 1
+    gpu_id = 0
     is_resume = False # 是否从故障训练恢复
     if is_resume == True:
         resume_pt_file = os.path.join(exp_data_root,"models",dataset_name,"yolov7","fault_train",

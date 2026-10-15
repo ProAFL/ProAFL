@@ -180,14 +180,14 @@ if __name__ == "__main__":
     print(f"PID: {pid}")
     config = read_yaml("config.yaml")
     exp_data_root = config["exp_data_dir"]
-    dataset_name = "visdrone"                     
+    dataset_name = "kitti" # voc|visdrone|kitti                   
     img_root_dir = os.path.join(exp_data_root,"datasets",f"{dataset_name}-coco","train")
     # annotation_path = f"{exp_data_root}/datasets/{dataset_name}-coco/train/_annotations.coco_error.json"
     inject_ratio = 0.1
     repeat_id = 1
     annotation_path = os.path.join(exp_data_root,"fault_inject",str(inject_ratio),dataset_name,
                         "coco_format","annotations_no_miss.json")
-    mask_type = "other_objects" # crop|other_objects
+    mask_type = "crop" # crop|other_objects
     if dataset_name == "voc":
         class_num = 21
     elif dataset_name == "visdrone":
@@ -197,7 +197,7 @@ if __name__ == "__main__":
     else:
         raise Exception("text")
     epoches = 13
-    device = torch.device("cuda:0")
+    device = torch.device("cuda:1")
     model_save_dir = os.path.join(exp_data_root,"datactive_models",dataset_name,str(inject_ratio),f"repeat_{str(repeat_id)}",mask_type)
     os.makedirs(model_save_dir,exist_ok=True)
     train()

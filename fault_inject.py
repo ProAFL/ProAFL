@@ -1,7 +1,3 @@
-
-'''
-textcoco style annotaion jsontext
-'''
 import os
 import random
 import json
@@ -186,7 +182,7 @@ if __name__ == "__main__":
     config = read_yaml("config.yaml")
     exp_data_root = config["exp_data_dir"]
           
-    dataset_name = "visdrone" # voc|kitti|visdrone
+    dataset_name = "kitti" # voc|kitti|visdrone
                            
     correct_anno_json_path = get_correct_anno_json_path(dataset_name)
                   
@@ -271,6 +267,7 @@ if __name__ == "__main__":
     df.to_csv(record_save_path, index=False, encoding="utf-8")
 
     print(f"Fault recorder is saved at: {record_save_path}")
+    print("进程结束")
 
 
 
