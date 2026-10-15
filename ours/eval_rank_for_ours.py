@@ -18,8 +18,8 @@ from ours.rank.analyse.common import (
 
 
 DATA_ROOT = Path("/data/mml/data_debugging_data/ProAFL_data")
-DATASETNAME = "visdrone" # voc|kitti|visdrone 
-EXPID = 1791968956
+DATASETNAME = "kitti" # voc|kitti|visdrone 
+EXPID = 1792056154 # 其实是个时间戳 1792056154(kitti), 1791968956(visdrone)
 RANK_DIR = DATA_ROOT / f"process_features/{DATASETNAME}/yolov7/0.1_repeat/repeat_1_{EXPID}"
 RANK_PATH = RANK_DIR / "merged_rank.json"
 ANNOTATIONS_PATH = DATA_ROOT / f"fault_inject/0.1/{DATASETNAME}/coco_format/annotations_with_miss.json"

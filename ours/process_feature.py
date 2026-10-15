@@ -13,8 +13,8 @@ import numpy as np
 import topsispy as tp
 
 DATA_ROOT = Path("/data/mml/data_debugging_data/ProAFL_data")
-DATASETNAME = "visdrone" # voc|kitti|visdrone 
-EXPID = 1791968956
+DATASETNAME = "kitti" # voc|kitti|visdrone 
+EXPID = 1792056154 # 其实是个时间戳 1792056154(kitti), 1791968956(visdrone)
 ANNOTATIONS_PATH = DATA_ROOT / f"fault_inject/0.1/{DATASETNAME}/coco_format/annotations_no_miss.json"
 METRICS_PATH = DATA_ROOT / (
     f"process_metrics/{DATASETNAME}/yolov7/0.1_repeat/"
@@ -23,7 +23,7 @@ METRICS_PATH = DATA_ROOT / (
 OUTPUT_DIR = DATA_ROOT / f"process_features/{DATASETNAME}/yolov7/0.1_repeat/repeat_1_{EXPID}"
 EPOCHS = 50
 LATE_EPOCHS = 10
-CONF_THRESHOLD = 0.1 # 首次到达 visdrones:0.1
+CONF_THRESHOLD = 0.1 # 首次到达 visdrones:0.1,kitti:0.1,voc:0.25
 IOU_THRESHOLD = 0.5 # 首次到达
 
 FEATURE_NAMES = (

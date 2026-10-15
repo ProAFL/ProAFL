@@ -108,7 +108,7 @@ if __name__ == "__main__":
             'missing_fault': 4,
     }
     exp_data_root = config["exp_data_dir"]
-    dataset_name = "visdrone" # voc|kitti|visdrone
+    dataset_name = "kitti" # voc|kitti|visdrone
     
     # crop_infer_results_path=f'{exp_data_root}/baselines/datactive/{dataset_name}/rank/infer/crop.json'
     # others_infer_results_path=f'{exp_data_root}/baselines/datactive/{dataset_name}/rank/infer/other_objects.json'

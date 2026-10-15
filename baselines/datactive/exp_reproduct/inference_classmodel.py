@@ -71,7 +71,7 @@ def infer():
 if __name__ == "__main__":
     config = read_yaml("config.yaml")
     exp_data_root = config["exp_data_dir"]
-    dataset_name = "visdrone" # "visdrone" "kitti" "voc"
+    dataset_name = "kitti" # "visdrone" "kitti" "voc"
     img_root = f"{exp_data_root}/datasets/{dataset_name}-coco/train"
     inject_ratio = 0.1
     annotation_path = annotation_path = f"{exp_data_root}/fault_inject/{str(inject_ratio)}/{dataset_name}/coco_format/annotations_no_miss.json"
@@ -80,7 +80,7 @@ if __name__ == "__main__":
     elif dataset_name == "visdrone":
         class_num = 11               
     elif dataset_name == "kitti":
-        class_num = 9               
+        class_num = 9
     gpu_id = 0
     for repeat_id in [1]:
         for mask_type in ["crop","other_objects"]:
@@ -92,7 +92,6 @@ if __name__ == "__main__":
             os.makedirs(result_save_dir,exist_ok=True)
             results_save_path = os.path.join(result_save_dir,f"{mask_type}.json")
             infer()
-
 
 '''
 train_model(mask_type='crop', class_num=class_num, img_root=img_root,

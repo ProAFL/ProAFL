@@ -18,8 +18,8 @@ from ours.process_metrics_img import box_iou, validate_box
 
 
 DATA_ROOT = Path("/data/mml/data_debugging_data/ProAFL_data")
-DATASETNAME = "visdrone" # voc|kitti|visdrone 
-EXPID = 1791968956
+DATASETNAME = "kitti" # voc|kitti|visdrone 
+EXPID = 1792056154 # 其实是个时间戳 1792056154(kitti), 1791968956(visdrone)
 METRICS_PATH = DATA_ROOT / (
     f"process_metrics/{DATASETNAME}/yolov7/0.1_repeat/"
     f"repeat_1_{EXPID}/miss_process_metrics.json"

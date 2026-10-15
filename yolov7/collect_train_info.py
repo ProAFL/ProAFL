@@ -202,7 +202,7 @@ if __name__ == "__main__":
     ts = int(time.time()) # 时间戳
     config = read_yaml("../config.yaml")
     exp_data_root = config["exp_data_dir"]
-    dataset_name = "visdrone" # voc|kitti|visdrone
+    dataset_name = "kitti" # voc|kitti|visdrone
     model_name = "yolov7"
     inject_ratio = 0.1 # 0.01,0.05,0.1,0.15
     repeat_id = 1
@@ -210,8 +210,8 @@ if __name__ == "__main__":
     # 基于yaml配置加载出model:Model,并放到device
     model = Model("cfg/training/yolov7.yaml", ch=3, nc=nc, anchors=3).to(device)
 
-    pbox_confi_thres = 0.1 # 低于这个置信度的预测框会被丢弃。值越大保留的预测框越少。visdrone使用0.1，其他数据集使用0.25
-    iou_thres = 0.75 # NMS(非极大抑制)的重叠门槛。同类预测框IoU超过0.65时，只保留最高的那个预测框，其他的丢弃。值越大保留的预测框越多。visdrone使用0.75，其他数据集使用0.65
+    pbox_confi_thres = 0.1 # 低于这个置信度的预测框会被丢弃。值越大保留的预测框越少。visdrone.kitti使用0.1，voc使用0.25
+    iou_thres = 0.75 # NMS(非极大抑制)的重叠门槛。同类预测框IoU超过0.65时，只保留最高的那个预测框，其他的丢弃。值越大保留的预测框越多。visdrone,kitti使用0.75，voc使用0.65
     epochs = 50
 
     collect_p_box_dir = os.path.join(exp_data_root,

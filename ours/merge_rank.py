@@ -13,8 +13,8 @@ from pathlib import Path
 
 
 DATA_ROOT = Path("/data/mml/data_debugging_data/ProAFL_data")
-DATASETNAME = "visdrone" # voc|kitti|visdrone 
-EXPID = 1791968956
+DATASETNAME = "kitti" # voc|kitti|visdrone 
+EXPID = 1792056154 # 其实是个时间戳 1792056154(kitti), 1791968956(visdrone)
 RANK_DIR = DATA_ROOT / (
     f"process_features/{DATASETNAME}/yolov7/0.1_repeat/repeat_1_{EXPID}"
 )
@@ -22,7 +22,7 @@ ANNO_RANK_PATH = RANK_DIR / "topsis_ranking.json"
 IMAGE_RANK_PATH = RANK_DIR / "miss_image_ranking.json"
 OUTPUT_PATH = RANK_DIR / "merged_rank.json"
 # 1.0 保持原百分位合并；0 < 系数 < 1 时图像提前，保留图像组内顺序。
-IMAGE_PERCENTILE_SCALE = 0.1
+IMAGE_PERCENTILE_SCALE = 1.0
 
 
 def load_json(path):
