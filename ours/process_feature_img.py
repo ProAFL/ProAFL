@@ -19,7 +19,7 @@ from ours.process_metrics_img import box_iou, validate_box
 
 DATA_ROOT = Path("/data/mml/data_debugging_data/ProAFL_data")
 DATASETNAME = "visdrone" # voc|kitti|visdrone 
-EXPID = 1791796185
+EXPID = 1791968956
 METRICS_PATH = DATA_ROOT / (
     f"process_metrics/{DATASETNAME}/yolov7/0.1_repeat/"
     f"repeat_1_{EXPID}/miss_process_metrics.json"
@@ -240,6 +240,7 @@ def main():
     })
     print(f"Ranked {len(ranking)} images; results saved to {OUTPUT_DIR}")
     print(f"Images with no candidate track: {len(no_candidate_names)}")
+    print("进程结束")
 
 
 if __name__ == "__main__":

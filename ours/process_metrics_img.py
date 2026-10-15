@@ -18,7 +18,7 @@ from statistics import median
 DATA_ROOT = Path("/data/mml/data_debugging_data/ProAFL_data")
 DATASETNAME = "visdrone" # voc|kitti|visdrone
 ANNOTATIONS_PATH = DATA_ROOT / f"fault_inject/0.1/{DATASETNAME}/coco_format/annotations_no_miss.json"
-EXPID = "1791796185"
+EXPID = "1791968956"
 PREDICTIONS_DIR = DATA_ROOT / (
     f"collection_process_info/{DATASETNAME}/yolov7/collected_predict_boxes/"
     f"inject_0.1_repeat/repeat_1_{EXPID}"

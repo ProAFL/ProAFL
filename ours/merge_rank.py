@@ -1,4 +1,4 @@
-"""Merge the two evidence-backed rankings by their within-group percentiles.
+"""Merge rankings by within-group percentiles, scaling image percentiles.
 
 Annotation and image TOPSIS scores are never compared directly. The
 never-overlapped annotations and images without candidate tracks are kept in
@@ -14,13 +14,15 @@ from pathlib import Path
 
 DATA_ROOT = Path("/data/mml/data_debugging_data/ProAFL_data")
 DATASETNAME = "visdrone" # voc|kitti|visdrone 
-EXPID = 1791796185
+EXPID = 1791968956
 RANK_DIR = DATA_ROOT / (
     f"process_features/{DATASETNAME}/yolov7/0.1_repeat/repeat_1_{EXPID}"
 )
 ANNO_RANK_PATH = RANK_DIR / "topsis_ranking.json"
 IMAGE_RANK_PATH = RANK_DIR / "miss_image_ranking.json"
 OUTPUT_PATH = RANK_DIR / "merged_rank.json"
+# 1.0 保持原百分位合并；0 < 系数 < 1 时图像提前，保留图像组内顺序。
+IMAGE_PERCENTILE_SCALE = 0.1
 
 
 def load_json(path):
@@ -82,13 +84,22 @@ def add_within_group_percentiles(evidence):
 
 
 def merge_evidence(annos, images):
-    """Sort both groups together by percentile; smaller is more suspicious."""
+    """Sort by scaled percentiles; smaller image scales move images earlier."""
+    if (isinstance(IMAGE_PERCENTILE_SCALE, bool)
+            or not isinstance(IMAGE_PERCENTILE_SCALE, (int, float))
+            or not math.isfinite(IMAGE_PERCENTILE_SCALE)
+            or IMAGE_PERCENTILE_SCALE <= 0):
+        raise ValueError("IMAGE_PERCENTILE_SCALE must be a finite positive number")
     add_within_group_percentiles(annos)
     add_within_group_percentiles(images)
+    for entry in annos:
+        entry["merge_percentile"] = entry["group_percentile"]
+    for entry in images:
+        entry["merge_percentile"] = entry["group_percentile"] * IMAGE_PERCENTILE_SCALE
     merged = sorted(
         annos + images,
         key=lambda entry: (
-            entry["group_percentile"],
+            entry["merge_percentile"],
             0 if entry["item_type"] == "anno" else 1,
             entry["anno_id"] if entry["item_type"] == "anno" else entry["image_name"],
         ),
@@ -96,7 +107,7 @@ def merge_evidence(annos, images):
     previous_percentile = None
     tied_rank = 0
     for position, entry in enumerate(merged, start=1):
-        percentile = entry["group_percentile"]
+        percentile = entry["merge_percentile"]
         if previous_percentile is None or percentile != previous_percentile:
             tied_rank = position
             previous_percentile = percentile
@@ -123,8 +134,10 @@ def build_merged_rank(anno_source, image_source):
         entry["total_rank"] = position
     return {
         "merge_rule": {
-            "description": "Sort evidence-backed items by within-group TOPSIS midrank percentile, ascending",
+            "description": "Sort evidence-backed items by merge_percentile, ascending",
             "percentile_formula": "(first_tied_position + last_tied_position - 1) / (2 * group_size)",
+            "image_percentile_scale": IMAGE_PERCENTILE_SCALE,
+            "merge_percentile_formula": "anno: group_percentile; image: group_percentile * image_percentile_scale",
             "group_rank_direction": "1 is most suspicious within its own group",
             "percentile_direction": "smaller is more suspicious",
             "cross_group_ties": "share merged_rank; anno is displayed first",
@@ -154,6 +167,7 @@ def main():
     print(f"Merged {result['counts']['merged_evidence_items']} evidence items to {OUTPUT_PATH}")
     print(f"Never-overlapped annos: {result['counts']['never_overlapped_annos']}")
     print(f"Images without candidate tracks: {result['counts']['no_candidate_images']}")
+    print("进程结束")
 
 
 if __name__ == "__main__":

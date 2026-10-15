@@ -14,7 +14,7 @@ import topsispy as tp
 
 DATA_ROOT = Path("/data/mml/data_debugging_data/ProAFL_data")
 DATASETNAME = "visdrone" # voc|kitti|visdrone 
-EXPID = 1791796185
+EXPID = 1791968956
 ANNOTATIONS_PATH = DATA_ROOT / f"fault_inject/0.1/{DATASETNAME}/coco_format/annotations_no_miss.json"
 METRICS_PATH = DATA_ROOT / (
     f"process_metrics/{DATASETNAME}/yolov7/0.1_repeat/"
@@ -23,8 +23,8 @@ METRICS_PATH = DATA_ROOT / (
 OUTPUT_DIR = DATA_ROOT / f"process_features/{DATASETNAME}/yolov7/0.1_repeat/repeat_1_{EXPID}"
 EPOCHS = 50
 LATE_EPOCHS = 10
-CONF_THRESHOLD = 0.25
-IOU_THRESHOLD = 0.5
+CONF_THRESHOLD = 0.1 # 首次到达 visdrones:0.1
+IOU_THRESHOLD = 0.5 # 首次到达
 
 FEATURE_NAMES = (
     "late_conf_deficit",
@@ -178,6 +178,7 @@ def main():
     save_json(OUTPUT_DIR / "never_overlapped.json", no_overlap_report)
     print(f"Ranked {len(ranking)} annotations; results saved to {OUTPUT_DIR}")
     print(f"Annotations never overlapping a prediction: {no_overlap_report['count']}")
+    print("进程结束")
 
 
 if __name__ == "__main__":
