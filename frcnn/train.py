@@ -4,6 +4,7 @@ import random
 import numpy as np
 from torch.utils.data import DataLoader
 from functools import partial
+from torchvision.datasets import voc
 from torchvision.transforms import ToTensor,Normalize
 from datasets import CocoDetectionDataset
 from torchvision.models.detection.faster_rcnn import FastRCNNPredictor,FasterRCNN_ResNet50_FPN_Weights
@@ -18,9 +19,6 @@ import matplotlib.pyplot as plt
 from PIL import Image
 import pandas as pd
 import os
-from frcnn.cutom_module.base_data_manager import (get_correct_ann_file_path,
-                                                  get_error_ann_file_path,
-                                                  get_imgs_dir)
 import time
 from cutom_module.small_utils import read_yaml
                                         
@@ -43,7 +41,6 @@ def get_train_and_val_dataset():
         annotation_path=train_annotation_path,
         transforms=get_transform(train=True)
     )
-
                              
     val_dataset = CocoDetectionDataset(
         image_dir=val_imgs_dir,
@@ -70,7 +67,6 @@ def save_epoch(model,epoch):
     return save_path
 
 def model_load_weight(model,model_weight_path):
-                
     state_dict = torch.load(model_weight_path,map_location="cpu")
     model.load_state_dict(state_dict)
     return model
@@ -81,26 +77,13 @@ def worker_init_fn(worker_id, rank, seed):
     np.random.seed(worker_seed)
     torch.manual_seed(worker_seed)
 
-def train(model_weight_path=None,distributed=False):
+def train(distributed=False):
     start_time = time.time()                     
-                                   
-                                                                                              
-                                                      
-                                                                          
-                                                                                  
-                                                             
-                     
-
-          
     train_dataset, val_dataset = get_train_and_val_dataset()
                  
     num_classes = len(train_dataset.coco.getCatIds()) + 1
     model = build_model(num_classes)
-          
-    if model_weight_path is not None:
-        model_load_weight(model,model_weight_path)
     '''
-    # textBackbone params
     for param in model.backbone.parameters():
         param.requires_grad = False
     params = [p for p in model.parameters() if p.requires_grad]
@@ -139,7 +122,7 @@ def train(model_weight_path=None,distributed=False):
                                                          
         train_loader = DataLoader(train_dataset, shuffle = False, batch_size = batch_size, num_workers = 4, pin_memory=True,
                                     drop_last=True, sampler=train_sampler, collate_fn=lambda x: tuple(zip(*x)),
-                                    worker_init_fn=partial(worker_init_fn, rank=rank, seed=seed))
+                                    worker_init_fn=partial(worker_init_fn, rank=rank, seed=seed)) # shuffle必须为False
         val_loader = DataLoader(val_dataset, shuffle = False, batch_size = batch_size, num_workers = 4, pin_memory=True, 
                                     drop_last=True, sampler=val_sampler, collate_fn=lambda x: tuple(zip(*x)),
                                     worker_init_fn=partial(worker_init_fn, rank=rank, seed=seed))
@@ -147,17 +130,14 @@ def train(model_weight_path=None,distributed=False):
             "train_loss":[],
             "val_loss":[]
         }
-        save_period = 10
+        save_period = 1
         save_dir = epoch_save_dir
         for epoch in range(num_epochs):
-            train_sampler.set_epoch(epoch)                                           
-                             
+            train_sampler.set_epoch(epoch)                                             
             train_one_epoch_for_distribution(model_train,model,optimizer,train_loader,val_loader,
                                      epoch,num_epochs,loss_history,save_period,save_dir,local_rank=local_rank)
             lr_scheduler.step()
     else:
-              
-                
         device = torch.device(f"cuda:{gpu_id}")
         model.to(device)
         train_loader = DataLoader(train_dataset, batch_size=_args["batch_size"], shuffle=True, collate_fn=lambda x: tuple(zip(*x)))
@@ -177,48 +157,32 @@ def train(model_weight_path=None,distributed=False):
     print(f"Elapsed time: {run_time}")
 
 if __name__ == "__main__":
-    config = read_yaml("config.yaml")
     PID = os.getpid()
     print("PID:",PID)
+    config = read_yaml("config.yaml")
     seed = 42
     exp_data_root_dir = config["exp_data_dir"]
+    dataset_name = "voc"
+    fault_ratio = 0.1
+    repeat_id = 1
     gpu_id = 0
-    print("gpu_id:",gpu_id)
-    _args = {
-        "dataset_name":"voc",                     
-        "model_name":"frcnn",
-        "trainset_status":"error",               
-    }
-    
-    dataset_name = _args["dataset_name"]
-    model_name = _args["model_name"]
-
-    model_weight_path = None
     num_epochs = 50
     init_lr = 5e-3
-    _args["model_weight_path"] = model_weight_path
-
-                    
+    _args = {}
     _args["init_lr"] = init_lr
     _args["num_epochs"] = num_epochs
     _args["batch_size"] = 32
     _args["ColorJitter"] = True
-    _args["Normal"] = False
+    _args["Normal"] = False # 应该是False
 
     epoch_save_dir = os.path.join(exp_data_root_dir,"models",dataset_name,
-                                  model_name, _args["trainset_status"])
+                                  "frcnn", f"fault_train/{fault_ratio}/repeat_{repeat_id}")
     os.makedirs(epoch_save_dir,exist_ok=True)
     _args["epoch_save_dir"] = epoch_save_dir
     pprint.pprint(_args)
 
-    train_imgs_dir = get_imgs_dir(dataset_name,"train",style="coco")
-    val_imgs_dir = get_imgs_dir(dataset_name,"val",style="coco")
-
-    if _args["trainset_status"] == "clean":
-        train_annotation_path = get_correct_ann_file_path(dataset_name,"train")
-    elif _args["trainset_status"] == "error":
-        train_annotation_path = get_error_ann_file_path(dataset_name)
-
-    val_annotation_path = get_correct_ann_file_path(dataset_name,"val")
-
-    train(model_weight_path,distributed=True)
+    train_imgs_dir = f"{exp_data_root_dir}/datasets/{dataset_name}-coco/train" # 这其实就是全部的训练集了
+    val_imgs_dir = f"{exp_data_root_dir}/datasets/{dataset_name}-coco/val"
+    train_annotation_path = f"{exp_data_root_dir}/fault_inject/{fault_ratio}/{dataset_name}/coco_format/annotations_no_miss.json"
+    val_annotation_path = f"{exp_data_root_dir}/datasets/{dataset_name}-coco/val/_annotations.coco.json"
+    train(distributed=False)
