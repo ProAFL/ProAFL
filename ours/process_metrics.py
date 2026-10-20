@@ -19,15 +19,16 @@ from ours.small_utils import read_yaml
 config = read_yaml("config.yaml")                           
 exp_data_root_dir = config["exp_data_dir"]
 DATA_ROOT = Path(exp_data_root_dir)
-DATASETNAME = "kitti" # voc|kitti|visdrone
+DATASETNAME = "voc" # voc|kitti|visdrone
+MODEL_NAME = "rtdetr" # yolov7|rtdetr|frcnn
 ANNOTATIONS_PATH = DATA_ROOT / f"fault_inject/0.1/{DATASETNAME}/coco_format/annotations_no_miss.json"
-EXPID = 1792056154 # 其实是个时间戳 1792056154(kitti), 1791968956(visdrone)
+EXPID = 1792398239 # 其实是个时间戳 1792056154(kitti), 1791968956(visdrone)，1792398239(redetr-voc)
 PREDICTIONS_DIR = DATA_ROOT / (
-    f"collection_process_info/{DATASETNAME}/yolov7/collected_predict_boxes/"
+    f"collection_process_info/{DATASETNAME}/{MODEL_NAME}/collected_predict_boxes/"
     f"inject_0.1_repeat/repeat_1_{EXPID}"
 )
-OUTPUT_PATH = DATA_ROOT / f"process_metrics/{DATASETNAME}/yolov7/0.1_repeat/repeat_1_{EXPID}/process_metrics.json"
-EPOCHS = 50
+OUTPUT_PATH = DATA_ROOT / f"process_metrics/{DATASETNAME}/{MODEL_NAME}/0.1_repeat/repeat_1_{EXPID}/process_metrics.json"
+EPOCHS = 100 # redetr-voc 100 epochs,其他50
 
 
 def box_iou(box_a, box_b):

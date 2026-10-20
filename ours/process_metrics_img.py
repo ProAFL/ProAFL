@@ -14,28 +14,31 @@ import math
 from pathlib import Path
 from statistics import median
 
+from ours.process_metrics import MODEL_NAME
+
 
 DATA_ROOT = Path("/data/mml/data_debugging_data/ProAFL_data")
-DATASETNAME = "kitti" # voc|kitti|visdrone
+DATASETNAME = "voc" # voc|kitti|visdrone
+MODEL_NAME = "rtdetr" # yolov7|rtdetr|frcnn
 ANNOTATIONS_PATH = DATA_ROOT / f"fault_inject/0.1/{DATASETNAME}/coco_format/annotations_no_miss.json"
-EXPID = 1792056154 # 其实是个时间戳 1792056154(kitti), 1791968956(visdrone)
+EXPID = 1792398239 # 其实是个时间戳 1792056154(kitti), 1791968956(visdrone)，1792398239(redetr-voc)
 PREDICTIONS_DIR = DATA_ROOT / (
-    f"collection_process_info/{DATASETNAME}/yolov7/collected_predict_boxes/"
+    f"collection_process_info/{DATASETNAME}/{MODEL_NAME}/collected_predict_boxes/"
     f"inject_0.1_repeat/repeat_1_{EXPID}"
 )
 OUTPUT_PATH = DATA_ROOT / (
-    f"process_metrics/{DATASETNAME}/yolov7/0.1_repeat/"
+    f"process_metrics/{DATASETNAME}/{MODEL_NAME}/0.1_repeat/"
     f"repeat_1_{EXPID}/miss_process_metrics.json"
 )
-EPOCHS = 50
+EPOCHS = 100 # redetr-voc 100 epochs,其他50
 
 # The saved predictions were already filtered by NMS at confidence 0.25.
 # Raising this threshold removes weak observations from their trajectories.
 MIN_CANDIDATE_CONF = 0.25
-MAX_ANNO_IOU = 0.2
+MAX_ANNO_IOU = 0.2 # 和已有标注框的最大 IoU 上限。若某个预测框和任一已标注框的 IoU 不小于`0.2` ，说明它可能其实对应已有标注，就不再算“漏标候选”
 MAX_ANNO_COVERAGE = 0.5  # Intersection area / prediction area.
-DUPLICATE_IOU = 0.97
-TRACK_IOU = 0.5
+DUPLICATE_IOU = 0.97 # 去重阈值。一个 epoch 内如果两个预测框几乎重合（IoU >= 0.97），就认为是重复框，只保留置信度更高的那个。
+TRACK_IOU = 0.5 # 跨 epoch 连成同一 track 的阈值。当前 epoch 的候选框如果和某条已有轨迹的代表框 IoU >= 0.5，就接到这条轨迹上；否则新建一条 track。
 
 
 def validate_settings(epochs):

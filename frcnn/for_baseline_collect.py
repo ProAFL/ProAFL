@@ -30,10 +30,6 @@ def build_frcnn_model(num_classes):
     Number of classes must be equal to your label number
     """
     model.roi_heads.box_predictor = FastRCNNPredictor(in_features, num_classes)
-
-
-                               
-
                                                            
     rh = model.roi_heads
 

@@ -14,18 +14,20 @@ from pathlib import Path
 import numpy as np
 import topsispy as tp
 
+from ours.process_feature import MODEL_NAME
 from ours.process_metrics_img import box_iou, validate_box
 
 
 DATA_ROOT = Path("/data/mml/data_debugging_data/ProAFL_data")
-DATASETNAME = "kitti" # voc|kitti|visdrone 
-EXPID = 1792056154 # 其实是个时间戳 1792056154(kitti), 1791968956(visdrone)
+DATASETNAME = "voc" # voc|kitti|visdrone 
+MODEL_NAME = "rtdetr" # yolov7|rtdetr|frcnn
+EXPID = 1792398239 # 其实是个时间戳 1792056154(kitti), 1791968956(visdrone)，1792398239(redetr-voc)
 METRICS_PATH = DATA_ROOT / (
-    f"process_metrics/{DATASETNAME}/yolov7/0.1_repeat/"
+    f"process_metrics/{DATASETNAME}/{MODEL_NAME}/0.1_repeat/"
     f"repeat_1_{EXPID}/miss_process_metrics.json"
 )
 OUTPUT_DIR = DATA_ROOT / (
-    f"process_features/{DATASETNAME}/yolov7/0.1_repeat/"
+    f"process_features/{DATASETNAME}/{MODEL_NAME}/0.1_repeat/"
     f"repeat_1_{EXPID}"
 )
 LATE_EPOCHS = 10
