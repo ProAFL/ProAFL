@@ -6,7 +6,7 @@ No missing-annotation ground truth or other fault labels enter scoring.
 Edit the constants below and run from the repository root with
 ``python -m ours.process_feature_img``.
 """
-
+import os
 import json
 import math
 from pathlib import Path
@@ -19,7 +19,7 @@ from ours.process_metrics_img import box_iou, validate_box
 
 
 DATA_ROOT = Path("/data/mml/data_debugging_data/ProAFL_data")
-DATASETNAME = "kitti" # voc|kitti|visdrone 
+DATASETNAME = "visdrone" # voc|kitti|visdrone 
 MODEL_NAME = "rtdetr" # yolov7|rtdetr|frcnn
 # yolov7-voc: 无
 # yolov7-kitti: 1792056154
@@ -27,7 +27,7 @@ MODEL_NAME = "rtdetr" # yolov7|rtdetr|frcnn
 # rtdetr-voc: 1792398239
 # rtdetr-visdrone: 1792504350
 # rtdetr-kitti: 1792556872
-EXPID = 1792556872 
+EXPID = 1792504350 
 METRICS_PATH = DATA_ROOT / (
     f"process_metrics/{DATASETNAME}/{MODEL_NAME}/0.1_repeat/"
     f"repeat_1_{EXPID}/miss_process_metrics.json"
@@ -222,6 +222,8 @@ def save_json(path, data):
 
 
 def main():
+    pid = os.getpid()
+    print(f"PID:{pid}")
     with open(METRICS_PATH, encoding="utf-8") as file:
         metrics = json.load(file)
     features_by_image, epochs = build_image_features(metrics, LATE_EPOCHS)

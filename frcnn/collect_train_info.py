@@ -24,8 +24,10 @@ class CollectionRoIHeads(RoIHeadsCustom):
         detections, losses = super().forward(features, proposals, image_shapes, targets)
         if not self.training:
             for detection in detections:
-                # RoIHeadsCustom returns foreground probability vectors as scores.
-                probs = detection["scores"]
+                # Some local torchvision versions already expose the matrix as
+                # "probs" and reduce "scores" to one dimension in RoIHeads.forward.
+                # Stock torchvision passes through our matrix as "scores" instead.
+                probs = detection.get("probs", detection["scores"])
                 detection["probs"] = probs
                 detection["scores"] = probs.gather(
                     1, (detection["labels"] - 1).unsqueeze(1)
@@ -77,7 +79,6 @@ def set_nms(model, model_name, conf_threshold=0.25,iou_threshold=0.65):
     elif model_name.lower() == "frcnn":
         model.roi_heads.score_thresh = conf_threshold
         model.roi_heads.nms_thresh = iou_threshold
-        
     else:
         raise Exception("Invalid model name")
     return model
@@ -85,7 +86,7 @@ def set_nms(model, model_name, conf_threshold=0.25,iou_threshold=0.65):
 def model_load_weight(model,epoch):
                 
     w_path = os.path.join(error_model_pth_dir,f"epoch_{epoch}.pth")
-    state_dict = torch.load(w_path,map_location="cpu")
+    state_dict = torch.load(w_path, map_location="cpu", weights_only=True)
     model.load_state_dict(state_dict)
     return model
 
@@ -138,21 +139,16 @@ def save_one_epoch(collect_dict,epoch):
 
 def collect_predicted_boxes():
     start_time = time.time()                     
-          
     train_dataset = get_trainset()
-          
-    train_loader = DataLoader(train_dataset, batch_size=16, 
+    train_loader = DataLoader(train_dataset, batch_size=32, 
                               shuffle=False, collate_fn=lambda x: tuple(zip(*x)))
-             
     num_classes = len(train_dataset.coco.getCatIds()) + 1
                  
     model = get_model(num_classes)
     if _args["custom_nms"] is True:
         model = set_nms(model,model_name=model_name)
-                
     device = torch.device(f"cuda:{gpu_id}")
     model.to(device)
-                      
     for epoch in range(num_epochs):
         print(f"\nEpoch {epoch}/{num_epochs}")
         model = model_load_weight(model,epoch)
@@ -167,13 +163,13 @@ def collect_predicted_boxes():
     print(f"Elapsed time: {hours:02d}:{minutes:02d}:{seconds:02.0f}")
 
 if __name__ == "__main__":
+    PID = os.getpid()
+    print("PID:",PID)
     config = read_yaml("config.yaml")
     exp_data_root_dir = config["exp_data_dir"]
     gpu_id = 0
-    PID = os.getpid()
-    print("PID:",PID)
     _args = {
-        "dataset_name":"voc",                     
+        "dataset_name":"kitti",
         "model_name":"frcnn",
         "num_epochs":50,
         "custom_nms":False
@@ -183,10 +179,10 @@ if __name__ == "__main__":
     dataset_name = _args["dataset_name"]
     model_name = _args["model_name"]
     num_epochs = _args["num_epochs"]
-    
-    error_model_pth_dir = os.path.join(exp_data_root_dir,"models",dataset_name,
-                                       model_name,"error")
-    collect_save_dir = os.path.join(exp_data_root_dir,"collection_process_info",
-                                    dataset_name,model_name,"collected_predict_boxes")
+    fault_ratio = 0.1
+    repeat_id =1
+    ts = int(time.time())
+    error_model_pth_dir = f"{exp_data_root_dir}/models/{dataset_name}/frcnn/fault_train/{fault_ratio}/repeat_{repeat_id}"
+    collect_save_dir = f"{exp_data_root_dir}/collection_process_info/{dataset_name}/frcnn/collected_predict_boxes/inject_{fault_ratio}_repeat/repeat_{repeat_id}_{ts}"
     os.makedirs(collect_save_dir,exist_ok=True)
     collect_predicted_boxes()

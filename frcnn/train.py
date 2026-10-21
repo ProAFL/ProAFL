@@ -163,16 +163,16 @@ if __name__ == "__main__":
     config = read_yaml("config.yaml")
     seed = 42
     exp_data_root_dir = config["exp_data_dir"]
-    dataset_name = "voc"
+    dataset_name = "kitti" # voc|kitti|visdrone
     fault_ratio = 0.1
     repeat_id = 1
-    gpu_id = 0
+    gpu_id = 1
     num_epochs = 50
     init_lr = 5e-3
     _args = {}
     _args["init_lr"] = init_lr
     _args["num_epochs"] = num_epochs
-    _args["batch_size"] = 32
+    _args["batch_size"] = 64
     _args["ColorJitter"] = True
     _args["Normal"] = False # 应该是False
 

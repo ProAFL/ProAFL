@@ -224,16 +224,6 @@ def collect_one_epoch(model,dataset_loader,device):
     for images, targets in dataset_loader:
         images = list(image.to(device) for image in images)
         targets = [{k: v.to(device) if isinstance(v, torch.Tensor) else v for k, v in t.items()} for t in targets]
-                      
-                                                      
-                          
-                                                                        
-                                                                         
-                                                                       
-                                                                       
-                                                                          
-                                     
-
         predictions = model(images)
         for img,target,pred in zip(images,targets,predictions):
             img_name = target["image_path"].split("/")[-1]

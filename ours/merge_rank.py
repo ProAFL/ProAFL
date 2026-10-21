@@ -13,7 +13,7 @@ from pathlib import Path
 
 
 DATA_ROOT = Path("/data/mml/data_debugging_data/ProAFL_data")
-DATASETNAME = "kitti" # voc|kitti|visdrone 
+DATASETNAME = "visdrone" # voc|kitti|visdrone 
 MODEL_NAME = "rtdetr" # yolov7|rtdetr|frcnn
 # yolov7-voc: 无
 # yolov7-kitti: 1792056154
@@ -21,7 +21,7 @@ MODEL_NAME = "rtdetr" # yolov7|rtdetr|frcnn
 # rtdetr-voc: 1792398239
 # rtdetr-visdrone: 1792504350
 # rtdetr-kitti: 1792556872
-EXPID = 1792556872
+EXPID = 1792504350
 RANK_DIR = DATA_ROOT / (
     f"process_features/{DATASETNAME}/{MODEL_NAME}/0.1_repeat/repeat_1_{EXPID}"
 )
