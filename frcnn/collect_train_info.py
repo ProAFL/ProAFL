@@ -8,25 +8,54 @@ import pprint
 import json
 from PIL import Image
 from torch.utils.data import DataLoader
-from torchvision.models.detection.faster_rcnn import FastRCNNPredictor,FasterRCNN_ResNet50_FPN_Weights
+from torchvision.models.detection.faster_rcnn import FastRCNNPredictor
 from torchvision.transforms import ToTensor
 from datasets import CocoDetectionDataset
 import torch,torchvision
 from collections import defaultdict
 from cutom_module.small_utils import read_yaml
+from customROI import RoIHeadsCustom
+
+
+class CollectionRoIHeads(RoIHeadsCustom):
+    """Expose foreground probabilities while retaining scalar detection scores."""
+
+    def forward(self, features, proposals, image_shapes, targets=None):
+        detections, losses = super().forward(features, proposals, image_shapes, targets)
+        if not self.training:
+            for detection in detections:
+                # RoIHeadsCustom returns foreground probability vectors as scores.
+                probs = detection["scores"]
+                detection["probs"] = probs
+                detection["scores"] = probs.gather(
+                    1, (detection["labels"] - 1).unsqueeze(1)
+                ).squeeze(1)
+        return detections, losses
 
                                         
 def get_transform():
     return ToTensor()
 
 def build_frcnn_model(num_classes):
-    model = torchvision.models.detection.fasterrcnn_resnet50_fpn(weights=FasterRCNN_ResNet50_FPN_Weights.DEFAULT)
+    # Every epoch loads a complete checkpoint, so pretrained downloads are unnecessary.
+    model = torchvision.models.detection.fasterrcnn_resnet50_fpn(
+        weights=None, weights_backbone=None
+    )
                                                       
     in_features = model.roi_heads.box_predictor.cls_score.in_features
     """  
     Number of classes must be equal to your label number
     """
     model.roi_heads.box_predictor = FastRCNNPredictor(in_features, num_classes)
+    rh = model.roi_heads
+    model.roi_heads = CollectionRoIHeads(
+        rh.box_roi_pool, rh.box_head, rh.box_predictor,
+        rh.proposal_matcher.high_threshold, rh.proposal_matcher.low_threshold,
+        rh.fg_bg_sampler.batch_size_per_image, rh.fg_bg_sampler.positive_fraction,
+        rh.box_coder.weights, rh.score_thresh, rh.nms_thresh, rh.detections_per_img,
+        rh.mask_roi_pool, rh.mask_head, rh.mask_predictor,
+        rh.keypoint_roi_pool, rh.keypoint_head, rh.keypoint_predictor,
+    )
     return model
 
 def get_trainset():
@@ -45,7 +74,7 @@ def set_nms(model, model_name, conf_threshold=0.25,iou_threshold=0.65):
     if model_name == "SSD":
         model.score_thresh = conf_threshold
         model.nms_thresh = iou_threshold
-    elif model_name == "FRCNN":
+    elif model_name.lower() == "frcnn":
         model.roi_heads.score_thresh = conf_threshold
         model.roi_heads.nms_thresh = iou_threshold
         
@@ -60,44 +89,43 @@ def model_load_weight(model,epoch):
     model.load_state_dict(state_dict)
     return model
 
-def collect_help(img_name,p_boxes,p_labels,confs, global_id):
+def collect_help(img_name,p_boxes,p_labels,confs,probs,global_id):
     p_boxs = []
     for i in range(p_boxes.shape[0]):
         p_box = p_boxes[i].tolist()
-        p_label = int(p_labels[i])
-        conf = confs[i].item()
+        # Dataset labels were shifted by +1 to reserve zero for background.
+        p_label = int(p_labels[i]) - 1
+        conf = round(confs[i].item(), 4)
         p_box = {
             "predicted_box_id":global_id,
             "img_name":img_name,
             "predicted_cls":p_label,
             "conf":conf,
-            "bbox":p_box
+            "bbox":p_box,
+            "probs":[round(value, 4) for value in probs[i].tolist()]
         }
         p_boxs.append(p_box)
         global_id += 1
     return p_boxs
 
 
+@torch.inference_mode()
 def collect_one_epoch(model,dataset_loader,device):
     model.eval()
     global_id = 0
     collect_dict = {}
     for images, targets in dataset_loader:
         images = list(image.to(device) for image in images)
-        targets = [{k: v.to(device) if isinstance(v, torch.Tensor) else v for k, v in t.items()} for t in targets]
         predictions = model(images)
-        for img,target,pred in zip(images,targets,predictions):
-            img_name = target["image_path"].split("/")[-1]
+        for target,pred in zip(targets,predictions):
+            img_name = os.path.basename(target["image_path"])
             p_boxes = pred['boxes']
             p_labels = pred['labels']
             confs = pred['scores']
-            if p_boxes.shape[0] > 0:
-                                                                
-                collected_p_boxs = collect_help(img_name,p_boxes,p_labels,confs, global_id)
-                collect_dict[img_name] = {
-                    "predicted_bboxs":collected_p_boxs
-                } 
-                global_id += len(collected_p_boxs)
+            probs = pred['probs']
+            collected_p_boxs = collect_help(img_name,p_boxes,p_labels,confs,probs,global_id)
+            collect_dict[img_name] = {"predicted_bboxs":collected_p_boxs}
+            global_id += len(collected_p_boxs)
     return collect_dict
 
 def save_one_epoch(collect_dict,epoch):
@@ -114,7 +142,7 @@ def collect_predicted_boxes():
     train_dataset = get_trainset()
           
     train_loader = DataLoader(train_dataset, batch_size=16, 
-                              shuffle=True, collate_fn=lambda x: tuple(zip(*x)))
+                              shuffle=False, collate_fn=lambda x: tuple(zip(*x)))
              
     num_classes = len(train_dataset.coco.getCatIds()) + 1
                  

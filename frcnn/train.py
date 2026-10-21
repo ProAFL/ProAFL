@@ -81,7 +81,7 @@ def worker_init_fn(worker_id, rank, seed):
 def train(distributed=False):
     start_time = time.time()                     
     train_dataset, val_dataset = get_train_and_val_dataset()
-                 
+    # 这会把原始类别编号 0…K-1 转成 1…K，给背景留出 0。背景框由模型训练过程生成，不需要自己在数据集中标注
     num_classes = len(train_dataset.coco.getCatIds()) + 1
     model = build_model(num_classes)
     '''

@@ -13,16 +13,22 @@ import numpy as np
 import topsispy as tp
 
 DATA_ROOT = Path("/data/mml/data_debugging_data/ProAFL_data")
-DATASETNAME = "voc" # voc|kitti|visdrone 
+DATASETNAME = "kitti" # voc|kitti|visdrone 
 MODEL_NAME = "rtdetr" # yolov7|rtdetr|frcnn
-EXPID = 1792398239 # 其实是个时间戳 1792056154(kitti), 1791968956(visdrone)，1792398239(redetr-voc)
+# yolov7-voc: 无
+# yolov7-kitti: 1792056154
+# yolov7-visdrone: 1791968956
+# rtdetr-voc: 1792398239
+# rtdetr-visdrone: 1792504350
+# rtdetr-kitti: 1792556872
+EXPID = 1792556872 
 ANNOTATIONS_PATH = DATA_ROOT / f"fault_inject/0.1/{DATASETNAME}/coco_format/annotations_no_miss.json"
 METRICS_PATH = DATA_ROOT / (
     f"process_metrics/{DATASETNAME}/{MODEL_NAME}/0.1_repeat/"
     f"repeat_1_{EXPID}/process_metrics.json"
 )
 OUTPUT_DIR = DATA_ROOT / f"process_features/{DATASETNAME}/{MODEL_NAME}/0.1_repeat/repeat_1_{EXPID}"
-EPOCHS = 100 # redetr-voc 100 epochs,其他50
+EPOCHS = 50 # redetr-voc:100,rtdetr-visdrone:50,rtdetr-kitti:50, 其他50
 LATE_EPOCHS = 10
 CONF_THRESHOLD = 0.25 # 首次到达 visdrones:0.1,kitti:0.1,voc:0.25
 IOU_THRESHOLD = 0.5 # 首次到达
