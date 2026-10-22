@@ -19,7 +19,7 @@ from ours.process_metrics import MODEL_NAME
 
 DATA_ROOT = Path("/data/mml/data_debugging_data/ProAFL_data")
 DATASETNAME = "kitti" # voc|kitti|visdrone
-MODEL_NAME = "rtdetr" # yolov7|rtdetr|frcnn
+MODEL_NAME = "frcnn" # yolov7|rtdetr|frcnn
 ANNOTATIONS_PATH = DATA_ROOT / f"fault_inject/0.1/{DATASETNAME}/coco_format/annotations_no_miss.json"
 # yolov7-voc: 无
 # yolov7-kitti: 1792056154
@@ -27,7 +27,9 @@ ANNOTATIONS_PATH = DATA_ROOT / f"fault_inject/0.1/{DATASETNAME}/coco_format/anno
 # rtdetr-voc: 1792398239
 # rtdetr-visdrone: 1792504350
 # rtdetr-kitti: 1792556872
-EXPID = 1792556872 
+# frcnn-voc: 1792570209
+# frcnn-kitti: 1792642708
+EXPID = 1792642708
 PREDICTIONS_DIR = DATA_ROOT / (
     f"collection_process_info/{DATASETNAME}/{MODEL_NAME}/collected_predict_boxes/"
     f"inject_0.1_repeat/repeat_1_{EXPID}"

@@ -13,15 +13,17 @@ import numpy as np
 import topsispy as tp
 
 DATA_ROOT = Path("/data/mml/data_debugging_data/ProAFL_data")
-DATASETNAME = "visdrone" # voc|kitti|visdrone 
-MODEL_NAME = "rtdetr" # yolov7|rtdetr|frcnn
+DATASETNAME = "kitti" # voc|kitti|visdrone 
+MODEL_NAME = "frcnn" # yolov7|rtdetr|frcnn
 # yolov7-voc: 无
 # yolov7-kitti: 1792056154
 # yolov7-visdrone: 1791968956
 # rtdetr-voc: 1792398239
 # rtdetr-visdrone: 1792504350
 # rtdetr-kitti: 1792556872
-EXPID = 1792504350 
+# frcnn-voc: 1792570209
+# frcnn-kitti: 1792642708
+EXPID = 1792642708
 ANNOTATIONS_PATH = DATA_ROOT / f"fault_inject/0.1/{DATASETNAME}/coco_format/annotations_no_miss.json"
 METRICS_PATH = DATA_ROOT / (
     f"process_metrics/{DATASETNAME}/{MODEL_NAME}/0.1_repeat/"

@@ -163,7 +163,7 @@ if __name__ == "__main__":
     config = read_yaml("config.yaml")
     seed = 42
     exp_data_root_dir = config["exp_data_dir"]
-    dataset_name = "kitti" # voc|kitti|visdrone
+    dataset_name = "visdrone" # voc|kitti|visdrone
     fault_ratio = 0.1
     repeat_id = 1
     gpu_id = 1

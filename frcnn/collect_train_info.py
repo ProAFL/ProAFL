@@ -62,8 +62,8 @@ def build_frcnn_model(num_classes):
 
 def get_trainset():
     train_dataset = CocoDetectionDataset(
-        image_dir=f"{exp_data_root_dir}/datasets/{dataset_name}-coco/train", 
-        annotation_path=f"{exp_data_root_dir}/datasets/{dataset_name}-coco/train/_annotations.coco_error.json",
+        image_dir=f"{exp_data_root_dir}/datasets/{dataset_name}-coco/train", # 这其实就是全部的训练集了
+        annotation_path=f"{exp_data_root_dir}/fault_inject/{fault_ratio}/{dataset_name}/coco_format/annotations_no_miss.json",
         transforms=get_transform()
     )
     return train_dataset
@@ -140,7 +140,7 @@ def save_one_epoch(collect_dict,epoch):
 def collect_predicted_boxes():
     start_time = time.time()                     
     train_dataset = get_trainset()
-    train_loader = DataLoader(train_dataset, batch_size=32, 
+    train_loader = DataLoader(train_dataset, batch_size=128, 
                               shuffle=False, collate_fn=lambda x: tuple(zip(*x)))
     num_classes = len(train_dataset.coco.getCatIds()) + 1
                  
