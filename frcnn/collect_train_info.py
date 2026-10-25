@@ -75,7 +75,7 @@ def build_frcnn_model(num_classes):
         # rpn_pre_nms_top_n_test=2000,
         # rpn_post_nms_top_n_test=2000,
         # VisDrone目标密集，提高阈值可减少相邻同类框被抑制。
-        # box_nms_thresh=0.75,
+        box_nms_thresh=0.75,
         # 先保留当前置信度门槛，便于判断其他调整的效果。
         box_score_thresh=0.05,
         # 最终每图最多保存500个框。
