@@ -19,7 +19,7 @@ from ours.rank.analyse.common import (
 
 
 DATA_ROOT = Path("/data/mml/data_debugging_data/ProAFL_data")
-DATASETNAME = "kitti" # voc|kitti|visdrone 
+DATASETNAME = "visdrone" # voc|kitti|visdrone 
 RANK_DIR = DATA_ROOT / f"rank/datactive/{DATASETNAME}/0.1/repeat_1"
 RANK_PATH = RANK_DIR / "converted_rank.joblib"
 ANNOTATIONS_PATH = DATA_ROOT / f"fault_inject/0.1/{DATASETNAME}/coco_format/annotations_with_miss.json"

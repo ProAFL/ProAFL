@@ -41,13 +41,8 @@ class RoIHeadsCustom(RoIHeads):
             scores = scores[:, 1:]                       
             labels = labels[:, 1:]                       
 
-                            
-                                                        
-                                                     
-            scores_full = scores.detach().clone()                          
-            scores_full = scores_full.unsqueeze(1).repeat(1, scores.size(1), 1)
-                                                                    
-            scores_full = scores_full.reshape(-1, scores.size(1))            
+            # 保留原 proposal 概率矩阵；候选筛选期间只传递索引，
+            # 避免提前将每个概率向量重复“前景类别数”次。
 
                                           
             boxes = boxes.reshape(-1, 4)                 
@@ -56,20 +51,25 @@ class RoIHeadsCustom(RoIHeads):
 
                   
             inds = torch.where(scores_flat > self.score_thresh)[0]
-            boxes, scores_flat, labels_flat, scores_full =\
-                boxes[inds], scores_flat[inds], labels_flat[inds], scores_full[inds]
+            candidate_indices = inds
+            boxes, scores_flat, labels_flat =\
+                boxes[inds], scores_flat[inds], labels_flat[inds]
 
                   
             keep = box_ops.remove_small_boxes(boxes, min_size=1e-2)
-            boxes, scores_flat, labels_flat, scores_full =\
-                boxes[keep], scores_flat[keep], labels_flat[keep], scores_full[keep]
+            boxes, scores_flat, labels_flat =\
+                boxes[keep], scores_flat[keep], labels_flat[keep]
+            candidate_indices = candidate_indices[keep]
 
                               
             keep = box_ops.batched_nms(boxes, scores_flat, labels_flat, self.nms_thresh)
             keep = keep[: self.detections_per_img]
 
-            boxes, scores_full, labels_flat =\
-                boxes[keep], scores_full[keep], labels_flat[keep]
+            # 展平前每个 proposal 有 C 个前景候选，整除后恢复 proposal 编号。
+            # 只为最终保留框取完整概率，数值、类别列顺序与原实现一致。
+            proposal_indices = candidate_indices[keep] // scores.size(1)
+            scores_full = scores.detach()[proposal_indices]
+            boxes, labels_flat = boxes[keep], labels_flat[keep]
 
             all_boxes.append(boxes)
             all_scores_full.append(scores_full)                             

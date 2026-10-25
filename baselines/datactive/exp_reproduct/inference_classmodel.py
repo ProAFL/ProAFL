@@ -71,7 +71,7 @@ def infer():
 if __name__ == "__main__":
     config = read_yaml("config.yaml")
     exp_data_root = config["exp_data_dir"]
-    dataset_name = "kitti" # "visdrone" "kitti" "voc"
+    dataset_name = "visdrone" # "visdrone" "kitti" "voc"
     img_root = f"{exp_data_root}/datasets/{dataset_name}-coco/train"
     inject_ratio = 0.1
     annotation_path = annotation_path = f"{exp_data_root}/fault_inject/{str(inject_ratio)}/{dataset_name}/coco_format/annotations_no_miss.json"
@@ -87,8 +87,8 @@ if __name__ == "__main__":
             # trained_model_path = f"{exp_data_root}/baselines/datactive/{dataset_name}/rank/models/{mask_type}/epoch_12.pt"
             # results_save_path = f"{exp_data_root}/baselines/datactive/{dataset_name}/rank/infer/{mask_type}.json"
             trained_model_path = os.path.join(exp_data_root,"datactive_models",dataset_name,str(inject_ratio),
-                                            f"repeat_{repeat_id}",mask_type,"epoch_12.pt")
-            result_save_dir = os.path.join(exp_data_root,"datactive_infer_res",dataset_name,str(inject_ratio),f"repeat_{repeat_id}")
+                                            f"repeat_{repeat_id}",mask_type,"epoch_5.pt")
+            result_save_dir = os.path.join(exp_data_root,"datactive_infer_res",dataset_name,str(inject_ratio),f"repeat_{5}")
             os.makedirs(result_save_dir,exist_ok=True)
             results_save_path = os.path.join(result_save_dir,f"{mask_type}.json")
             infer()

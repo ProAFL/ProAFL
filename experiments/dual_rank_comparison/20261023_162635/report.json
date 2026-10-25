@@ -1,0 +1,561 @@
+{
+  "cutoff": 0.4,
+  "rule": "Fixed dual_head_max with all six features (3 confidence + 3 IoU); no tuning.",
+  "class_features": [
+    "late_conf_deficit",
+    "all_conf_deficit",
+    "first_conf_reach"
+  ],
+  "geometry_features": [
+    "late_iou_deficit",
+    "all_iou_deficit",
+    "first_iou_reach"
+  ],
+  "note": "Original evaluation functions and rounding. Each original merge is reproduced entry by entry. Original image scales preserved. Missing Datactive fault items reported; legacy APFD/FNR handling preserved for comparability.",
+  "results": [
+    {
+      "dataset": "voc",
+      "model": "yolov7",
+      "expid": "1791094449",
+      "method": "original_ours",
+      "image_percentile_scale": 1.0,
+      "APFD": 0.815,
+      "FPR": 0.2,
+      "FNR": 0.066,
+      "F1": 0.757,
+      "TOP1": 0.934,
+      "EXAM": 0.421,
+      "ranking_length": 19326,
+      "duplicate_items": 0,
+      "missing_fault_items": 0
+    },
+    {
+      "dataset": "voc",
+      "model": "yolov7",
+      "expid": "1791094449",
+      "method": "dual_head_max_6features",
+      "image_percentile_scale": 1.0,
+      "APFD": 0.822,
+      "FPR": 0.199,
+      "FNR": 0.064,
+      "F1": 0.759,
+      "TOP1": 0.946,
+      "EXAM": 0.417,
+      "ranking_length": 19326,
+      "duplicate_items": 0,
+      "missing_fault_items": 0
+    },
+    {
+      "dataset": "voc",
+      "model": "yolov7",
+      "expid": "1791094449",
+      "method": "datactive_repeat_1",
+      "image_percentile_scale": 1.0,
+      "APFD": 0.674,
+      "FPR": 0.336,
+      "FNR": 0.398,
+      "F1": 0.46,
+      "TOP1": 0.527,
+      "EXAM": 0.476,
+      "ranking_length": 19057,
+      "duplicate_items": 0,
+      "missing_fault_items": 269
+    },
+    {
+      "dataset": "kitti",
+      "model": "yolov7",
+      "expid": "1792056154",
+      "method": "original_ours",
+      "image_percentile_scale": 1.0,
+      "APFD": 0.794,
+      "FPR": 0.161,
+      "FNR": 0.08,
+      "F1": 0.81,
+      "TOP1": 0.929,
+      "EXAM": 0.317,
+      "ranking_length": 24163,
+      "duplicate_items": 0,
+      "missing_fault_items": 0
+    },
+    {
+      "dataset": "kitti",
+      "model": "yolov7",
+      "expid": "1792056154",
+      "method": "dual_head_max_6features",
+      "image_percentile_scale": 1.0,
+      "APFD": 0.8,
+      "FPR": 0.16,
+      "FNR": 0.077,
+      "F1": 0.813,
+      "TOP1": 0.948,
+      "EXAM": 0.311,
+      "ranking_length": 24163,
+      "duplicate_items": 0,
+      "missing_fault_items": 0
+    },
+    {
+      "dataset": "kitti",
+      "model": "yolov7",
+      "expid": "1792056154",
+      "method": "datactive_repeat_1",
+      "image_percentile_scale": 1.0,
+      "APFD": 0.683,
+      "FPR": 0.272,
+      "FNR": 0.318,
+      "F1": 0.597,
+      "TOP1": 0.627,
+      "EXAM": 0.378,
+      "ranking_length": 24115,
+      "duplicate_items": 0,
+      "missing_fault_items": 48
+    },
+    {
+      "dataset": "visdrone",
+      "model": "yolov7",
+      "expid": "1791968956",
+      "method": "original_ours",
+      "image_percentile_scale": 0.1,
+      "APFD": 0.738,
+      "FPR": 0.227,
+      "FNR": 0.218,
+      "F1": 0.685,
+      "TOP1": 0.711,
+      "EXAM": 0.146,
+      "ranking_length": 349673,
+      "duplicate_items": 0,
+      "missing_fault_items": 0
+    },
+    {
+      "dataset": "visdrone",
+      "model": "yolov7",
+      "expid": "1791968956",
+      "method": "dual_head_max_6features",
+      "image_percentile_scale": 0.1,
+      "APFD": 0.757,
+      "FPR": 0.205,
+      "FNR": 0.169,
+      "F1": 0.728,
+      "TOP1": 0.703,
+      "EXAM": 0.137,
+      "ranking_length": 349673,
+      "duplicate_items": 0,
+      "missing_fault_items": 0
+    },
+    {
+      "dataset": "visdrone",
+      "model": "yolov7",
+      "expid": "1791968956",
+      "method": "datactive_repeat_1",
+      "image_percentile_scale": 0.1,
+      "APFD": 0.724,
+      "FPR": 0.234,
+      "FNR": 0.233,
+      "F1": 0.671,
+      "TOP1": 0.887,
+      "EXAM": 0.155,
+      "ranking_length": 349672,
+      "duplicate_items": 0,
+      "missing_fault_items": 1
+    },
+    {
+      "dataset": "voc",
+      "model": "rtdetr",
+      "expid": "1792398239",
+      "method": "original_ours",
+      "image_percentile_scale": 1.0,
+      "APFD": 0.76,
+      "FPR": 0.24,
+      "FNR": 0.174,
+      "F1": 0.67,
+      "TOP1": 0.865,
+      "EXAM": 0.441,
+      "ranking_length": 19326,
+      "duplicate_items": 0,
+      "missing_fault_items": 0
+    },
+    {
+      "dataset": "voc",
+      "model": "rtdetr",
+      "expid": "1792398239",
+      "method": "dual_head_max_6features",
+      "image_percentile_scale": 1.0,
+      "APFD": 0.764,
+      "FPR": 0.235,
+      "FNR": 0.159,
+      "F1": 0.682,
+      "TOP1": 0.873,
+      "EXAM": 0.436,
+      "ranking_length": 19326,
+      "duplicate_items": 0,
+      "missing_fault_items": 0
+    },
+    {
+      "dataset": "voc",
+      "model": "rtdetr",
+      "expid": "1792398239",
+      "method": "datactive_repeat_1",
+      "image_percentile_scale": 1.0,
+      "APFD": 0.674,
+      "FPR": 0.336,
+      "FNR": 0.398,
+      "F1": 0.46,
+      "TOP1": 0.527,
+      "EXAM": 0.476,
+      "ranking_length": 19057,
+      "duplicate_items": 0,
+      "missing_fault_items": 269
+    },
+    {
+      "dataset": "kitti",
+      "model": "rtdetr",
+      "expid": "1792556872",
+      "method": "original_ours",
+      "image_percentile_scale": 1.0,
+      "APFD": 0.807,
+      "FPR": 0.159,
+      "FNR": 0.076,
+      "F1": 0.814,
+      "TOP1": 0.956,
+      "EXAM": 0.302,
+      "ranking_length": 24163,
+      "duplicate_items": 0,
+      "missing_fault_items": 0
+    },
+    {
+      "dataset": "kitti",
+      "model": "rtdetr",
+      "expid": "1792556872",
+      "method": "dual_head_max_6features",
+      "image_percentile_scale": 1.0,
+      "APFD": 0.812,
+      "FPR": 0.157,
+      "FNR": 0.071,
+      "F1": 0.818,
+      "TOP1": 0.964,
+      "EXAM": 0.298,
+      "ranking_length": 24163,
+      "duplicate_items": 0,
+      "missing_fault_items": 0
+    },
+    {
+      "dataset": "kitti",
+      "model": "rtdetr",
+      "expid": "1792556872",
+      "method": "datactive_repeat_1",
+      "image_percentile_scale": 1.0,
+      "APFD": 0.683,
+      "FPR": 0.272,
+      "FNR": 0.318,
+      "F1": 0.597,
+      "TOP1": 0.627,
+      "EXAM": 0.378,
+      "ranking_length": 24115,
+      "duplicate_items": 0,
+      "missing_fault_items": 48
+    },
+    {
+      "dataset": "visdrone",
+      "model": "rtdetr",
+      "expid": "1792504350",
+      "method": "original_ours",
+      "image_percentile_scale": 1.0,
+      "APFD": 0.756,
+      "FPR": 0.194,
+      "FNR": 0.144,
+      "F1": 0.749,
+      "TOP1": 0.876,
+      "EXAM": 0.214,
+      "ranking_length": 349673,
+      "duplicate_items": 0,
+      "missing_fault_items": 0
+    },
+    {
+      "dataset": "visdrone",
+      "model": "rtdetr",
+      "expid": "1792504350",
+      "method": "dual_head_max_6features",
+      "image_percentile_scale": 1.0,
+      "APFD": 0.773,
+      "FPR": 0.189,
+      "FNR": 0.134,
+      "F1": 0.759,
+      "TOP1": 0.854,
+      "EXAM": 0.209,
+      "ranking_length": 349673,
+      "duplicate_items": 0,
+      "missing_fault_items": 0
+    },
+    {
+      "dataset": "visdrone",
+      "model": "rtdetr",
+      "expid": "1792504350",
+      "method": "datactive_repeat_1",
+      "image_percentile_scale": 1.0,
+      "APFD": 0.724,
+      "FPR": 0.234,
+      "FNR": 0.233,
+      "F1": 0.671,
+      "TOP1": 0.887,
+      "EXAM": 0.155,
+      "ranking_length": 349672,
+      "duplicate_items": 0,
+      "missing_fault_items": 1
+    }
+  ],
+  "exam_by_fault": {
+    "yolov7/voc/original_ours": {
+      "miss_fault": 0.672796290746705,
+      "loc_fault": 0.38721982269805855,
+      "class_fault": 0.4024209306649654,
+      "redun_fault": 0.22324241511778264
+    },
+    "yolov7/voc/dual_head_max_6features": {
+      "miss_fault": 0.6749216376453517,
+      "loc_fault": 0.3914296339908029,
+      "class_fault": 0.3682722974602615,
+      "redun_fault": 0.23283822258602302
+    },
+    "yolov7/voc/datactive_repeat_1": {
+      "miss_fault": 0.2919976749495009,
+      "loc_fault": 0.7348747996368479,
+      "class_fault": 0.3998965309556187,
+      "redun_fault": 0.47830719329946525
+    },
+    "yolov7/kitti/original_ours": {
+      "loc_fault": 0.2913293253988549,
+      "class_fault": 0.3078187847772681,
+      "miss_fault": 0.5283334746204075,
+      "redun_fault": 0.14223999810722748
+    },
+    "yolov7/kitti/dual_head_max_6features": {
+      "loc_fault": 0.3116445214593876,
+      "class_fault": 0.2507447184581368,
+      "miss_fault": 0.5286762096195811,
+      "redun_fault": 0.15273052032902226
+    },
+    "yolov7/kitti/datactive_repeat_1": {
+      "loc_fault": 0.6025106022518301,
+      "class_fault": 0.2307587375536161,
+      "miss_fault": 0.32463459147237617,
+      "redun_fault": 0.3549965969480889
+    },
+    "yolov7/visdrone/original_ours": {
+      "loc_fault": 0.19045848261707543,
+      "miss_fault": 0.12105191869692092,
+      "class_fault": 0.21327398695713706,
+      "redun_fault": 0.05751598323961405
+    },
+    "yolov7/visdrone/dual_head_max_6features": {
+      "loc_fault": 0.2220211171910993,
+      "miss_fault": 0.1244642816200962,
+      "class_fault": 0.1377848097434459,
+      "redun_fault": 0.06363296904145134
+    },
+    "yolov7/visdrone/datactive_repeat_1": {
+      "loc_fault": 0.27273505793530234,
+      "miss_fault": 0.16331358547920635,
+      "class_fault": 0.0486810729659868,
+      "redun_fault": 0.13485566806241991
+    },
+    "rtdetr/voc/original_ours": {
+      "miss_fault": 0.6222652123174467,
+      "loc_fault": 0.3957045251570709,
+      "class_fault": 0.5032318665848711,
+      "redun_fault": 0.24085409143041175
+    },
+    "rtdetr/voc/dual_head_max_6features": {
+      "miss_fault": 0.6231885003666053,
+      "loc_fault": 0.3936326911263379,
+      "class_fault": 0.48186373839555774,
+      "redun_fault": 0.24573955610143491
+    },
+    "rtdetr/voc/datactive_repeat_1": {
+      "miss_fault": 0.2919976749495009,
+      "loc_fault": 0.7348747996368479,
+      "class_fault": 0.3998965309556187,
+      "redun_fault": 0.47830719329946525
+    },
+    "rtdetr/kitti/original_ours": {
+      "loc_fault": 0.2769166462161162,
+      "class_fault": 0.31761910276275807,
+      "miss_fault": 0.4704195931409287,
+      "redun_fault": 0.14154061158559803
+    },
+    "rtdetr/kitti/dual_head_max_6features": {
+      "loc_fault": 0.29808616580987224,
+      "class_fault": 0.2748908456947463,
+      "miss_fault": 0.4708681529651861,
+      "redun_fault": 0.14671497089631405
+    },
+    "rtdetr/kitti/datactive_repeat_1": {
+      "loc_fault": 0.6025106022518301,
+      "class_fault": 0.2307587375536161,
+      "miss_fault": 0.32463459147237617,
+      "redun_fault": 0.3549965969480889
+    },
+    "rtdetr/visdrone/original_ours": {
+      "loc_fault": 0.1617045823805198,
+      "miss_fault": 0.4792392341342782,
+      "class_fault": 0.17882727251076744,
+      "redun_fault": 0.03699859083979365
+    },
+    "rtdetr/visdrone/dual_head_max_6features": {
+      "loc_fault": 0.19139286643137973,
+      "miss_fault": 0.48209874025277133,
+      "class_fault": 0.1214092494318396,
+      "redun_fault": 0.042059873659605194
+    },
+    "rtdetr/visdrone/datactive_repeat_1": {
+      "loc_fault": 0.27273505793530234,
+      "miss_fault": 0.16331358547920635,
+      "class_fault": 0.0486810729659868,
+      "redun_fault": 0.13485566806241991
+    }
+  },
+  "comparisons": [
+    {
+      "dataset": "voc",
+      "model": "yolov7",
+      "reference": "original_ours",
+      "changes_positive_is_better": {
+        "APFD": 0.007,
+        "FPR": 0.001,
+        "FNR": 0.002,
+        "TOP1": 0.012,
+        "EXAM": 0.004
+      }
+    },
+    {
+      "dataset": "voc",
+      "model": "yolov7",
+      "reference": "datactive_repeat_1",
+      "changes_positive_is_better": {
+        "APFD": 0.148,
+        "FPR": 0.137,
+        "FNR": 0.334,
+        "TOP1": 0.419,
+        "EXAM": 0.059
+      }
+    },
+    {
+      "dataset": "kitti",
+      "model": "yolov7",
+      "reference": "original_ours",
+      "changes_positive_is_better": {
+        "APFD": 0.006,
+        "FPR": 0.001,
+        "FNR": 0.003,
+        "TOP1": 0.019,
+        "EXAM": 0.006
+      }
+    },
+    {
+      "dataset": "kitti",
+      "model": "yolov7",
+      "reference": "datactive_repeat_1",
+      "changes_positive_is_better": {
+        "APFD": 0.117,
+        "FPR": 0.112,
+        "FNR": 0.241,
+        "TOP1": 0.321,
+        "EXAM": 0.067
+      }
+    },
+    {
+      "dataset": "visdrone",
+      "model": "yolov7",
+      "reference": "original_ours",
+      "changes_positive_is_better": {
+        "APFD": 0.019,
+        "FPR": 0.022,
+        "FNR": 0.049,
+        "TOP1": -0.008,
+        "EXAM": 0.009
+      }
+    },
+    {
+      "dataset": "visdrone",
+      "model": "yolov7",
+      "reference": "datactive_repeat_1",
+      "changes_positive_is_better": {
+        "APFD": 0.033,
+        "FPR": 0.029,
+        "FNR": 0.064,
+        "TOP1": -0.184,
+        "EXAM": 0.018
+      }
+    },
+    {
+      "dataset": "voc",
+      "model": "rtdetr",
+      "reference": "original_ours",
+      "changes_positive_is_better": {
+        "APFD": 0.004,
+        "FPR": 0.005,
+        "FNR": 0.015,
+        "TOP1": 0.008,
+        "EXAM": 0.005
+      }
+    },
+    {
+      "dataset": "voc",
+      "model": "rtdetr",
+      "reference": "datactive_repeat_1",
+      "changes_positive_is_better": {
+        "APFD": 0.09,
+        "FPR": 0.101,
+        "FNR": 0.239,
+        "TOP1": 0.346,
+        "EXAM": 0.04
+      }
+    },
+    {
+      "dataset": "kitti",
+      "model": "rtdetr",
+      "reference": "original_ours",
+      "changes_positive_is_better": {
+        "APFD": 0.005,
+        "FPR": 0.002,
+        "FNR": 0.005,
+        "TOP1": 0.008,
+        "EXAM": 0.004
+      }
+    },
+    {
+      "dataset": "kitti",
+      "model": "rtdetr",
+      "reference": "datactive_repeat_1",
+      "changes_positive_is_better": {
+        "APFD": 0.129,
+        "FPR": 0.115,
+        "FNR": 0.247,
+        "TOP1": 0.337,
+        "EXAM": 0.08
+      }
+    },
+    {
+      "dataset": "visdrone",
+      "model": "rtdetr",
+      "reference": "original_ours",
+      "changes_positive_is_better": {
+        "APFD": 0.017,
+        "FPR": 0.005,
+        "FNR": 0.01,
+        "TOP1": -0.022,
+        "EXAM": 0.005
+      }
+    },
+    {
+      "dataset": "visdrone",
+      "model": "rtdetr",
+      "reference": "datactive_repeat_1",
+      "changes_positive_is_better": {
+        "APFD": 0.049,
+        "FPR": 0.045,
+        "FNR": 0.099,
+        "TOP1": -0.033,
+        "EXAM": -0.054
+      }
+    }
+  ]
+}

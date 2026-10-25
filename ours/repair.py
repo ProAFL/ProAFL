@@ -1,11 +1,11 @@
-
-
 '''
-text(ours/datactive/other baselines)rankingtext,textlabeltext(repair) coco_style
+repair coco_style
 '''
+from copy import deepcopy
 import os
 import joblib
 import json
+from pathlib import Path
 
 import time
 from datetime import datetime
@@ -288,41 +288,116 @@ def repair_kit_strict_cost(converted_rank:list, anno_correct_json:dict, anno_err
     return new_annos
 
 
+
+
 def main():
-    start_time = time.time()                     
-
-                      
-    anno_error_json = read_json(anno_error_path)
-    anno_correct_json = read_json(anno_correct_path)
-
-                 
-    ours_and_otherbaseline = []
-    ours_and_otherbaseline.append("ours")
-    ours_and_otherbaseline.extend(other_baselines_list)
-    if _args['rank_method'] in ours_and_otherbaseline:
-        g_boxes_json = read_json(gt_json_path)
-        converted_rank = conver_ours_rank(rank,g_boxes_json,anno_error_json)
-    elif _args['rank_method'] == "datactive":
-        coco = COCO(anno_error_path)
-        bg_catId = coco.getCatIds()[-1]+1
-        converted_rank = conver_datactive_rank(rank,bg_catId)
+    start_time = time.time()
+    # load rank
+    if METHOD == "ours":
+        with open(RANK_PATH, encoding="utf-8") as file:
+            ranking = json.load(file)["all_ranking"]
+        ranked_items = []
+        for item in ranking:
+            if item["item_type"] == "anno":
+                ranked_items.append(item["anno_id"])
+            elif item["item_type"] == "image":
+                ranked_items.append(item["image_name"])
+            else:
+                raise ValueError(f"Unsupported item_type: {item['item_type']}")
     else:
-        raise Exception("rank method Parameterstext")
+        ranked_items = joblib.load(RANK_PATH)
 
-              
-    if _args["strict_cost"]:
-        anno_repaired_json = repair_kit_strict_cost(converted_rank, anno_correct_json, anno_error_json, 
-                                    cut_off_rate=_args["cut_off_rate"])
-    else:
-        anno_repaired_json = repair_kit(converted_rank, anno_correct_json, anno_error_json, 
-                                     cut_off_rate=_args["cut_off_rate"])
+    anno_fault_with_miss_json = read_json(ANNOTATIONS_WITHMISS_PATH)
+    anno_fault_json = read_json(ANNOTATIONS_FAULT_PATH)
+    anno_correct_json = read_json(ANNOTATIONS_CORRECT_PATH)
+
     
+    # budget = int(CUTOFF * (len(anno_fault_json["images"]) +
+    #                        len(anno_fault_json["annotations"])))
+    # budget = int(len(ranked_items) * CUTOFF)
 
-          
-    if _args["is_save"]:
-        with open(repair_anno_save_path,"w") as f:
-            json.dump(anno_repaired_json,f)
-        print(f"anno_repaired_jsonSaved at: {repair_anno_save_path}")
+    budget = int(len(anno_correct_json["annotations"])*FAULT_RATIO*4)
+    cost = budget
+    anno_json = deepcopy(anno_fault_json) # copy一份故障标注文件，以防修改原始文件
+    correct_imgname_to_annoids = get_img_name_to_ann_ids(anno_correct_json)
+    current_imgname_to_annoids = get_img_name_to_ann_ids(anno_json)
+    correct_annoid_to_anno = get_annoId_to_anno(anno_correct_json)
+    current_annoid_to_anno = get_annoId_to_anno(anno_json)
+    image_names = {image["file_name"] for image in anno_json["images"]}
+    repair_info = {"miss": {}, "cls": {}, "loc": {}, "redun": {}}
+    seen_items = set()
+
+    # 按排名顺序处理图片或标注，严格限制总预算。
+    for ranked_item in ranked_items:
+        if cost <= 0:
+            break
+        # 跳过重复条目，避免重复修复或重复扣费。
+        if ranked_item in seen_items:
+            continue
+        seen_items.add(ranked_item)
+        # 字符串表示图片名，需要检查该图片是否存在漏标框。
+        if isinstance(ranked_item, str):
+            if ranked_item not in image_names:
+                raise ValueError(f"Unknown image name: {ranked_item}")
+            current_ids = set(current_imgname_to_annoids.get(ranked_item, []))
+            # 正确标注中存在、当前标注中不存在的 ID 即为漏标；排序保证修复顺序可复现。
+            missed_ids = sorted(set(correct_imgname_to_annoids.get(ranked_item, [])) -
+                                current_ids)
+            if not missed_ids:
+                # 即使没有漏标，检查一张图片也消耗 1 个 cost。
+                cost -= 1
+                continue
+            repaired_missing = []
+            for missed_id in missed_ids:
+                # 预算可能在图片内部耗尽，只补回预算允许修复的漏标框。
+                if cost <= 0:
+                    break
+                annotation = deepcopy(correct_annoid_to_anno[missed_id])
+                annotation.update(fault_type=0, repair_ops="repair_miss")
+                repaired_missing.append(annotation)
+                # strict cost：每补回一个漏标框扣除 1，而不是整张图片只扣除 1。
+                cost -= 1
+            # 记录已选中的漏标框，后续由 repair_anno_json 统一补入输出标注。
+            repair_info["miss"][ranked_item] = repaired_missing
+        else:
+            # 非字符串表示标注 ID；检查一个标注消耗 1 个 cost，无故障也扣费。
+            annotation = current_annoid_to_anno[ranked_item]
+            cost -= 1
+            fault_type = annotation["fault_type"]
+            if fault_type == 1:
+                # 分类错误：记录正确类别的来源，并将当前标注标记为已修复。
+                repair_info["cls"][ranked_item] = correct_annoid_to_anno[ranked_item]
+                annotation.update(fault_type=0, repair_ops="repair_cls")
+            elif fault_type == 2:
+                # 定位错误：记录正确框，后续由 repair_anno_json 替换 bbox。
+                correct_annotation = correct_annoid_to_anno[ranked_item]
+                repair_info["loc"][ranked_item] = correct_annotation
+                # 同步与位置相关的面积和分割信息，正确标注没有的字段则移除。
+                for field in ("area", "segmentation"):
+                    if field in correct_annotation:
+                        annotation[field] = deepcopy(correct_annotation[field])
+                    else:
+                        annotation.pop(field, None)
+                annotation.update(fault_type=0, repair_ops="repair_loc")
+            elif fault_type == 3:
+                # 冗余框：先记录，后续由 repair_anno_json 从输出标注中删除。
+                repair_info["redun"][ranked_item] = annotation
+
+    count_info = count_repair_info(repair_info, anno_fault_with_miss_json,
+                                   anno_fault_json)
+    pprint.pprint(count_info, indent=4, sort_dicts=False)
+    anno_json = repair_anno_json(anno_json, repair_info)
+    SAVE_DIR.mkdir(parents=True, exist_ok=True)
+    save_path = SAVE_DIR / "annotations.coco_repair.json"
+    with open(save_path, "w", encoding="utf-8") as file:
+        json.dump(anno_json, file, ensure_ascii=False)
+    print(f"cost:{budget}, spent cost:{budget - cost}, remain cost:{cost}")
+    print(f"repaired anno json saved at: {save_path}")
+
+    coco_anno_json_path = save_path
+    yolo_output_dir = SAVE_DIR/"yolo_format"
+    os.makedirs(yolo_output_dir,exist_ok=True)
+    coco2yolo(coco_anno_json_path,yolo_output_dir,"train")
 
     end_time = time.time()                   
     elapsed_time = end_time - start_time                                     
@@ -338,49 +413,36 @@ if __name__ == "__main__":
     PID = os.getpid()
     print("PID:",PID)
     config = read_yaml("config.yaml")
-    exp_root_dir = config['exp_data_dir']
-
-    all_methods = config["all_methods"]
-    _args = {
-        "dataset_name":"VisDrone",                     
-        "model_name":"YOLOv7",                      
-        "rank_method":"ours",                                                        
-        "cut_off_rate": 0.5,
-        "strict_cost":True,                    
-        "is_save":True       
-    }
-    dataset_name = _args["dataset_name"]
-    model_name = _args["model_name"]
-
-    if _args["rank_method"] == "ours":
-        _args["save_dir"] = os.path.join(exp_root_dir,"ours",dataset_name,model_name,"repair")
-        _args["rank_data_path"] = get_rank_data_path(dataset_name,"ours", model_name)
-    elif _args["rank_method"] in config["baselines"]:
-        if _args["rank_method"] == "datactive":
-            _args["save_dir"] = os.path.join(exp_root_dir,"baselines","datactive",dataset_name)
-            _args["rank_data_path"] = get_rank_data_path(dataset_name,"datactive")
-        else:
-            _args["save_dir"] = os.path.join(exp_root_dir,"baselines",_args["rank_method"],dataset_name,model_name)
-            _args["rank_data_path"] = get_rank_data_path(dataset_name,_args["rank_method"],model_name)
+    DATA_ROOT = Path(config['exp_data_dir'])
+    METHOD = "datactive" # ours|datactive
+    DATASET_NAME = "visdrone" # voc|kitti|visdrone
+    MODEL_NAME = "yolov7"
+    FAULT_RATIO = 0.1
+    REPEAT_ID = 1
+    # yolov7-voc: 1791094449
+    # yolov7-kitti: 1792056154
+    # yolov7-visdrone: 1791968956
+    # rtdetr-voc: 1792398239
+    # rtdetr-visdrone: 1792504350
+    # rtdetr-kitti: 1792556872
+    # frcnn-voc: 1792570209
+    # frcnn-kitti: 1792642708
+    EXPID = 1791968956
+    if METHOD == "ours":
+        # 排序结果路径
+        RANK_PATH = DATA_ROOT / f"process_features/{DATASET_NAME}/{MODEL_NAME}/{FAULT_RATIO}_repeat/repeat_{REPEAT_ID}_{EXPID}/merged_rank.json"
+    elif METHOD == "datactive":
+        RANK_PATH = DATA_ROOT / f"rank/datactive/{DATASET_NAME}/0.1/repeat_{REPEAT_ID}"/"converted_rank.joblib"
+    # 故障（含有miss fault）标注文件
+    ANNOTATIONS_WITHMISS_PATH = DATA_ROOT / f"fault_inject/{FAULT_RATIO}/{DATASET_NAME}/coco_format/annotations_with_miss.json"
+    # 故障（不含有miss fault）标注文件
+    ANNOTATIONS_FAULT_PATH = DATA_ROOT / f"fault_inject/{FAULT_RATIO}/{DATASET_NAME}/coco_format/annotations_no_miss.json"
+    # 正确标注文件
+    ANNOTATIONS_CORRECT_PATH = DATA_ROOT / f"datasets/{DATASET_NAME}-coco/train/_annotations.coco_correct.json"
+    if METHOD == "datactive":
+        SAVE_DIR = DATA_ROOT/f"repair/{METHOD}/{DATASET_NAME}/{FAULT_RATIO}_repeat/repeat_{REPEAT_ID}"
     else:
-        raise Exception(f'{_args["rank_method"]} set error')
-
-    pprint.pprint(_args)
-          
-                       
-    gt_json_path = get_collected_gt_box_json_path(dataset_name)
-                
-    anno_error_path = get_error_ann_file_path(dataset_name)
-                         
-    anno_with_miss_error_path = get_annotations_with_miss_json_path(dataset_name)
-                  
-    anno_correct_path = get_correct_ann_file_path(dataset_name,"train")
-    rank = joblib.load(_args["rank_data_path"])
-    if _args["is_save"]:
-        os.makedirs(_args["save_dir"],exist_ok=True)
-        repair_anno_save_path = os.path.join(_args["save_dir"],"_annotations.coco_repair.json")
+        SAVE_DIR = DATA_ROOT/f"repair/{METHOD}/{DATASET_NAME}/{MODEL_NAME}/{FAULT_RATIO}_repeat/repeat_{REPEAT_ID}_{EXPID}"
+    os.makedirs(SAVE_DIR,exist_ok=True)
     main()
                                        
-    yolo_output_dir = os.path.join(_args["save_dir"],"yolo_format")
-    os.makedirs(yolo_output_dir)
-    coco2yolo(repair_anno_save_path,yolo_output_dir,"train")

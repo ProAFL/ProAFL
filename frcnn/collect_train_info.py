@@ -1,20 +1,49 @@
-'''
-Docstring for collection
-'''
+"""逐轮采集 FRCNN 预测框，保留完整前景类别概率。"""
 
 import os
 import time
 import pprint
 import json
 from PIL import Image
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, Dataset
 from torchvision.models.detection.faster_rcnn import FastRCNNPredictor
 from torchvision.transforms import ToTensor
-from datasets import CocoDetectionDataset
 import torch,torchvision
-from collections import defaultdict
 from cutom_module.small_utils import read_yaml
 from customROI import RoIHeadsCustom
+
+
+class CollectionDataset(Dataset):
+    """采集只需图片与路径，避免每轮重复构建训练用标注张量。"""
+
+    def __init__(self, image_dir, annotation_path, transforms=None):
+        with open(annotation_path, encoding="utf-8") as file:
+            annotations = json.load(file)
+        visible_ids = {row["image_id"] for row in annotations["annotations"]}
+        # 保持原数据集的图片顺序和筛选规则，预测框 ID 的生成顺序不变。
+        self.image_paths = [
+            os.path.join(image_dir, row["file_name"])
+            for row in annotations["images"] if row["id"] in visible_ids
+        ]
+        self.num_classes = len({row["id"] for row in annotations["categories"]}) + 1
+        self.transforms = transforms
+        print(f"Total images: {len(annotations['images'])}, valid images with anns: {len(self.image_paths)}")
+
+    def __len__(self):
+        return len(self.image_paths)
+
+    def __getitem__(self, index):
+        path = self.image_paths[index]
+        with Image.open(path) as source:
+            image = source.convert("RGB")
+        if self.transforms is not None:
+            image = self.transforms(image)
+        return image, {"image_path": path}
+
+
+def collate_batch(batch):
+    """顶层函数支持多进程加载，图片尺寸不同时不进行堆叠。"""
+    return tuple(zip(*batch))
 
 
 class CollectionRoIHeads(RoIHeadsCustom):
@@ -41,7 +70,16 @@ def get_transform():
 def build_frcnn_model(num_classes):
     # Every epoch loads a complete checkpoint, so pretrained downloads are unnecessary.
     model = torchvision.models.detection.fasterrcnn_resnet50_fpn(
-        weights=None, weights_backbone=None
+        weights=None, weights_backbone=None,
+        # 让更多位置候选进入分类和框回归阶段。
+        # rpn_pre_nms_top_n_test=2000,
+        # rpn_post_nms_top_n_test=2000,
+        # VisDrone目标密集，提高阈值可减少相邻同类框被抑制。
+        # box_nms_thresh=0.75,
+        # 先保留当前置信度门槛，便于判断其他调整的效果。
+        box_score_thresh=0.05,
+        # 最终每图最多保存500个框。
+        box_detections_per_img=500
     )
                                                       
     in_features = model.roi_heads.box_predictor.cls_score.in_features
@@ -61,7 +99,7 @@ def build_frcnn_model(num_classes):
     return model
 
 def get_trainset():
-    train_dataset = CocoDetectionDataset(
+    train_dataset = CollectionDataset(
         image_dir=f"{exp_data_root_dir}/datasets/{dataset_name}-coco/train", # 这其实就是全部的训练集了
         annotation_path=f"{exp_data_root_dir}/fault_inject/{fault_ratio}/{dataset_name}/coco_format/annotations_no_miss.json",
         transforms=get_transform()
@@ -91,22 +129,27 @@ def model_load_weight(model,epoch):
     return model
 
 def collect_help(img_name,p_boxes,p_labels,confs,probs,global_id):
+    # 每组张量整批转到 CPU，避免每个框都触发 GPU 同步和小块数据传输。
+    boxes = p_boxes.detach().cpu().tolist()
+    labels = p_labels.detach().cpu().tolist()
+    scores = confs.detach().cpu().tolist()
+    probabilities = probs.detach().cpu().tolist()
+    if not len(boxes) == len(labels) == len(scores) == len(probabilities):
+        raise ValueError(f"预测框、类别、分数和概率数量不一致：{img_name}")
     p_boxs = []
-    for i in range(p_boxes.shape[0]):
-        p_box = p_boxes[i].tolist()
-        # Dataset labels were shifted by +1 to reserve zero for background.
-        p_label = int(p_labels[i]) - 1
-        conf = round(confs[i].item(), 4)
+    for prediction_id, (box, label, score, class_probs) in enumerate(
+        zip(boxes, labels, scores, probabilities), start=global_id
+    ):
         p_box = {
-            "predicted_box_id":global_id,
+            "predicted_box_id":prediction_id,
             "img_name":img_name,
-            "predicted_cls":p_label,
-            "conf":conf,
-            "bbox":p_box,
-            "probs":[round(value, 4) for value in probs[i].tolist()]
+            # 训练时类别加了 1；输出时恢复从 0 开始的前景类别编号。
+            "predicted_cls":int(label) - 1,
+            "conf":round(score, 4),
+            "bbox":box,
+            "probs":[round(value, 4) for value in class_probs]
         }
         p_boxs.append(p_box)
-        global_id += 1
     return p_boxs
 
 
@@ -116,7 +159,7 @@ def collect_one_epoch(model,dataset_loader,device):
     global_id = 0
     collect_dict = {}
     for images, targets in dataset_loader:
-        images = list(image.to(device) for image in images)
+        images = list(image.to(device,non_blocking=True) for image in images)
         predictions = model(images)
         for target,pred in zip(targets,predictions):
             img_name = os.path.basename(target["image_path"])
@@ -132,29 +175,47 @@ def collect_one_epoch(model,dataset_loader,device):
 def save_one_epoch(collect_dict,epoch):
     save_file_name = f"epoch_{epoch}_predicted_bboxs.json"
     save_path = os.path.join(collect_save_dir,save_file_name)
-    with open(save_path, "w", encoding="utf-8") as f:
-        json.dump(collect_dict,f,indent=4)
+    with open(save_path, "w", encoding="utf-8", buffering=1024 * 1024) as f:
+        json.dump(collect_dict, f, separators=(",", ":"))
     return save_path
 
 
 def collect_predicted_boxes():
     start_time = time.time()                     
     train_dataset = get_trainset()
-    train_loader = DataLoader(train_dataset, batch_size=128, 
-                              shuffle=False, collate_fn=lambda x: tuple(zip(*x)))
-    num_classes = len(train_dataset.coco.getCatIds()) + 1
+    device = torch.device(f"cuda:{gpu_id}")
+    workers = _args["num_workers"]
+    loader_options = {
+        "batch_size": _args["batch_size"], "num_workers": workers,
+        "shuffle": False, "collate_fn": collate_batch,
+        "pin_memory": device.type == "cuda",
+    }
+    # num_workers=0 时不能配置 persistent_workers 或 prefetch_factor。
+    if workers > 0:
+        loader_options.update(persistent_workers=True, prefetch_factor=_args["prefetch_factor"])
+    train_loader = DataLoader(train_dataset, **loader_options)
+    num_classes = train_dataset.num_classes
                  
     model = get_model(num_classes)
     if _args["custom_nms"] is True:
         model = set_nms(model,model_name=model_name)
-    device = torch.device(f"cuda:{gpu_id}")
     model.to(device)
     for epoch in range(num_epochs):
         print(f"\nEpoch {epoch}/{num_epochs}")
+        epoch_start = time.perf_counter()
         model = model_load_weight(model,epoch)
+        loaded_at = time.perf_counter()
         collect_dict = collect_one_epoch(model,train_loader,device)
+        collected_at = time.perf_counter()
         save_path = save_one_epoch(collect_dict,epoch)
+        saved_at = time.perf_counter()
+        print(f"权重加载 {loaded_at - epoch_start:.1f}s，"
+              f"图片加载/推理/转换 {collected_at - loaded_at:.1f}s，"
+              f"JSON保存 {saved_at - collected_at:.1f}s，"
+              f"采集吞吐 {len(collect_dict) / max(collected_at - loaded_at, 1e-9):.2f} 张/秒")
         print(f"Collected data saved at: {save_path}")
+        # 下轮开始前释放上一轮结果，避免同时保留两轮的大字典。
+        del collect_dict
     end_time = time.time()                   
     elapsed_time = end_time - start_time                                     
     hours = int(elapsed_time // 3600)                   
@@ -167,11 +228,14 @@ if __name__ == "__main__":
     print("PID:",PID)
     config = read_yaml("config.yaml")
     exp_data_root_dir = config["exp_data_dir"]
-    gpu_id = 0
+    gpu_id = 1
     _args = {
-        "dataset_name":"kitti",
+        "dataset_name":"visdrone", # voc|kitti|visdrone
         "model_name":"frcnn",
         "num_epochs":50,
+        "batch_size":64,
+        "num_workers":16,  # CPU 并行读图数；设为 0 可切换单进程加载。
+        "prefetch_factor":2,
         "custom_nms":False
     }
     pprint.pprint(_args)

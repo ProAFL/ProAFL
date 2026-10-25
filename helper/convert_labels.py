@@ -1,7 +1,5 @@
 
-'''
-text
-'''
+
 import os
 from pathlib import Path
 from labelformat.formats import (YOLOv7ObjectDetectionInput, COCOObjectDetectionOutput, 

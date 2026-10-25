@@ -13,8 +13,8 @@ from pathlib import Path
 
 
 DATA_ROOT = Path("/data/mml/data_debugging_data/ProAFL_data")
-DATASETNAME = "kitti" # voc|kitti|visdrone 
-MODEL_NAME = "frcnn" # yolov7|rtdetr|frcnn
+DATASETNAME = "visdrone" # voc|kitti|visdrone 
+MODEL_NAME = "yolov7" # yolov7|rtdetr|frcnn
 # yolov7-voc: 无
 # yolov7-kitti: 1792056154
 # yolov7-visdrone: 1791968956
@@ -23,7 +23,7 @@ MODEL_NAME = "frcnn" # yolov7|rtdetr|frcnn
 # rtdetr-kitti: 1792556872
 # frcnn-voc: 1792570209
 # frcnn-kitti: 1792642708
-EXPID = 1792642708
+EXPID = 1791968956
 RANK_DIR = DATA_ROOT / (
     f"process_features/{DATASETNAME}/{MODEL_NAME}/0.1_repeat/repeat_1_{EXPID}"
 )
@@ -31,7 +31,7 @@ ANNO_RANK_PATH = RANK_DIR / "topsis_ranking.json"
 IMAGE_RANK_PATH = RANK_DIR / "miss_image_ranking.json"
 OUTPUT_PATH = RANK_DIR / "merged_rank.json"
 # 1.0 保持原百分位合并；0 < 系数 < 1 时图像提前，保留图像组内顺序。
-IMAGE_PERCENTILE_SCALE = 1.0
+IMAGE_PERCENTILE_SCALE = 0.1 # yolov7-disdrone:0.1
 
 def load_json(path):
     with open(path, encoding="utf-8") as file:
