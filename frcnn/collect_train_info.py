@@ -1,9 +1,10 @@
-"""逐轮采集 FRCNN 预测框，保留完整前景类别概率。"""
+"""逐轮采集 FRCNN 预测框，保留完整前景类别概率，默认无损保存为 JSON.gz。"""
 
 import os
 import time
 import pprint
 import json
+import gzip
 from PIL import Image
 from torch.utils.data import DataLoader, Dataset
 from torchvision.models.detection.faster_rcnn import FastRCNNPredictor
@@ -11,6 +12,11 @@ from torchvision.transforms import ToTensor
 import torch,torchvision
 from cutom_module.small_utils import read_yaml
 from customROI import RoIHeadsCustom
+
+
+# 无损压缩只影响磁盘格式，完整保留坐标和类别概率。
+COMPRESS_OUTPUT = False
+GZIP_LEVEL = 6
 
 
 class CollectionDataset(Dataset):
@@ -72,14 +78,14 @@ def build_frcnn_model(num_classes):
     model = torchvision.models.detection.fasterrcnn_resnet50_fpn(
         weights=None, weights_backbone=None,
         # 让更多位置候选进入分类和框回归阶段。
-        # rpn_pre_nms_top_n_test=2000,
-        # rpn_post_nms_top_n_test=2000,
+        rpn_pre_nms_top_n_test=2000,
+        rpn_post_nms_top_n_test=2000,
         # VisDrone目标密集，提高阈值可减少相邻同类框被抑制。
-        box_nms_thresh=0.75,
-        # 先保留当前置信度门槛，便于判断其他调整的效果。
+        box_nms_thresh=0.65,
+        # 保留低分候选，减少因 0.05 阈值造成的零重叠。
         box_score_thresh=0.05,
-        # 最终每图最多保存500个框。
-        box_detections_per_img=500
+        # 显式设置，避免退回默认100；先控制在1000而非无限增加。
+        box_detections_per_img=1000
     )
                                                       
     in_features = model.roi_heads.box_predictor.cls_score.in_features
@@ -174,9 +180,15 @@ def collect_one_epoch(model,dataset_loader,device):
 
 def save_one_epoch(collect_dict,epoch):
     save_file_name = f"epoch_{epoch}_predicted_bboxs.json"
+    if COMPRESS_OUTPUT:
+        save_file_name += ".gz"
     save_path = os.path.join(collect_save_dir,save_file_name)
-    with open(save_path, "w", encoding="utf-8", buffering=1024 * 1024) as f:
-        json.dump(collect_dict, f, separators=(",", ":"))
+    if COMPRESS_OUTPUT:
+        file = gzip.open(save_path, "wt", encoding="utf-8", compresslevel=GZIP_LEVEL)
+    else:
+        file = open(save_path, "w", encoding="utf-8", buffering=1024 * 1024)
+    with file as f:
+        json.dump(collect_dict, f, separators=(",", ":"), allow_nan=False)
     return save_path
 
 
@@ -199,6 +211,12 @@ def collect_predicted_boxes():
     model = get_model(num_classes)
     if _args["custom_nms"] is True:
         model = set_nms(model,model_name=model_name)
+    print("采集设置：", {
+        "score_threshold": model.roi_heads.score_thresh,
+        "nms_threshold": model.roi_heads.nms_thresh,
+        "max_detections": model.roi_heads.detections_per_img,
+        "gzip": COMPRESS_OUTPUT,
+    })
     model.to(device)
     for epoch in range(num_epochs):
         print(f"\nEpoch {epoch}/{num_epochs}")
@@ -214,6 +232,8 @@ def collect_predicted_boxes():
               f"JSON保存 {saved_at - collected_at:.1f}s，"
               f"采集吞吐 {len(collect_dict) / max(collected_at - loaded_at, 1e-9):.2f} 张/秒")
         print(f"Collected data saved at: {save_path}")
+        print(f"预测框总数：{sum(len(row['predicted_bboxs']) for row in collect_dict.values())}，"
+              f"文件大小：{os.path.getsize(save_path) / 1024 ** 2:.1f} MiB")
         # 下轮开始前释放上一轮结果，避免同时保留两轮的大字典。
         del collect_dict
     end_time = time.time()                   
@@ -228,7 +248,7 @@ if __name__ == "__main__":
     print("PID:",PID)
     config = read_yaml("config.yaml")
     exp_data_root_dir = config["exp_data_dir"]
-    gpu_id = 1
+    gpu_id = 0
     _args = {
         "dataset_name":"visdrone", # voc|kitti|visdrone
         "model_name":"frcnn",

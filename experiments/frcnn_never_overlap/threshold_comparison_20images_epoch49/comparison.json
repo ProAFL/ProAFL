@@ -1,0 +1,54 @@
+{
+  "experiment": "1792933936",
+  "epoch": 49,
+  "images": 20,
+  "selection": "same seed=42 sample, fault_type=0, historical never-overlapped annos only",
+  "scope": "CPU batch size=1. Sampled single-checkpoint intervention; not a full 50-epoch diagnosis or dataset-wide reduction estimate.",
+  "results": [
+    {
+      "run": "baseline_005",
+      "score_threshold": 0.05,
+      "max_detections": 500,
+      "target_annos": 103,
+      "covered": 0,
+      "remaining": 103,
+      "iou_ge_05": 0,
+      "reasons": {
+        "roi_score_threshold": 98,
+        "roi_box_regression": 3,
+        "rpn_output_limit": 2
+      }
+    },
+    {
+      "run": "threshold_001",
+      "score_threshold": 0.01,
+      "max_detections": 500,
+      "target_annos": 103,
+      "covered": 28,
+      "remaining": 75,
+      "iou_ge_05": 0,
+      "reasons": {
+        "roi_score_threshold": 25,
+        "reproduced_overlap": 28,
+        "roi_output_limit": 45,
+        "roi_box_regression": 3,
+        "rpn_output_limit": 2
+      }
+    },
+    {
+      "run": "threshold_001_cap2000",
+      "score_threshold": 0.01,
+      "max_detections": 2000,
+      "target_annos": 103,
+      "covered": 73,
+      "remaining": 30,
+      "iou_ge_05": 1,
+      "reasons": {
+        "roi_score_threshold": 25,
+        "reproduced_overlap": 73,
+        "roi_box_regression": 3,
+        "rpn_output_limit": 2
+      }
+    }
+  ]
+}

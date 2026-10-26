@@ -1,5 +1,7 @@
 import os
 import json
+import gzip
+from pathlib import Path
 import yaml
 from datetime import datetime
 
@@ -70,10 +72,15 @@ def get_nc(dataset_name)->int:
     return nc
 
 def read_json(json_path:str):
-    _json = None
-    with open(json_path, "r") as f:
-        _json = json.load(f)
-    return _json
+    """Read JSON, or transparently fall back to its lossless .json.gz file."""
+    path = Path(json_path)
+    if not path.exists() and path.suffix == ".json":
+        compressed = path.with_suffix(".json.gz")
+        if compressed.exists():
+            path = compressed
+    opener = gzip.open if path.suffix == ".gz" else open
+    with opener(path, "rt", encoding="utf-8") as f:
+        return json.load(f)
 
 def read_yaml(yaml_path):
     with open(yaml_path, "r", encoding="utf-8") as f:

@@ -20,7 +20,7 @@ EXPERIMENT_IDS = {
     ("visdrone", "rtdetr"): 1792504350,
     ("voc", "frcnn"): 1792570209,
     ("kitti", "frcnn"): 1792642708,
-    ("visdrone", "frcnn"): 1792917048 # 1792748834,1792917048(500per)
+    ("visdrone", "frcnn"): 1792933936 # 1792748834,1792917048(500per)，1792933936
 }
 EXPID = EXPERIMENT_IDS[(DATASETNAME, MODEL_NAME)]
 EPOCHS = 100 if (DATASETNAME, MODEL_NAME) == ("voc", "rtdetr") else 50
@@ -36,7 +36,7 @@ MAX_ANNO_COVERAGE = 0.5
 DUPLICATE_IOU = 0.97
 TRACK_IOU = 0.5
 # IMAGE_PERCENTILE_SCALE = 0.1 if (DATASETNAME, MODEL_NAME) == ("visdrone", "yolov7") else 1.0
-IMAGE_PERCENTILE_SCALE = 0.1 
+IMAGE_PERCENTILE_SCALE = 0.3
 
 ANNOTATIONS_PATH = DATA_ROOT / f"fault_inject/{FAULT_RATIO}/{DATASETNAME}/coco_format/annotations_no_miss.json"
 PREDICTIONS_DIR = DATA_ROOT / (

@@ -28,8 +28,8 @@ MODEL_NAME = "frcnn" # yolov7|rtdetr|frcnn
 # rtdetr-kitti: 1792556872
 # frcnn-voc: 1792570209
 # frcnn-kitti: 1792642708
-# frcnn-visdrone: 1792917048 # 1792748834,1792917048(500per)
-EXPID = 1792917048
+# frcnn-visdrone: 1792917048 # 1792748834,1792917048(500per),1792933936
+EXPID = 1792933936
 RANK_DIR = DATA_ROOT /"dual_branch" / f"process_features/{DATASETNAME}/{MODEL_NAME}/0.1_repeat/repeat_1_{EXPID}"
 RANK_PATH = RANK_DIR / "merged_rank.json"
 ANNOTATIONS_PATH = DATA_ROOT / f"fault_inject/0.1/{DATASETNAME}/coco_format/annotations_with_miss.json"

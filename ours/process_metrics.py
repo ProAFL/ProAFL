@@ -13,7 +13,7 @@ Edit the settings below, then run ``python ours/process_metrics.py``.
 import json
 from collections import defaultdict
 from pathlib import Path
-from ours.small_utils import read_yaml
+from ours.small_utils import read_yaml, read_json
 
 # Settings for the current VOC / YOLOv7 experiment. Edit these before running.
 config = read_yaml("config.yaml")                           
@@ -124,8 +124,7 @@ def collect_process_metrics(annotation_path, predictions_dir:Path, epochs=50):
     for epoch in range(epochs):
         print(f"Epoch:{epoch}")
         prediction_path = predictions_dir / f"epoch_{epoch}_predicted_bboxs.json"
-        with open(prediction_path, encoding="utf-8") as file:
-            predictions_by_image = json.load(file)
+        predictions_by_image = read_json(prediction_path)
         for image_name, annotations in annotations_by_image.items():
             # The collector may omit images with no post-NMS predictions.
             predictions = (predictions_by_image[image_name]["predicted_bboxs"]

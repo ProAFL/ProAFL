@@ -15,6 +15,7 @@ from pathlib import Path
 from statistics import median
 
 from ours.process_metrics import MODEL_NAME
+from ours.small_utils import read_json
 
 
 DATA_ROOT = Path("/data/mml/data_debugging_data/ProAFL_data")
@@ -232,8 +233,7 @@ def collect_metrics(annotation_path, predictions_dir, epochs):
     for epoch in range(epochs):
         print(f"Epoch:{epoch}")
         path = predictions_dir / f"epoch_{epoch}_predicted_bboxs.json"
-        with open(path, encoding="utf-8") as file:
-            predictions_by_image = json.load(file)
+        predictions_by_image = read_json(path)
         for name, image in images.items():
             predictions = (predictions_by_image[name]["predicted_bboxs"]
                            if name in predictions_by_image else [])

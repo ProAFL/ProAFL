@@ -4,11 +4,7 @@ import json
 
 import numpy as np
 from scipy.stats import rankdata
-
-
-def read_json(path):
-    with open(path, encoding="utf-8") as file:
-        return json.load(file)
+from ours.small_utils import read_json
 
 
 def save_json(path, data):
