@@ -1,0 +1,66 @@
+{
+  "checkpoint": "/data/mml/data_debugging_data/ProAFL_data/models/visdrone/fcos/fault_train/0.1/repeat_1/epoch_49.pth",
+  "annotations": "/data/mml/data_debugging_data/ProAFL_data/datasets/visdrone-coco/val/_annotations.coco.json",
+  "images": 1610,
+  "annotations_count": 75102,
+  "torch": "2.5.1+cu121",
+  "device": "NVIDIA A800 80GB PCIe",
+  "inference_seconds": 33.583112206310034,
+  "protocol": "COCO bbox evaluation on this project validation split; class-aware AP; category IDs 0..9",
+  "input_size": [
+    800,
+    1333
+  ],
+  "nms_threshold": 0.65,
+  "topk_candidates": 1000,
+  "results": {
+    "evaluation_005_cap300": {
+      "mAP50": 0.2711248637576816,
+      "mAP50_95": 0.15682077929427554,
+      "AP_small": 0.07210669691815448,
+      "AR100": 0.32147206203399853,
+      "per_class_AP50": {
+        "pedestrian": 0.2515119741456297,
+        "people": 0.10533611600613152,
+        "bicycle": 0.09058316273069929,
+        "car": 0.6794586783719088,
+        "van": 0.33672778454400226,
+        "truck": 0.31664364302398323,
+        "tricycle": 0.11543341897768562,
+        "awning-tricycle": 0.10133265177532491,
+        "bus": 0.5251678426071705,
+        "motor": 0.18905336539428003
+      },
+      "prediction_count": 483000,
+      "coco_max_dets": [
+        1,
+        10,
+        100
+      ]
+    },
+    "collection_02_cap100": {
+      "mAP50": 0.2560446696327185,
+      "mAP50_95": 0.15093164691433075,
+      "AP_small": 0.06624911466222554,
+      "AR100": 0.2671456038373391,
+      "per_class_AP50": {
+        "pedestrian": 0.23823478882251767,
+        "people": 0.09211910593546206,
+        "bicycle": 0.07882101953733728,
+        "car": 0.6633279619983693,
+        "van": 0.31325185556403023,
+        "truck": 0.30663963945227635,
+        "tricycle": 0.10522358060050331,
+        "awning-tricycle": 0.08450745952647272,
+        "bus": 0.5144114471786088,
+        "motor": 0.16390983771160775
+      },
+      "prediction_count": 160843,
+      "coco_max_dets": [
+        1,
+        10,
+        100
+      ]
+    }
+  }
+}

@@ -1,0 +1,83 @@
+{
+  "experiment": "1793002784",
+  "epoch": 49,
+  "images": 20,
+  "target_normal_annos": 73,
+  "scope": "Same affected images, historical never-overlapped normal annotations. Single checkpoint CPU inference; baseline checks batch-128 reproduction differences. This is not a full 50-epoch reduction estimate.",
+  "dedup": "Exact coordinate equality across classes after NMS, before final cap; keep first (highest-score) record. No GT used for selection.",
+  "results": [
+    {
+      "threshold": 0.2,
+      "exact_coordinate_dedup": false,
+      "cap": 100,
+      "mean_boxes": 100.0,
+      "boxes": 2000,
+      "recovered": 0,
+      "iou_ge_05": 0
+    },
+    {
+      "threshold": 0.2,
+      "exact_coordinate_dedup": false,
+      "cap": 200,
+      "mean_boxes": 200.0,
+      "boxes": 4000,
+      "recovered": 29,
+      "iou_ge_05": 6
+    },
+    {
+      "threshold": 0.2,
+      "exact_coordinate_dedup": true,
+      "cap": 100,
+      "mean_boxes": 100.0,
+      "boxes": 2000,
+      "recovered": 30,
+      "iou_ge_05": 4
+    },
+    {
+      "threshold": 0.2,
+      "exact_coordinate_dedup": true,
+      "cap": 200,
+      "mean_boxes": 197.45,
+      "boxes": 3949,
+      "recovered": 54,
+      "iou_ge_05": 11
+    },
+    {
+      "threshold": 0.05,
+      "exact_coordinate_dedup": false,
+      "cap": 100,
+      "mean_boxes": 100.0,
+      "boxes": 2000,
+      "recovered": 0,
+      "iou_ge_05": 0
+    },
+    {
+      "threshold": 0.05,
+      "exact_coordinate_dedup": false,
+      "cap": 200,
+      "mean_boxes": 200.0,
+      "boxes": 4000,
+      "recovered": 29,
+      "iou_ge_05": 6
+    },
+    {
+      "threshold": 0.05,
+      "exact_coordinate_dedup": true,
+      "cap": 100,
+      "mean_boxes": 100.0,
+      "boxes": 2000,
+      "recovered": 30,
+      "iou_ge_05": 4
+    },
+    {
+      "threshold": 0.05,
+      "exact_coordinate_dedup": true,
+      "cap": 200,
+      "mean_boxes": 200.0,
+      "boxes": 4000,
+      "recovered": 54,
+      "iou_ge_05": 11
+    }
+  ],
+  "seconds": 22.837423803284764
+}

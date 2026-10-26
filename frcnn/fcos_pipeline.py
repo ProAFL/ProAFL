@@ -44,7 +44,7 @@ MIN_SIZE = 800                          # 缩放后的短边目标长度
 MAX_SIZE = 1333                         # 缩放后的长边上限
 SCORE_THRESHOLD = 0.2                  # 类别概率与 centerness 组合后的分数门槛
 NMS_THRESHOLD = 0.65
-MAX_DETECTIONS = 100                    # 每张图最终最多保存的预测框数
+MAX_DETECTIONS = 300                  # 每张图最终最多保存的预测框数
 TOPK_CANDIDATES = 1000                   # 每个特征层进入 NMS 的候选上限
 
 # 训练设置。
