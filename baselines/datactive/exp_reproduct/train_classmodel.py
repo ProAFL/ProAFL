@@ -195,7 +195,7 @@ if __name__ == "__main__":
     elif dataset_name == "kitti":
         class_num = 9
     else:
-        raise Exception("text")
+        raise Exception(f"dataset_name:{dataset_name} not supported")
     epoches = 13
     device = torch.device("cuda:1")
     model_save_dir = os.path.join(exp_data_root,"datactive_models",dataset_name,str(inject_ratio),f"repeat_{str(repeat_id)}",mask_type)
