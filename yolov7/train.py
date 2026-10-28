@@ -607,7 +607,10 @@ if __name__ == '__main__':
     inject_ratio = 0.1 # 0.01,0.05,0.1,0.15
     repeat_id = 1
     gpu_id = 0
-    is_resume = True # 是否从故障训练恢复(corrected train)
+    label_flag = "datactive" # fault|ours|datactive
+    is_resume = False # 是否从故障训练恢复(corrected train)
+    if label_flag in ["ours","datactive"]:
+        is_resume = True
     if is_resume == True:
         is_save_each_epoch = False # corrected train 只保存 best
         resume_pt_file = os.path.join(exp_data_root,"models",dataset_name,"yolov7","fault_train",
@@ -615,61 +618,26 @@ if __name__ == '__main__':
         resume_opt_yaml_path = os.path.join(exp_data_root,"models",dataset_name,"yolov7","fault_train",
                      f"{inject_ratio}", f"repeat_{repeat_id}","logs","opt.yaml")
         resume_end_epoch = 75
-    '''
-    # fault inject trained model 文件夹
-    model_save_dir = f"{exp_data_root}/models/{dataset_name}/yolov7/fault_train/{inject_ratio}/repeat_{str(repeat_id)}"
-    '''
-    model_save_dir = f"{exp_data_root}/retrained_models/ours/{dataset_name}/yolov7/{inject_ratio}/repeat_{str(repeat_id)}"
-    os.makedirs(model_save_dir,exist_ok=True)
-
-    '''
-    # fault inject labels 文件夹
-    train_labels_dir = f"{exp_data_root}/fault_inject/{inject_ratio}/{dataset_name}/yolo_format/labels_train"
-    val_labels_dir = f"{exp_data_root}/fault_inject/{inject_ratio}/{dataset_name}/yolo_format/labels_val"
-    '''
-    train_labels_dir = f"{exp_data_root}/repair/ours/{dataset_name}/yolov7/{inject_ratio}_repeat/repeat_{repeat_id}/yolo_format/labels_train"
-    val_labels_dir = f"{exp_data_root}/repair/ours/{dataset_name}/yolov7/{inject_ratio}_repeat/repeat_{repeat_id}/yolo_format/labels_val"
-
-
-    # model_save_dir = f"{exp_data_root}/models/{dataset_name}/yolov7/corrected_train/{inject_ratio}_repeat/repeat_{str(repeat_id)}"
-    # os.makedirs(model_save_dir,exist_ok=True)
-    # train_labels_dir = f"{exp_data_root}/corrected_anno/ours/{dataset_name}/yolov7/{inject_ratio}_repeat/repeat_{repeat_id}/yolo_format/labels_train"
-    # val_labels_dir = f"{exp_data_root}/corrected_anno/ours/{dataset_name}/yolov7/{inject_ratio}_repeat/repeat_{repeat_id}/yolo_format/labels_val"
-
+    
+    # 设置label文件夹
+    if label_flag == "fault":
+        train_labels_dir = f"{exp_data_root}/fault_inject/{inject_ratio}/{dataset_name}/yolo_format/labels_train"
+        val_labels_dir = f"{exp_data_root}/fault_inject/{inject_ratio}/{dataset_name}/yolo_format/labels_val"
+    elif label_flag == "ours":
+        train_labels_dir = f"{exp_data_root}/repair/ours/{dataset_name}/yolov7/{inject_ratio}_repeat/repeat_{repeat_id}/yolo_format/labels_train"
+        val_labels_dir = f"{exp_data_root}/repair/ours/{dataset_name}/yolov7/{inject_ratio}_repeat/repeat_{repeat_id}/yolo_format/labels_val"
+    elif label_flag == "datactive":
+        train_labels_dir = f"{exp_data_root}/repair/datactive/{dataset_name}/{inject_ratio}_repeat/repeat_{repeat_id}/yolo_format/labels_train" 
+        val_labels_dir = f"{exp_data_root}/repair/datactive/{dataset_name}/{inject_ratio}_repeat/repeat_{repeat_id}/yolo_format/labels_val" 
+    # 置换label
     label_replace(dataset_name, train_labels_dir, val_labels_dir)
-
-    '''
-    _args = {
-        "dataset_name":"voc",
-        "model_name":"yolov7",
-        "gpu_id":0,
-        "trainset_stat":"ours", # "clean", "fault", "ours","datactive","entropy","loss","deepgini","margin","objectlab"
-        "save_each_epoch":False                                                               
-    }
-    baselines = config["baselines"]
-    dataset_name = _args["dataset_name"]
-    model_name = _args["model_name"]
-    method_name = _args["trainset_stat"]
-
-    if _args["trainset_stat"]  == "ours":
-        _args["model_save_dir"] = os.path.join(exp_data_root,"ours",
-                                   dataset_name,model_name,"retrain","models")
-                 
-        os.makedirs(_args["model_save_dir"],exist_ok=True)
-
-    elif _args["trainset_stat"] in baselines:
-        if _args["trainset_stat"] == "datactive":
-                                                                                                              
-            _args["model_save_dir"] = os.path.join(exp_data_root,"baselines", "datactive",
-                                    dataset_name,"retrain","yolov7")
-        else:
-            _args["model_save_dir"] = os.path.join(exp_data_root,"baselines", _args["trainset_stat"],
-                                    dataset_name,"yolov7","retrain","models")
-                 
-        os.makedirs(_args["model_save_dir"],exist_ok=True)
-    else:
-        raise Exception("Invalid train-set state")
-    '''
+    
+    # 设置模型保存目录
+    if label_flag == "fault":
+        model_save_dir = f"{exp_data_root}/models/{dataset_name}/yolov7/fault_train/{inject_ratio}/repeat_{str(repeat_id)}"
+    elif label_flag in ["ours","datactive"] :
+        model_save_dir = f"{exp_data_root}/retrained_models/{label_flag}/{dataset_name}/yolov7/{inject_ratio}/repeat_{str(repeat_id)}"
+    os.makedirs(model_save_dir,exist_ok=True)
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--weights', type=str, default='yolov7.pt', help='initial weights path')
@@ -677,7 +645,7 @@ if __name__ == '__main__':
     parser.add_argument('--data', type=str, default=f'data/{dataset_name}.yaml', help='data.yaml path')
     parser.add_argument('--hyp', type=str, default='data/hyp.scratch.p5.yaml', help='hyperparameters path')
     parser.add_argument('--epochs', type=int, default=50)
-    parser.add_argument('--batch-size', type=int, default=64, help='total batch size for all GPUs')
+    parser.add_argument('--batch-size', type=int, default=128, help='total batch size for all GPUs')
     parser.add_argument('--img-size', nargs='+', type=int, default=[640, 640], help='[train, test] image sizes')
     parser.add_argument('--rect', action='store_true', help='rectangular training')
     parser.add_argument('--resume', nargs='?', const=True, default=False, help='resume most recent training')
@@ -742,8 +710,8 @@ if __name__ == '__main__':
         with open(opt.opt_yaml_path) as f:
             resume_opt = argparse.Namespace(**yaml.load(f, Loader=yaml.SafeLoader))           
         opt.epochs = resume_epochs
-        opt.cfg, opt.weights, opt.resume, opt.batch_size, opt.global_rank, opt.local_rank = '', ckpt, True, resume_opt.total_batch_size, *apriori             
-                                                        
+        # opt.cfg, opt.weights, opt.resume, opt.batch_size, opt.global_rank, opt.local_rank = '', ckpt, True, resume_opt.total_batch_size, *apriori             
+        opt.cfg, opt.weights, opt.resume, opt.global_rank, opt.local_rank = '', ckpt, True, *apriori             
         opt.save_dir = model_save_dir                             
         logger.info('Resuming training from %s' % ckpt)
     else:                                                                                  
