@@ -23,20 +23,6 @@ from ours.small_utils import read_json,read_yaml
 import pprint
 from pycocotools.coco import COCO
 
-def get_gid_to_img_and_line():
-    res = {}
-    with open(gt_json_path,mode='r') as f:
-        gt_box = json.load(f)
-    for img_name,g_box_list in gt_box.items():
-        line_no = 0
-        for g_box in g_box_list:
-            gid = g_box["box_id"]
-            res[gid] = {
-                "img_name":img_name,
-                "line_no":line_no
-            }
-            line_no += 1
-    return res
 
 def get_repair_info(converted_rank:list,anno_correct_json:dict, anno_error_json:dict,cut_off_rate:float)->dict:
     repair_info = {
@@ -419,18 +405,23 @@ if __name__ == "__main__":
     MODEL_NAME = "yolov7"
     FAULT_RATIO = 0.1
     REPEAT_ID = 1
-    # yolov7-voc: 1791094449
-    # yolov7-kitti: 1792056154
-    # yolov7-visdrone: 1791968956
-    # rtdetr-voc: 1792398239
-    # rtdetr-visdrone: 1792504350
-    # rtdetr-kitti: 1792556872
-    # frcnn-voc: 1792570209
-    # frcnn-kitti: 1792642708
+    '''
+    ("voc", "yolov7"): 1791094449,
+    ("kitti", "yolov7"): 1792056154,
+    ("visdrone", "yolov7"): 1791968956,
+    ("voc", "rtdetr"): 1792398239,
+    ("kitti", "rtdetr"): 1792556872,
+    ("visdrone", "rtdetr"): 1792504350,
+    ("voc", "frcnn"): 1792570209,
+    ("kitti", "frcnn"): 1792642708,
+    ("visdrone", "frcnn"): 1792917048, # 1792748834,1792917048(500per)，1792933936
+    ("visdrone", "fcos"):1793025492 
     EXPID = 1791968956
+    '''
     if METHOD == "ours":
         # 排序结果路径
-        RANK_PATH = DATA_ROOT / f"process_features/{DATASET_NAME}/{MODEL_NAME}/{FAULT_RATIO}_repeat/repeat_{REPEAT_ID}_{EXPID}/merged_rank.json"
+        # RANK_PATH = DATA_ROOT / f"process_features/{DATASET_NAME}/{MODEL_NAME}/{FAULT_RATIO}_repeat/repeat_{REPEAT_ID}_{EXPID}/merged_rank.json"
+        RANK_PATH = DATA_ROOT /"dual_branch"/f"process_features/{DATASET_NAME}/{MODEL_NAME}/{FAULT_RATIO}_repeat/repeat_{REPEAT_ID}/merged_rank.json"
     elif METHOD == "datactive":
         RANK_PATH = DATA_ROOT / f"rank/datactive/{DATASET_NAME}/0.1/repeat_{REPEAT_ID}"/"converted_rank.joblib"
     # 故障（含有miss fault）标注文件
@@ -442,7 +433,8 @@ if __name__ == "__main__":
     if METHOD == "datactive":
         SAVE_DIR = DATA_ROOT/f"repair/{METHOD}/{DATASET_NAME}/{FAULT_RATIO}_repeat/repeat_{REPEAT_ID}"
     else:
-        SAVE_DIR = DATA_ROOT/f"repair/{METHOD}/{DATASET_NAME}/{MODEL_NAME}/{FAULT_RATIO}_repeat/repeat_{REPEAT_ID}_{EXPID}"
+        # SAVE_DIR = DATA_ROOT/f"repair/{METHOD}/{DATASET_NAME}/{MODEL_NAME}/{FAULT_RATIO}_repeat/repeat_{REPEAT_ID}_{EXPID}"
+        SAVE_DIR = DATA_ROOT/f"repair/{METHOD}/{DATASET_NAME}/{MODEL_NAME}/{FAULT_RATIO}_repeat/repeat_{REPEAT_ID}"
     os.makedirs(SAVE_DIR,exist_ok=True)
     main()
                                        

@@ -19,7 +19,7 @@ from ours.rank.analyse.common import (
 
 DATA_ROOT = Path("/data/mml/data_debugging_data/ProAFL_data")
 DATASETNAME = "visdrone" # voc|kitti|visdrone 
-MODEL_NAME = "frcnn" # yolov7|rtdetr|frcnn|fcos
+MODEL_NAME = "rtdetr" # yolov7|rtdetr|frcnn|fcos
 # yolov7-voc: 1791094449
 # yolov7-kitti: 1792056154
 # yolov7-visdrone: 1791968956
@@ -28,10 +28,13 @@ MODEL_NAME = "frcnn" # yolov7|rtdetr|frcnn|fcos
 # rtdetr-kitti: 1792556872
 # frcnn-voc: 1792570209
 # frcnn-kitti: 1792642708
-# frcnn-visdrone: 1792933936 # 1792748834,1792917048(500per),1792933936
+# frcnn-visdrone: 1792933936 # 1792748834,1792917048(500per,yes),1792933936
 # fcos-visdrone: 1793025492
-EXPID = 1792917048
-RANK_DIR = DATA_ROOT / "dual_branch" / f"process_features/{DATASETNAME}/{MODEL_NAME}/0.1_repeat/repeat_1_{EXPID}"
+# EXPID = 1792504350
+
+# RANK_DIR = DATA_ROOT / "dual_branch" / f"process_features/{DATASETNAME}/{MODEL_NAME}/0.1_repeat/repeat_1_{EXPID}"
+
+RANK_DIR = DATA_ROOT / "dual_branch" / f"process_features/{DATASETNAME}/{MODEL_NAME}/0.1_repeat/repeat_1"
 RANK_PATH = RANK_DIR / "merged_rank.json"
 ANNOTATIONS_PATH = DATA_ROOT / f"fault_inject/0.1/{DATASETNAME}/coco_format/annotations_with_miss.json"
 RANK_HOT_PATH = RANK_DIR / "rank_hot.png"
