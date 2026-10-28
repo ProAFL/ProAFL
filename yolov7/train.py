@@ -571,6 +571,13 @@ def label_replace(dataset_name,train_labels_dir,val_labels_dir):
     shutil.copytree(val_labels_dir, cur_val_labels_dir)
     print("Training label directory replacement completed")
     print("Validation label directory replacement completed")
+    for labels_dir in (cur_train_labels_dir, cur_val_labels_dir):
+        cache_path = labels_dir + ".cache"
+        if os.path.exists(cache_path):
+            os.remove(cache_path)
+            print(f"已删除标签缓存: {cache_path}")
+        else:
+            print(f"标签缓存不存在，无需删除")
 
     '''
     if _args["trainset_stat"] == "ours":
@@ -595,24 +602,34 @@ if __name__ == '__main__':
     print("PID:",PID)
     config = read_yaml("../config.yaml") # 读取主项目的配置
     exp_data_root = config["exp_data_dir"]
-    dataset_name = "kitti" # voc|kitti|visdrone
+    dataset_name = "visdrone" # voc|kitti|visdrone
     is_save_each_epoch = True # 是否每个epoch的checkpoint都保存
     inject_ratio = 0.1 # 0.01,0.05,0.1,0.15
     repeat_id = 1
     gpu_id = 0
-    is_resume = False # 是否从故障训练恢复
+    is_resume = True # 是否从故障训练恢复(corrected train)
     if is_resume == True:
+        is_save_each_epoch = False # corrected train 只保存 best
         resume_pt_file = os.path.join(exp_data_root,"models",dataset_name,"yolov7","fault_train",
-                     f"{inject_ratio}_repeat", f"repeat_{repeat_id}","weights","last.pt")
+                     f"{inject_ratio}", f"repeat_{repeat_id}","weights","last.pt") # 从fault train last pt开始恢复训练
         resume_opt_yaml_path = os.path.join(exp_data_root,"models",dataset_name,"yolov7","fault_train",
-                     f"{inject_ratio}_repeat", f"repeat_{repeat_id}","logs","opt.yaml")
+                     f"{inject_ratio}", f"repeat_{repeat_id}","logs","opt.yaml")
         resume_end_epoch = 75
-    # labels 文件夹
-    
+    '''
+    # fault inject trained model 文件夹
     model_save_dir = f"{exp_data_root}/models/{dataset_name}/yolov7/fault_train/{inject_ratio}/repeat_{str(repeat_id)}"
+    '''
+    model_save_dir = f"{exp_data_root}/retrained_models/ours/{dataset_name}/yolov7/{inject_ratio}/repeat_{str(repeat_id)}"
     os.makedirs(model_save_dir,exist_ok=True)
+
+    '''
+    # fault inject labels 文件夹
     train_labels_dir = f"{exp_data_root}/fault_inject/{inject_ratio}/{dataset_name}/yolo_format/labels_train"
     val_labels_dir = f"{exp_data_root}/fault_inject/{inject_ratio}/{dataset_name}/yolo_format/labels_val"
+    '''
+    train_labels_dir = f"{exp_data_root}/repair/ours/{dataset_name}/yolov7/{inject_ratio}_repeat/repeat_{repeat_id}/yolo_format/labels_train"
+    val_labels_dir = f"{exp_data_root}/repair/ours/{dataset_name}/yolov7/{inject_ratio}_repeat/repeat_{repeat_id}/yolo_format/labels_val"
+
 
     # model_save_dir = f"{exp_data_root}/models/{dataset_name}/yolov7/corrected_train/{inject_ratio}_repeat/repeat_{str(repeat_id)}"
     # os.makedirs(model_save_dir,exist_ok=True)
@@ -660,7 +677,7 @@ if __name__ == '__main__':
     parser.add_argument('--data', type=str, default=f'data/{dataset_name}.yaml', help='data.yaml path')
     parser.add_argument('--hyp', type=str, default='data/hyp.scratch.p5.yaml', help='hyperparameters path')
     parser.add_argument('--epochs', type=int, default=50)
-    parser.add_argument('--batch-size', type=int, default=128, help='total batch size for all GPUs')
+    parser.add_argument('--batch-size', type=int, default=64, help='total batch size for all GPUs')
     parser.add_argument('--img-size', nargs='+', type=int, default=[640, 640], help='[train, test] image sizes')
     parser.add_argument('--rect', action='store_true', help='rectangular training')
     parser.add_argument('--resume', nargs='?', const=True, default=False, help='resume most recent training')
@@ -721,17 +738,15 @@ if __name__ == '__main__':
         ckpt = opt.resume if isinstance(opt.resume, str) else get_latest_run()                                 
         assert os.path.isfile(ckpt), 'ERROR: --resume checkpoint does not exist'
         apriori = opt.global_rank, opt.local_rank
-        resume_epochs = opt.epochs
-                                                                
+        resume_epochs = opt.epochs                              
         with open(opt.opt_yaml_path) as f:
-            opt = argparse.Namespace(**yaml.load(f, Loader=yaml.SafeLoader))           
+            resume_opt = argparse.Namespace(**yaml.load(f, Loader=yaml.SafeLoader))           
         opt.epochs = resume_epochs
-        opt.cfg, opt.weights, opt.resume, opt.batch_size, opt.global_rank, opt.local_rank = '', ckpt, True, opt.total_batch_size, *apriori             
+        opt.cfg, opt.weights, opt.resume, opt.batch_size, opt.global_rank, opt.local_rank = '', ckpt, True, resume_opt.total_batch_size, *apriori             
                                                         
         opt.save_dir = model_save_dir                             
         logger.info('Resuming training from %s' % ckpt)
-    else:
-                                                                                           
+    else:                                                                                  
         opt.data, opt.cfg, opt.hyp = check_file(opt.data), check_file(opt.cfg), check_file(opt.hyp)               
         assert len(opt.cfg) or len(opt.weights), 'either --cfg or --weights must be specified'
         opt.img_size.extend([opt.img_size[-1]] * (2 - len(opt.img_size)))                                   
