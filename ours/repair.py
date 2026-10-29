@@ -197,7 +197,6 @@ def repair_kit(converted_rank:list, anno_correct_json:dict, anno_error_json:dict
 
 def repair_kit_strict_cost(converted_rank:list, anno_correct_json:dict, anno_error_json:dict,
                  cut_off_rate:float=0.4):
-    '''textcost'''
                   
     total_imgnums = len(anno_error_json["images"])
     total_annoLen = len(anno_error_json["annotations"])
@@ -392,7 +391,7 @@ def main():
     seconds = elapsed_time % 60                               
     print(f"Elapsed time: {hours:02d}:{minutes:02d}:{seconds:02.0f}")
     now_timestr = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-    print(f"text: {now_timestr}")
+    print(f"完成时刻: {now_timestr}")
 
 
 if __name__ == "__main__":
@@ -400,7 +399,7 @@ if __name__ == "__main__":
     print("PID:",PID)
     config = read_yaml("config.yaml")
     DATA_ROOT = Path(config['exp_data_dir'])
-    METHOD = "datactive" # ours|datactive
+    METHOD = "ours" # ours|datactive
     DATASET_NAME = "visdrone" # voc|kitti|visdrone
     MODEL_NAME = "yolov7"
     FAULT_RATIO = 0.1

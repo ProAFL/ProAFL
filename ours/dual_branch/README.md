@@ -1,92 +1,115 @@
-# 六特征双分支流程
+# 双分支对称八维流程
 
-本目录独立实现六特征双分支方案，不依赖实验对比脚本，不读取正确标注或故障类型来打分。
-原有 `ours/process_*.py`、`ours/merge_rank.py` 及其结果不变。
+正式入口 `process_feature.py` 默认采用上一版对称八维：类别 4 维、几何 4 维，
+两分支等优先级融合。当前 VisDrone/YOLOv7 图片系数为 `0.5`。
 
-## 配置和流程
+| 过程属性 | 类别分支 | 几何分支 |
+| --- | --- | --- |
+| 后期分歧 | `late_conf_deficit` | `late_iou_deficit` |
+| 全程分歧 | `all_conf_deficit` | `all_iou_deficit` |
+| 首次达到阈值 | `first_conf_reach` | `first_iou_reach` |
+| 持续分歧 | `persistent_class_margin` | `persistent_iou_deficit` |
 
-统一修改 `config.py` 中的数据集、模型、实验编号、轮数及阈值。
-默认对应 YOLOv7 / VisDrone / repeat_1 / 1791968956。
-已列出前面八组实验的编号；RT-DETR / VOC 使用 100 轮，其余使用 50 轮。
+六维模式使用表中前三行；八维模式再加入最后一行。各分支分别做三项或四项等权 TOPSIS，
+只在至少有一次预测重叠的标注内计算异常百分位，
+最终取 `max(class_percentile, geometry_percentile)`。从未匹配的标注沿用原规则，
+合并时单独放在最前。特征和排序不使用正确标签、故障类型或干净 test 标签。
 
-一条命令顺序执行全部五步（包括重新收集过程度量）：
+## 运行
 
-```bash
-python -m ours.dual_branch.run_pipline
-```
-
-`run_pipline.py` 只有一个 `main()`，直接复用五个模块中的采集、特征提取、
-评分、保存和合并函数，不调用这五个模块的 `main()`，也不启动子进程。
-任何一步失败都会保留原始异常并停止后续步骤；各步骤都使用 `config.py` 的当前配置。
-过程度量仍保存为中间 JSON，避免大型标注轨迹和图片轨迹同时占用内存；
-标注和图片排名通过 Python 对象直接传给合并函数，同时保留原有 JSON 便于检查。
-旧名称 `run_pipeline.py` 仅作为兼容入口，指向同一个统一流程。
-也可以在仓库根目录的 Python 环境中调用：
+流水线使用 Python 常量配置，不解析命令行参数。直接修改 `run_pipeline.py` 顶部：
 
 ```python
-from ours.dual_branch.run_pipline import main
-
-main()
+GEOMETRY_WEIGHT = 1.0         # 正式 4+4 对称八维，两分支等优先级
+FEATURE_DIMENSIONS = 8        # 改为 6 使用原版 3+3 六维；8 使用扩展 4+4 八维
+PREDICTIONS_DIR_OVERRIDE = None  # 使用 config.py 的预测目录
+REUSE_METRICS = True          # False 重新收集；True 复用已有标注/图片过程度量
 ```
 
-如需单独执行，五个脚本的顺序如下，均从仓库根目录启动：
+从仓库根目录运行：
 
 ```bash
-python -m ours.dual_branch.process_metrics
-python -m ours.dual_branch.process_metrics_img
+python -m ours.dual_branch.run_pipeline
+```
+
+`run_pipeline.py` 的 `main` 读取上述常量，默认选择正式对称八维。
+原六项特征始终保留。`FEATURE_DIMENSIONS = 6` 会独立运行原六维排序，
+不计算新增两项，也不回查完整类别预测得分；两种模式都集中在 `process_feature.py`。
+流水线依次收集标注轨迹、收集漏标候选轨迹、排序标注、排序图片、合并排名。
+`REUSE_METRICS = True` 仅跳过前两步，仍重建特征与排名；八维模式会回查完整类别得分。
+复用模式会先检查两份过程度量文件存在，缺失则在写入前报错。
+
+Python 调用：
+
+```python
+from ours.dual_branch.run_pipeline import main
+
+main(reuse_metrics=True)
+```
+
+如果已有图片排名，仅更新标注排序和最终合并排名：
+
+```bash
 python -m ours.dual_branch.process_feature
-python -m ours.dual_branch.process_feature_img
 python -m ours.dual_branch.merge_rank
 ```
 
-以上仅为使用说明，编写代码时未执行这些命令。
-依赖为 NumPy、SciPy、PyYAML；公共 TOPSIS 直接使用 NumPy 实现。
+## 配置与输入
 
-## 标注打分
+`config.py` 统一配置数据集、模型、故障比例、repeat、轮数及输入/输出目录。
+本次默认是 VisDrone / YOLOv7 / 0.1 / repeat_1，50 轮，最后 10 轮作为后期窗口。
+类别首次达到阈值为 `0.1`，IoU 首次达到阈值为 `0.45`，均使用严格大于判定。
 
-六项特征完整保留：
-
-- 类别分支：`late_conf_deficit`、`all_conf_deficit`、`first_conf_reach`。
-- 几何分支：`late_iou_deficit`、`all_iou_deficit`、`first_iou_reach`。
-
-两个分支分别在全部现存标注上进行等权 TOPSIS。
-仅在至少有一轮预测重叠的标注中，将两分支得分分别转换为升序平均名次百分位，
-再取两个百分位的最大值作为最终可疑分数，越大越可疑。
-从未重叠的标注不参与百分位校准，融合分数设为 0，合并时仍按原规则单独置于最前。
-
-`process_features.json` 保存原六特征，`branch_scores.json` 保存分支得分及融合过程。
-`topsis_ranking.json` 的 `topsis_score` 字段保存融合分数，以兼容原有排名格式。
-分支诊断字段不会混入最终合并排名。
-
-## 图片与合并
-
-图片分支沿用原规则：过滤已有标注附近的预测框，跨轮次关联位置轨迹，
-选择全程置信度证据最大的代表轨迹，提取六项图片特征并进行 TOPSIS 排序。
-候选筛选阈值独立配置，不能通过修改标注的 `CONF_THRESHOLD` 来改变图片筛选。
-
-合并前，将标注融合分数、图片 TOPSIS 分数分别转换为降序平均名次百分位。
-标注使用原百分位；图片使用百分位乘 `IMAGE_PERCENTILE_SCALE`，再按值升序混排。
-默认仅 YOLOv7 / VisDrone 的图片系数为 0.1，其余已列实验为 1.0。
-最终顺序仍为：无重叠标注 → 有证据条目的混合排名 → 无候选图片。
-
-## 输出目录和格式
-
-新结果统一保存到：
+现有预测目录为：
 
 ```text
-<DATA_ROOT>/dual_branch/process_metrics/<数据集>/<模型>/0.1_repeat/repeat_1_<EXPID>/
-<DATA_ROOT>/dual_branch/process_features/<数据集>/<模型>/0.1_repeat/repeat_1_<EXPID>/
+/data/mml/data_debugging_data/ProAFL_data/collection_process_info/visdrone/yolov7/collected_predict_boxes/inject_0.1_repeat/repeat_1_1791968956
 ```
 
-如要复用已有过程度量，可将 `config.py` 的 `METRICS_DIR` 指向原实验的
-`process_metrics` 目录，并从第三步开始；需确认轮数、实验编号及阈值与数据一致。
-这不会修改已有过程度量，特征和排名仍写入新的 `FEATURES_DIR`。
+已通过 `PREDICTION_EXPERIMENT_ID` 接入此目录，默认命令可直接读取。
+切换实验时应核对预测来源和过程度量是否一致，也可以用流水线的
+`PREDICTIONS_DIR_OVERRIDE` 常量显式覆盖。
+`EPOCHS` 必须与实际采集轮数一致。
 
-最终 `merged_rank.json` 保持原有顶层字段：
-`merge_rule`、`counts`、`merged_ranking`、`never_overlapped_annos`、
-`no_candidate_images`、`all_ranking`。
-条目的 `item_type`、`anno_id` / `image_name`、`source_rank`、
-`source_topsis_score`、`total_rank`，以及中间混排组的
-`group_rank`、`group_percentile`、`merge_percentile`、`merged_rank` 均保持原格式。
-其中标注的 `source_topsis_score` 对应新的融合分数，图片仍对应其 TOPSIS 分数。
-后续评估和修复脚本可沿用原来的读取逻辑，只需将排名路径指向新目录。
+八维模式下，`process_feature.py` 内部按每轮已有的匹配预测框 ID 回查完整 `probs`，
+逐轮释放预测数据，不重新训练或重新做框两两匹配；同时检查 ID 和标注类别得分，
+防止静默混用其他实验。以下两项持续分歧都采用“平均冲突强度 × 最长连续冲突占比”：
+
+- 类别：可靠匹配（IoU >= 0.5、最高类别得分 >= 0.25）下的平均相对类别 margin，
+  乘以同一替代类别以 margin >= 0.5 连续获得支持的最长轮数 / 总轮数。
+- 几何：`observed * (1 - IoU)` 的全程平均，乘以连续存在匹配且 IoU <= 0.45
+  的最长轮数 / 总轮数。没有观测的轮次记零证据，并中断连续段。
+
+六维模式输出原六项特征。八维模式输出九项统计，其中八项参与排序，
+`alternative_class_persistence` 作为联合类别冲突强度的辅助量。
+元数据分别记录实际打分维度和辅助统计。
+
+## 输出与下游
+
+当前过程度量和排序目录分别为：
+
+```text
+<DATA_ROOT>/dual_branch/process_metrics/visdrone/yolov7/0.1_repeat/repeat_1/
+<DATA_ROOT>/dual_branch/process_features/visdrone/yolov7/0.1_repeat/repeat_1/
+```
+
+标注输出仍为 `process_features.json`、`topsis_ranking.json`、`branch_scores.json`、
+`never_overlapped.json`；图片输出及最终 `merged_rank.json` 结构保持兼容。
+`repair.py` 继续读取原来的 `merged_rank.json` 路径。
+运行上述命令会更新配置目录中的对应结果，复用模式不改动两份过程度量文件。
+
+仅生成独立预览：
+
+```bash
+python -m ours.dual_branch.process_feature --output-dir /tmp/symmetric_preview
+```
+
+默认 `merge_rank` 不会自动读取这个预览目录。
+
+本次配置的同预算 137280 离线修复模拟为：分类 29856、定位 18220、
+冗余 33930、漏标 22812，合计 104818，修复率 76.35%。
+这是当前 repeat 的注入故障评估结果，尚未验证重训练 mAP。
+
+正式实现已集中在 `process_feature.py`，流水线可用 `FEATURE_DIMENSIONS` 选择 6 或 8。
+`GEOMETRY_WEIGHT` 可调整分支优先级；程序调用时，`build_results` 与
+`save_results` 应传入相同的权重和 `feature_dimensions`。

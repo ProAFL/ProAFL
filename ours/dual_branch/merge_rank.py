@@ -11,7 +11,6 @@ ANNO_RANK_PATH = RANK_DIR / "topsis_ranking.json"
 IMAGE_RANK_PATH = RANK_DIR / "miss_image_ranking.json"
 OUTPUT_PATH = RANK_DIR / "merged_rank.json"
 
-
 def split_ranking(source, item_type, id_key, no_evidence_key):
     """将有证据和无证据条目分开，输出字段沿用原 merge_rank。"""
     rows = source["ranking"]

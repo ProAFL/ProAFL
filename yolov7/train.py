@@ -46,6 +46,13 @@ def is_directory_exists(path):
     return os.path.exists(path) and os.path.isdir(path)
 
 def train(hyp, opt, device, tb_writer=None):
+    reset_retrain = getattr(opt, 'retrain_mode', 'resume') == 'reset'
+    if reset_retrain:
+        if opt.resume:
+            raise ValueError('reset retraining cannot restore a resume checkpoint state')
+        hyp = dict(hyp)
+        hyp.update(lr0=opt.retrain_lr, lrf=0.1,
+                   warmup_epochs=opt.retrain_warmup_epochs, warmup_bias_lr=0.01)
     logger.info(colorstr('hyperparameters: ') + ', '.join(f'{k}={v}' for k, v in hyp.items()))
     save_dir, epochs, batch_size, total_batch_size, weights, rank, freeze =\
         Path(opt.save_dir), opt.epochs, opt.batch_size, opt.total_batch_size, opt.weights, opt.global_rank, opt.freeze
@@ -75,7 +82,7 @@ def train(hyp, opt, device, tb_writer=None):
     loggers = {'wandb': None}                
     if rank in [-1, 0]:
         opt.hyp = hyp                       
-        run_id = torch.load(weights, map_location=device, weights_only=False).get('wandb_id') if weights.endswith('.pt') and os.path.isfile(weights) else None
+        run_id = torch.load(weights, map_location=device, weights_only=False).get('wandb_id') if not reset_retrain and weights.endswith('.pt') and os.path.isfile(weights) else None
         wandb_logger = WandbLogger(opt, Path(opt.save_dir).stem, run_id, data_dict)
         loggers['wandb'] = wandb_logger.wandb
         data_dict = wandb_logger.data_dict
@@ -209,30 +216,35 @@ def train(hyp, opt, device, tb_writer=None):
             
     start_epoch, best_fitness = 0, 0.0
     if pretrained:
+        if not reset_retrain:
                    
-        if ckpt['optimizer'] is not None:
-            optimizer.load_state_dict(ckpt['optimizer'])
-            best_fitness = ckpt['best_fitness']
+            if ckpt['optimizer'] is not None:
+                optimizer.load_state_dict(ckpt['optimizer'])
+                best_fitness = ckpt['best_fitness']
 
              
-        if ema and ckpt.get('ema'):
-            ema.ema.load_state_dict(ckpt['ema'].float().state_dict())
-            ema.updates = ckpt['updates']
+            if ema and ckpt.get('ema'):
+                ema.ema.load_state_dict(ckpt['ema'].float().state_dict())
+                ema.updates = ckpt['updates']
 
                  
-        if ckpt.get('training_results') is not None:
-            results_file.write_text(ckpt['training_results'])                     
+            if ckpt.get('training_results') is not None:
+                results_file.write_text(ckpt['training_results'])
 
                 
-        start_epoch = ckpt['epoch'] + 1
-        if opt.resume:
-            assert start_epoch > 0, '%s training to %g epochs is finished, nothing to resume.' % (weights, epochs)
-            assert start_epoch < epochs, \
-                f'Resume checkpoint has completed {start_epoch} epochs; target epochs ({epochs}) must be greater.'
-        elif epochs < start_epoch:
-            logger.info('%s has been trained for %g epochs. Fine-tuning for %g additional epochs.' %
-                        (weights, ckpt['epoch'], epochs))
-            epochs += ckpt['epoch']                              
+            start_epoch = ckpt['epoch'] + 1
+            if opt.resume:
+                assert start_epoch > 0, '%s training to %g epochs is finished, nothing to resume.' % (weights, epochs)
+                assert start_epoch < epochs, \
+                    f'Resume checkpoint has completed {start_epoch} epochs; target epochs ({epochs}) must be greater.'
+            elif epochs < start_epoch:
+                logger.info('%s has been trained for %g epochs. Fine-tuning for %g additional epochs.' %
+                            (weights, ckpt['epoch'], epochs))
+                epochs += ckpt['epoch']
+
+        else:
+            logger.info('Reset retraining: model weights loaded; optimizer, EMA, scheduler, '
+                        'epoch, best_fitness and training history start fresh.')
 
         del ckpt, state_dict
 
@@ -283,7 +295,7 @@ def train(hyp, opt, device, tb_writer=None):
                     tb_writer.add_histogram('classes', c, 0)
 
                      
-            if not opt.noautoanchor:
+            if not opt.noautoanchor and not reset_retrain:
                 check_anchors(dataset, model=model, thr=hyp['anchor_t'], imgsz=imgsz)
             model.half().float()                               
 
@@ -306,7 +318,8 @@ def train(hyp, opt, device, tb_writer=None):
 
                     
     t0 = time.time()
-    nw = max(round(hyp['warmup_epochs'] * nb), 1000)                                                             
+    # 新方案按指定轮数 warmup，避免小数据集也被强制 warmup 1000 个 batch。
+    nw = max(round(hyp['warmup_epochs'] * nb), 0 if reset_retrain else 1000)
                                                                                         
     maps = np.zeros(nc)                 
     results = (0, 0, 0, 0, 0, 0, 0)                                                     
@@ -354,7 +367,7 @@ def train(hyp, opt, device, tb_writer=None):
             imgs = imgs.to(device, non_blocking=True).float() / 255.0                                      
 
                     
-            if ni <= nw:
+            if nw > 0 and ni <= nw:
                 xi = [0, nw]            
                                                                                                     
                 accumulate = max(1, np.interp(ni, xi, [1, nbs / total_batch_size]).round())
@@ -607,7 +620,8 @@ if __name__ == '__main__':
     inject_ratio = 0.1 # 0.01,0.05,0.1,0.15
     repeat_id = 1
     gpu_id = 0
-    label_flag = "datactive" # fault|ours|datactive
+    label_flag = "ours" # fault|ours|datactive
+    retrain_mode = "resume" # resume: 原方案；reset: 仅继承权重，重置训练状态
     is_resume = False # 是否从故障训练恢复(corrected train)
     if label_flag in ["ours","datactive"]:
         is_resume = True
@@ -629,15 +643,12 @@ if __name__ == '__main__':
     elif label_flag == "datactive":
         train_labels_dir = f"{exp_data_root}/repair/datactive/{dataset_name}/{inject_ratio}_repeat/repeat_{repeat_id}/yolo_format/labels_train" 
         val_labels_dir = f"{exp_data_root}/repair/datactive/{dataset_name}/{inject_ratio}_repeat/repeat_{repeat_id}/yolo_format/labels_val" 
-    # 置换label
-    label_replace(dataset_name, train_labels_dir, val_labels_dir)
     
     # 设置模型保存目录
     if label_flag == "fault":
         model_save_dir = f"{exp_data_root}/models/{dataset_name}/yolov7/fault_train/{inject_ratio}/repeat_{str(repeat_id)}"
     elif label_flag in ["ours","datactive"] :
         model_save_dir = f"{exp_data_root}/retrained_models/{label_flag}/{dataset_name}/yolov7/{inject_ratio}/repeat_{str(repeat_id)}"
-    os.makedirs(model_save_dir,exist_ok=True)
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--weights', type=str, default='yolov7.pt', help='initial weights path')
@@ -649,6 +660,14 @@ if __name__ == '__main__':
     parser.add_argument('--img-size', nargs='+', type=int, default=[640, 640], help='[train, test] image sizes')
     parser.add_argument('--rect', action='store_true', help='rectangular training')
     parser.add_argument('--resume', nargs='?', const=True, default=False, help='resume most recent training')
+    parser.add_argument('--retrain-mode', choices=['resume', 'reset'], default=retrain_mode,
+                        help='resume: original retraining; reset: inherit only fault model weights')
+    parser.add_argument('--retrain-epochs', type=int, default=25,
+                        help='additional training epochs for reset mode')
+    parser.add_argument('--retrain-lr', type=float, default=0.003,
+                        help='initial learning rate for reset mode')
+    parser.add_argument('--retrain-warmup-epochs', type=float, default=2.0,
+                        help='warmup epochs for reset mode (0 disables warmup)')
     parser.add_argument('--nosave', action='store_true', help='only save final checkpoint')
     parser.add_argument('--notest', action='store_true', help='only test final epoch')
     parser.add_argument('--noautoanchor', action='store_true', help='disable autoanchor check')
@@ -678,10 +697,33 @@ if __name__ == '__main__':
     parser.add_argument('--v5-metric', action='store_true', help='assume maximum recall as 1.0 in AP calculation')
 
     opt = parser.parse_args()
-    if is_resume:
+    if opt.retrain_mode == 'reset':
+        if not is_resume:
+            parser.error('--retrain-mode reset requires label_flag="ours" or "datactive"')
+        if opt.resume:
+            parser.error('--resume cannot be combined with --retrain-mode reset')
+        if opt.evolve:
+            parser.error('--evolve cannot be combined with --retrain-mode reset')
+        if opt.retrain_epochs < 1 or (opt.linear_lr and opt.retrain_epochs < 2):
+            parser.error('--retrain-epochs must be positive (at least 2 with --linear-lr)')
+        if not math.isfinite(opt.retrain_lr) or opt.retrain_lr <= 0:
+            parser.error('--retrain-lr must be finite and positive')
+        if not math.isfinite(opt.retrain_warmup_epochs) or opt.retrain_warmup_epochs < 0:
+            parser.error('--retrain-warmup-epochs must be finite and nonnegative')
+        if not os.path.isfile(resume_pt_file):
+            parser.error(f'Fault checkpoint does not exist: {resume_pt_file}')
+        opt.weights, opt.cfg, opt.resume = resume_pt_file, '', False
+        opt.epochs = opt.retrain_epochs
+        # 独立目录保存新方案结果，重复运行自动递增，保留原方案结果。
+        model_save_dir = str(increment_path(Path(model_save_dir) / f'reset_{opt.epochs}ep', exist_ok=False))
+    elif is_resume:
         opt.resume = resume_pt_file # 权重文件pt
         opt.opt_yaml_path = resume_opt_yaml_path # 优化的相关配置
         opt.epochs = resume_end_epoch
+
+    # 参数检查后再置换标签，--help 或错误参数不会改动数据。
+    label_replace(dataset_name, train_labels_dir, val_labels_dir)
+    os.makedirs(model_save_dir, exist_ok=True)
     
     '''
     ours_and_baselines = config["all_methods"]

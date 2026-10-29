@@ -6,7 +6,7 @@ from ours.small_utils import read_yaml
 
 DATA_ROOT = Path(read_yaml("config.yaml")["exp_data_dir"])
 DATASETNAME = "visdrone"    # voc | kitti | visdrone
-MODEL_NAME = "frcnn"     # yolov7 | rtdetr | frcnn | fcos
+MODEL_NAME = "yolov7"     # yolov7 | rtdetr | frcnn | fcos
 FAULT_RATIO = 0.1
 REPEAT_ID = 1
 '''
@@ -42,7 +42,10 @@ DUPLICATE_IOU = 0.97
 TRACK_IOU = 0.5
 # IMAGE_PERCENTILE_SCALE = 0.1 if (DATASETNAME, MODEL_NAME) == ("visdrone", "yolov7") else 1.0
 if DATASETNAME == "visdrone":
-    IMAGE_PERCENTILE_SCALE = 0.1
+    if MODEL_NAME == "yolov7":
+        IMAGE_PERCENTILE_SCALE = 0.1
+    else:
+        IMAGE_PERCENTILE_SCALE = 0.1
 else:
     IMAGE_PERCENTILE_SCALE = 1.0
 
@@ -54,9 +57,16 @@ PREDICTIONS_DIR = DATA_ROOT / (
     f"inject_{FAULT_RATIO}_repeat/repeat_{REPEAT_ID}_{EXPID}"
 )
 '''
+# 当前 VisDrone/YOLOv7 的既有过程度量对应此采集实验；其他实验可显式指定目录。
+PREDICTION_EXPERIMENT_ID = (
+    1791968956 if (DATASETNAME, MODEL_NAME, REPEAT_ID) == ("visdrone", "yolov7", 1) else None
+)
+PREDICTION_REPEAT_DIR = f"repeat_{REPEAT_ID}"
+if PREDICTION_EXPERIMENT_ID is not None:
+    PREDICTION_REPEAT_DIR += f"_{PREDICTION_EXPERIMENT_ID}"
 PREDICTIONS_DIR = DATA_ROOT / (
     f"collection_process_info/{DATASETNAME}/{MODEL_NAME}/collected_predict_boxes/"
-    f"inject_{FAULT_RATIO}_repeat/repeat_{REPEAT_ID}"
+    f"inject_{FAULT_RATIO}_repeat/{PREDICTION_REPEAT_DIR}"
 )
 
 # 所有新结果放入独立目录，避免覆盖原流程数据。

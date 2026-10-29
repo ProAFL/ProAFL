@@ -41,6 +41,10 @@ def build_dataset(mask_type,class_num):
 def build_ResNet50(class_num):
     model = torchvision.models.resnet50(weights=ResNet50_Weights.IMAGENET1K_V1)
     model.fc = torch.nn.Linear(2048, class_num)
+    # 只微调 layer4 和 fc，其余层(conv1/bn1/layer1~3)冻结
+    for name, param in model.named_parameters():
+        if not (name.startswith("layer4.") or name.startswith("fc.")):
+            param.requires_grad = False
     return model
 
 def build_criterion(is_LNL,train_dataset):
@@ -180,14 +184,14 @@ if __name__ == "__main__":
     print(f"PID: {pid}")
     config = read_yaml("config.yaml")
     exp_data_root = config["exp_data_dir"]
-    dataset_name = "kitti" # voc|visdrone|kitti                   
+    dataset_name = "visdrone" # voc|visdrone|kitti                   
     img_root_dir = os.path.join(exp_data_root,"datasets",f"{dataset_name}-coco","train")
     # annotation_path = f"{exp_data_root}/datasets/{dataset_name}-coco/train/_annotations.coco_error.json"
     inject_ratio = 0.1
     repeat_id = 1
     annotation_path = os.path.join(exp_data_root,"fault_inject",str(inject_ratio),dataset_name,
                         "coco_format","annotations_no_miss.json")
-    mask_type = "other_objects" # crop|other_objects
+    mask_type = "crop" # crop|other_objects
     if dataset_name == "voc":
         class_num = 21
     elif dataset_name == "visdrone":
@@ -196,9 +200,9 @@ if __name__ == "__main__":
         class_num = 9
     else:
         raise Exception(f"dataset_name:{dataset_name} not supported")
-    epoches = 13
+    epoches = 5 # 13
     device = torch.device("cuda:1")
-    model_save_dir = os.path.join(exp_data_root,"datactive_models",dataset_name,str(inject_ratio),f"repeat_{str(repeat_id)}",mask_type)
+    model_save_dir = os.path.join(exp_data_root,"datactive_models",dataset_name,str(inject_ratio),f"repeat_{str(repeat_id)}_temp",mask_type)
     os.makedirs(model_save_dir,exist_ok=True)
     train()
     end_time = time.time()

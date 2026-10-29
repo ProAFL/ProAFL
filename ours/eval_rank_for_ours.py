@@ -19,7 +19,7 @@ from ours.rank.analyse.common import (
 
 DATA_ROOT = Path("/data/mml/data_debugging_data/ProAFL_data")
 DATASETNAME = "visdrone" # voc|kitti|visdrone 
-MODEL_NAME = "rtdetr" # yolov7|rtdetr|frcnn|fcos
+MODEL_NAME = "yolov7" # yolov7|rtdetr|frcnn|fcos
 # yolov7-voc: 1791094449
 # yolov7-kitti: 1792056154
 # yolov7-visdrone: 1791968956
