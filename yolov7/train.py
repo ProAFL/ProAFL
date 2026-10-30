@@ -616,11 +616,11 @@ if __name__ == '__main__':
     config = read_yaml("../config.yaml") # 读取主项目的配置
     exp_data_root = config["exp_data_dir"]
     dataset_name = "visdrone" # voc|kitti|visdrone
-    is_save_each_epoch = True # 是否每个epoch的checkpoint都保存
+    is_save_each_epoch = False # 是否每个epoch的checkpoint都保存
     inject_ratio = 0.1 # 0.01,0.05,0.1,0.15
     repeat_id = 1
     gpu_id = 0
-    label_flag = "ours" # fault|ours|datactive
+    label_flag = "datactive" # fault|ours|datactive
     retrain_mode = "resume" # resume: 原方案；reset: 仅继承权重，重置训练状态
     is_resume = False # 是否从故障训练恢复(corrected train)
     if label_flag in ["ours","datactive"]:

@@ -124,7 +124,7 @@ if __name__ == "__main__":
     inject_ratio = 0.1
     annotation_path=f"{exp_data_root}/fault_inject/{str(inject_ratio)}/{dataset_name}/coco_format/annotations_no_miss.json"
     annotation_with_miss_path = f"{exp_data_root}/fault_inject/{str(inject_ratio)}/{dataset_name}/coco_format/annotations_with_miss.json"
-    for repeat_id in [5]:
+    for repeat_id in [1]:
         crop_infer_results_path = os.path.join(exp_data_root,"datactive_infer_res",dataset_name,
                                                str(inject_ratio),f"repeat_{repeat_id}","crop.json")
         others_infer_results_path = os.path.join(exp_data_root,"datactive_infer_res",dataset_name,

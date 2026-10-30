@@ -399,7 +399,7 @@ if __name__ == "__main__":
     print("PID:",PID)
     config = read_yaml("config.yaml")
     DATA_ROOT = Path(config['exp_data_dir'])
-    METHOD = "ours" # ours|datactive
+    METHOD = "datactive" # ours|datactive
     DATASET_NAME = "visdrone" # voc|kitti|visdrone
     MODEL_NAME = "yolov7"
     FAULT_RATIO = 0.1
@@ -419,7 +419,6 @@ if __name__ == "__main__":
     '''
     if METHOD == "ours":
         # 排序结果路径
-        # RANK_PATH = DATA_ROOT / f"process_features/{DATASET_NAME}/{MODEL_NAME}/{FAULT_RATIO}_repeat/repeat_{REPEAT_ID}_{EXPID}/merged_rank.json"
         RANK_PATH = DATA_ROOT /"dual_branch"/f"process_features/{DATASET_NAME}/{MODEL_NAME}/{FAULT_RATIO}_repeat/repeat_{REPEAT_ID}/merged_rank.json"
     elif METHOD == "datactive":
         RANK_PATH = DATA_ROOT / f"rank/datactive/{DATASET_NAME}/0.1/repeat_{REPEAT_ID}"/"converted_rank.joblib"

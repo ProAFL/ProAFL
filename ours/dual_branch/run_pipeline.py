@@ -15,7 +15,7 @@ from ours.dual_branch.config import ANNOTATIONS_PATH, PREDICTIONS_DIR, EPOCHS, L
 FEATURE_DIMENSIONS = 8  # 6：原版类别 3 维 + 几何 3 维；8：扩展类别 4 维 + 几何 4 维
 GEOMETRY_WEIGHT = 1.0  # 两分支等优先级；可填 [0,1]，减小后优先检查类别异常
 PREDICTIONS_DIR_OVERRIDE = None  # None：使用 config.py；也可填完整预测目录字符串或 Path
-REUSE_METRICS = True  # True：复用两份已有过程度量；False：重新收集全部过程度量
+REUSE_METRICS = True  # 首次切换预测目录必须重新收集；同一来源采集完成后可改 True 复用
 # 图片系数仍在 config.py 的 IMAGE_PERCENTILE_SCALE 设置，目前 VisDrone/YOLOv7 为 0.5。
 
 

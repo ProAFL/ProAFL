@@ -23,7 +23,7 @@
 GEOMETRY_WEIGHT = 1.0         # 正式 4+4 对称八维，两分支等优先级
 FEATURE_DIMENSIONS = 8        # 改为 6 使用原版 3+3 六维；8 使用扩展 4+4 八维
 PREDICTIONS_DIR_OVERRIDE = None  # 使用 config.py 的预测目录
-REUSE_METRICS = True          # False 重新收集；True 复用已有标注/图片过程度量
+REUSE_METRICS = False         # 默认重新收集；同一预测来源的度量可设 True 复用
 ```
 
 从仓库根目录运行：
@@ -60,15 +60,17 @@ python -m ours.dual_branch.merge_rank
 本次默认是 VisDrone / YOLOv7 / 0.1 / repeat_1，50 轮，最后 10 轮作为后期窗口。
 类别首次达到阈值为 `0.1`，IoU 首次达到阈值为 `0.45`，均使用严格大于判定。
 
-现有预测目录为：
+预测目录统一使用不带实验编号的路径：
 
 ```text
-/data/mml/data_debugging_data/ProAFL_data/collection_process_info/visdrone/yolov7/collected_predict_boxes/inject_0.1_repeat/repeat_1_1791968956
+<DATA_ROOT>/collection_process_info/<DATASETNAME>/<MODEL_NAME>/collected_predict_boxes/inject_<FAULT_RATIO>_repeat/repeat_<REPEAT_ID>
 ```
 
-已通过 `PREDICTION_EXPERIMENT_ID` 接入此目录，默认命令可直接读取。
-切换实验时应核对预测来源和过程度量是否一致，也可以用流水线的
-`PREDICTIONS_DIR_OVERRIDE` 常量显式覆盖。
+例如 VOC/YOLOv7 使用 `inject_0.1_repeat/repeat_1`。
+切换预测来源后必须用 `REUSE_METRICS = False` 重新采集标注和图片过程度量，
+避免旧缓存中的预测框 ID 与新预测不一致。默认配置会重新采集；
+完成后，如预测和标注均未变化，可设为 `True` 复用。
+也可以用流水线的 `PREDICTIONS_DIR_OVERRIDE` 常量显式覆盖预测目录。
 `EPOCHS` 必须与实际采集轮数一致。
 
 八维模式下，`process_feature.py` 内部按每轮已有的匹配预测框 ID 回查完整 `probs`，

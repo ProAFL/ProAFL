@@ -81,14 +81,14 @@ if __name__ == "__main__":
         class_num = 11               
     elif dataset_name == "kitti":
         class_num = 9
-    gpu_id = 0
+    gpu_id = 1
     for repeat_id in [1]:
         for mask_type in ["crop","other_objects"]:
             # trained_model_path = f"{exp_data_root}/baselines/datactive/{dataset_name}/rank/models/{mask_type}/epoch_12.pt"
             # results_save_path = f"{exp_data_root}/baselines/datactive/{dataset_name}/rank/infer/{mask_type}.json"
             trained_model_path = os.path.join(exp_data_root,"datactive_models",dataset_name,str(inject_ratio),
-                                            f"repeat_{repeat_id}",mask_type,"epoch_5.pt")
-            result_save_dir = os.path.join(exp_data_root,"datactive_infer_res",dataset_name,str(inject_ratio),f"repeat_{5}")
+                                            f"repeat_{repeat_id}_temp",mask_type,"epoch_9.pt")
+            result_save_dir = os.path.join(exp_data_root,"datactive_infer_res",dataset_name,str(inject_ratio),f"repeat_{repeat_id}")
             os.makedirs(result_save_dir,exist_ok=True)
             results_save_path = os.path.join(result_save_dir,f"{mask_type}.json")
             infer()

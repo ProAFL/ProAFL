@@ -7,7 +7,7 @@ import shutil
 
 config = read_yaml("config.yaml")
 exp_root_dir = Path(config["exp_data_dir"])
-method_name = "ours"  # ours|datactive
+method_name = "datactive"  # ours|datactive
 dataset_name = "visdrone"  # voc|visdrone|kitti
 fault_ratio = 0.1
 repeat_id = 1
