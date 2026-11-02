@@ -71,7 +71,7 @@ def infer():
 if __name__ == "__main__":
     config = read_yaml("config.yaml")
     exp_data_root = config["exp_data_dir"]
-    dataset_name = "visdrone" # "visdrone" "kitti" "voc"
+    dataset_name = "voc" # "visdrone" "kitti" "voc"
     img_root = f"{exp_data_root}/datasets/{dataset_name}-coco/train"
     inject_ratio = 0.1
     annotation_path = annotation_path = f"{exp_data_root}/fault_inject/{str(inject_ratio)}/{dataset_name}/coco_format/annotations_no_miss.json"

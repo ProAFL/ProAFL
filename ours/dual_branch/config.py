@@ -6,7 +6,7 @@ from ours.small_utils import read_yaml
 
 DATA_ROOT = Path(read_yaml("config.yaml")["exp_data_dir"])
 DATASETNAME = "visdrone"    # voc | kitti | visdrone
-MODEL_NAME = "rtdetr"     # yolov7 | rtdetr | frcnn | fcos
+MODEL_NAME = "frcnn"     # yolov7 | rtdetr | frcnn | fcos
 FAULT_RATIO = 0.1
 REPEAT_ID = 1
 '''

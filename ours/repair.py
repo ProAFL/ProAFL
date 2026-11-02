@@ -399,8 +399,8 @@ if __name__ == "__main__":
     print("PID:",PID)
     config = read_yaml("config.yaml")
     DATA_ROOT = Path(config['exp_data_dir'])
-    METHOD = "datactive" # ours|datactive
-    DATASET_NAME = "visdrone" # voc|kitti|visdrone
+    METHOD = "ours" # ours|datactive
+    DATASET_NAME = "kitti" # voc|kitti|visdrone
     MODEL_NAME = "yolov7"
     FAULT_RATIO = 0.1
     REPEAT_ID = 1
