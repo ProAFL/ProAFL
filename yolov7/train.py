@@ -615,15 +615,18 @@ if __name__ == '__main__':
     print("PID:",PID)
     config = read_yaml("../config.yaml") # 读取主项目的配置
     exp_data_root = config["exp_data_dir"]
-    dataset_name = "voc" # voc|kitti|visdrone
+    dataset_name = "kitti" # voc|kitti|visdrone
     is_save_each_epoch = False # 是否每个epoch的checkpoint都保存
     inject_ratio = 0.1 # 0.01,0.05,0.1,0.15
     repeat_id = 1
-    gpu_id = 1
-    label_flag = "datactive" # fault|ours|datactive
+    label_flag = "objectlab" # fault|ours|datactive|objectlab|deepgini|entropy|margin|loss
     retrain_mode = "resume" # resume: 原方案；reset: 仅继承权重，重置训练状态
-    is_resume = False # 是否从故障训练恢复(corrected train)
-    if label_flag in ["ours","datactive"]:
+    is_resume = True # 是否从故障训练恢复(corrected train)
+    is_save_each_epoch = False # 是否每个epoch的checkpoint都保存
+    batch_size = 128 # 128
+    workers = 16 # 16
+    gpu_id = 0
+    if label_flag in ["ours","datactive","objectlab","deepgini","entropy","margin","loss"]:
         is_resume = True
     if is_resume == True:
         is_save_each_epoch = False # corrected train 只保存 best
@@ -643,11 +646,14 @@ if __name__ == '__main__':
     elif label_flag == "datactive":
         train_labels_dir = f"{exp_data_root}/repair/datactive/{dataset_name}/{inject_ratio}_repeat/repeat_{repeat_id}/yolo_format/labels_train" 
         val_labels_dir = f"{exp_data_root}/repair/datactive/{dataset_name}/{inject_ratio}_repeat/repeat_{repeat_id}/yolo_format/labels_val" 
+    elif label_flag in ["objectlab","deepgini","entropy","margin","loss"]:
+        train_labels_dir = f"{exp_data_root}/repair/{label_flag}/{dataset_name}/yolov7/{inject_ratio}_repeat/repeat_{repeat_id}/yolo_format/labels_train" 
+        val_labels_dir = f"{exp_data_root}/repair/{label_flag}/{dataset_name}/yolov7/{inject_ratio}_repeat/repeat_{repeat_id}/yolo_format/labels_val" 
     
     # 设置模型保存目录
     if label_flag == "fault":
         model_save_dir = f"{exp_data_root}/models/{dataset_name}/yolov7/fault_train/{inject_ratio}/repeat_{str(repeat_id)}"
-    elif label_flag in ["ours","datactive"] :
+    elif label_flag in ["ours","datactive","objectlab","deepgini","entropy","margin","loss"] :
         model_save_dir = f"{exp_data_root}/retrained_models/{label_flag}/{dataset_name}/yolov7/{inject_ratio}/repeat_{str(repeat_id)}"
 
     parser = argparse.ArgumentParser()
