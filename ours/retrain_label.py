@@ -7,8 +7,8 @@ import shutil
 
 config = read_yaml("config.yaml")
 exp_root_dir = Path(config["exp_data_dir"])
-method_name = "datactive"  # ours|datactive
-dataset_name = "kitti"  # voc|kitti|visdrone
+method_name = "loss"  # ours|datactive|objectlab|deepgini|entropy|margin|loss
+dataset_name = "visdrone"  # voc|kitti|visdrone
 fault_ratio = 0.1
 repeat_id = 1
 
@@ -19,6 +19,10 @@ if method_name == "ours":
                   "yolo_format" / "labels")
 elif method_name == "datactive":
     labels_dir = (exp_root_dir / "repair" / "datactive" / dataset_name /
+                  f"{fault_ratio}_repeat" / f"repeat_{repeat_id}" /
+                  "yolo_format" / "labels")
+elif method_name in ["objectlab","deepgini","entropy","margin","loss"]:
+    labels_dir = (exp_root_dir / "repair" / method_name / dataset_name / "yolov7" /
                   f"{fault_ratio}_repeat" / f"repeat_{repeat_id}" /
                   "yolo_format" / "labels")
 else:

@@ -18,9 +18,9 @@ from ours.rank.analyse.common import (
 )
 
 DATA_ROOT = Path("/data/mml/data_debugging_data/ProAFL_data")
-DATASETNAME = "voc" # voc|kitti|visdrone 
-MODEL_NAME = "yolov7" # yolov7|rtdetr|frcnn
-METHOD = "loss" # objectlab|entropy|deepgini|margin|loss
+DATASETNAME = "visdrone" # voc|kitti|visdrone 
+MODEL_NAME = "frcnn" # yolov7|rtdetr|frcnn
+METHOD = "loss" # objectlab|deepgini|entropy|margin|loss
 RANK_DIR = DATA_ROOT / f"rank/{METHOD}/{DATASETNAME}/{MODEL_NAME}/0.1/repeat_1"
 RANK_PATH = RANK_DIR / "rank.joblib"
 ANNOTATIONS_PATH = DATA_ROOT / f"fault_inject/0.1/{DATASETNAME}/coco_format/annotations_with_miss.json"

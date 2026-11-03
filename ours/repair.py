@@ -399,8 +399,8 @@ if __name__ == "__main__":
     print("PID:",PID)
     config = read_yaml("config.yaml")
     DATA_ROOT = Path(config['exp_data_dir'])
-    METHOD = "ours" # ours|datactive
-    DATASET_NAME = "kitti" # voc|kitti|visdrone
+    METHOD = "loss" # ours|datactive|objectlab|deepgini|entropy|margin|loss
+    DATASET_NAME = "visdrone" # voc|kitti|visdrone
     MODEL_NAME = "yolov7"
     FAULT_RATIO = 0.1
     REPEAT_ID = 1
@@ -421,7 +421,9 @@ if __name__ == "__main__":
         # 排序结果路径
         RANK_PATH = DATA_ROOT /"dual_branch"/f"process_features/{DATASET_NAME}/{MODEL_NAME}/{FAULT_RATIO}_repeat/repeat_{REPEAT_ID}/merged_rank.json"
     elif METHOD == "datactive":
-        RANK_PATH = DATA_ROOT / f"rank/datactive/{DATASET_NAME}/0.1/repeat_{REPEAT_ID}"/"converted_rank.joblib"
+        RANK_PATH = DATA_ROOT / f"rank/datactive/{DATASET_NAME}/{FAULT_RATIO}/repeat_{REPEAT_ID}"/"converted_rank.joblib"
+    elif METHOD in ["objectlab","deepgini","entropy","margin","loss"]:
+        RANK_PATH = DATA_ROOT / f"rank/{METHOD}/{DATASET_NAME}/{MODEL_NAME}/{FAULT_RATIO}/repeat_{REPEAT_ID}"/"rank.joblib"
     # 故障（含有miss fault）标注文件
     ANNOTATIONS_WITHMISS_PATH = DATA_ROOT / f"fault_inject/{FAULT_RATIO}/{DATASET_NAME}/coco_format/annotations_with_miss.json"
     # 故障（不含有miss fault）标注文件
