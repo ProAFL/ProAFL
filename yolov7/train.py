@@ -619,13 +619,13 @@ if __name__ == '__main__':
     is_save_each_epoch = False # 是否每个epoch的checkpoint都保存
     inject_ratio = 0.1 # 0.01,0.05,0.1,0.15
     repeat_id = 1
-    label_flag = "objectlab" # fault|ours|datactive|objectlab|deepgini|entropy|margin|loss
+    label_flag = "loss" # fault|ours|datactive|objectlab|deepgini|entropy|margin|loss
     retrain_mode = "resume" # resume: 原方案；reset: 仅继承权重，重置训练状态
     is_resume = True # 是否从故障训练恢复(corrected train)
     is_save_each_epoch = False # 是否每个epoch的checkpoint都保存
     batch_size = 128 # 128
     workers = 16 # 16
-    gpu_id = 0
+    gpu_id = 1
     if label_flag in ["ours","datactive","objectlab","deepgini","entropy","margin","loss"]:
         is_resume = True
     if is_resume == True:
@@ -662,7 +662,7 @@ if __name__ == '__main__':
     parser.add_argument('--data', type=str, default=f'data/{dataset_name}.yaml', help='data.yaml path')
     parser.add_argument('--hyp', type=str, default='data/hyp.scratch.p5.yaml', help='hyperparameters path')
     parser.add_argument('--epochs', type=int, default=50)
-    parser.add_argument('--batch-size', type=int, default=128, help='total batch size for all GPUs')
+    parser.add_argument('--batch-size', type=int, default=batch_size, help='total batch size for all GPUs')
     parser.add_argument('--img-size', nargs='+', type=int, default=[640, 640], help='[train, test] image sizes')
     parser.add_argument('--rect', action='store_true', help='rectangular training')
     parser.add_argument('--resume', nargs='?', const=True, default=False, help='resume most recent training')
@@ -687,7 +687,7 @@ if __name__ == '__main__':
     parser.add_argument('--adam', action='store_true', help='use torch.optim.Adam() optimizer')
     parser.add_argument('--sync-bn', action='store_true', help='use SyncBatchNorm, only available in DDP mode')
     parser.add_argument('--local_rank', type=int, default=-1, help='DDP parameter, do not modify')
-    parser.add_argument('--workers', type=int, default=16, help='maximum number of dataloader workers')
+    parser.add_argument('--workers', type=int, default=workers, help='maximum number of dataloader workers')
     parser.add_argument('--project', default='runs/train', help='save to project/name')
     parser.add_argument('--entity', default=None, help='W&B entity')
     parser.add_argument('--name', default='exp', help='save to project/name')
