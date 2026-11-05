@@ -401,7 +401,7 @@ if __name__ == "__main__":
     DATA_ROOT = Path(config['exp_data_dir'])
     METHOD = "loss" # ours|datactive|objectlab|deepgini|entropy|margin|loss
     DATASET_NAME = "visdrone" # voc|kitti|visdrone
-    MODEL_NAME = "yolov7"
+    MODEL_NAME = "rtdetr" # yolov7|rtdetr|frcnn
     FAULT_RATIO = 0.1
     REPEAT_ID = 1
     '''
