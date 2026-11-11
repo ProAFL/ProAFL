@@ -1,2 +1,24 @@
 # retrain
-在retrain_frcnn.py中
+在retrain_frcnn.py中，基于已有的代码风格和内容（其实是从train.py中拷贝过来的），实现对frcnn模型的retrain（重训练）。
+
+重训练的起点checkpoint: 
+    datasetname = "voc" # voc|kitti|visdrone
+    fault_rate = 0.1
+    repeat_id = 1
+    模型的pth路径： /data/mml/data_debugging_data/ProAFL_data/models/{datasetname}/frcnn/fault_train/{fault_rate}/repeat_{repeat_id}/epoch_49.pth
+
+重训练的轮次（Epoch）：25
+
+重训练使用的数据集：
+if method_name = ours # ours|datactive|objectlab|deepgini|entropy|margin|loss
+    训练集：/data/mml/data_debugging_data/ProAFL_data/repair/ours/{datasetname}/frcnn/{fault_rate}_repeat/repeat_{repeat_id}/annotations_train.json
+    验证集：/data/mml/data_debugging_data/ProAFL_data/repair/ours/{datasetname}/frcnn/{fault_rate}_repeat/repeat_{repeat_id}/annotations_val.json
+elif method_name == "datactive"
+    训练集：/data/mml/data_debugging_data/ProAFL_data/repair/ours/{datasetname}/{fault_rate}_repeat/repeat_{repeat_id}/annotations_train.json
+    验证集：/data/mml/data_debugging_data/ProAFL_data/repair/ours/{datasetname}/{fault_rate}_repeat/repeat_{repeat_id}/annotations_val.json
+
+
+
+重训练后保存的目录：
+/data/mml/data_debugging_data/ProAFL_data/retrained_models/{method_name}/{datasetname}/frcnn
+只保存在验证集上mAP@0.5最好的模型权重。

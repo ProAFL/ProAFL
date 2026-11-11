@@ -1,0 +1,82 @@
+在正常train时(train.py和retrain.py):
+from torchvision.models.detection.roi_heads::ROIHeads
+中的class ROIHeads(nn.Module)::def forward(...) 中 在 self.training==False时（也就是训练过程中的eval）调用的是
+包原始的def postprocess_detections(...)即返回的是一个score.所以第887行应该使用"scores": scores_full[i] # train.py中也要eval（最原始的）
+以此来保证train时正常的训练和eval
+
+
+在收集过程指标时时(collect_train_info.py):
+
+customROI.py文件下新写了个class RoIHeadsCustom(RoIHeads) # from torchvision.models.detection.roi_heads import RoIHeads
+其中覆写了def postprocess_detections(...)即返回了all_boxes, all_scores_full, all_labels。
+并且collect_train_info.py中又添加了下面的两段代码，所以可以收集到全类别信息,但是要注意
+from torchvision.models.detection.roi_heads::ROIHeads#L887 要使用
+"scores": scores_full[i].max(dim=1).values,  # 也会保留原来的 top1 score  # collect_train_info.py
+"probs": scores_full[i]                   # 这里是每个检测的全类别概率 # collect_train_info.py
+‘’‘
+class CollectionRoIHeads(RoIHeadsCustom):
+    """Expose foreground probabilities while retaining scalar detection scores."""
+
+    def forward(self, features, proposals, image_shapes, targets=None):
+        detections, losses = super().forward(features, proposals, image_shapes, targets) # RoIHeadsCustom的forward
+        if not self.training:
+            for detection in detections:
+                # Some local torchvision versions already expose the matrix as
+                # "probs" and reduce "scores" to one dimension in RoIHeads.forward.
+                # Stock torchvision passes through our matrix as "scores" instead.
+                probs = detection.get("probs", detection["scores"])
+                detection["probs"] = probs
+                detection["scores"] = probs.gather(
+                    1, (detection["labels"] - 1).unsqueeze(1)
+                ).squeeze(1)
+        return detections, losses
+’‘’
+‘’‘
+def build_frcnn_model(num_classes):
+    # Every epoch loads a complete checkpoint, so pretrained downloads are unnecessary.
+    model = torchvision.models.detection.fasterrcnn_resnet50_fpn(
+        weights=None, weights_backbone=None,
+        # 让更多位置候选进入分类和框回归阶段。
+        rpn_pre_nms_top_n_test=2000,
+        rpn_post_nms_top_n_test=2000,
+        # VisDrone目标密集，提高阈值可减少相邻同类框被抑制。
+        box_nms_thresh=0.65,
+        # 保留低分候选，减少因 0.05 阈值造成的零重叠。
+        box_score_thresh=0.05,
+        # 显式设置，避免退回默认100；先控制在1000而非无限增加。
+        box_detections_per_img=500
+    )
+                                                      
+    in_features = model.roi_heads.box_predictor.cls_score.in_features
+    """  
+    Number of classes must be equal to your label number
+    """
+    model.roi_heads.box_predictor = FastRCNNPredictor(in_features, num_classes)
+    rh = model.roi_heads
+    model.roi_heads = CollectionRoIHeads(
+        rh.box_roi_pool, rh.box_head, rh.box_predictor,
+        rh.proposal_matcher.high_threshold, rh.proposal_matcher.low_threshold,
+        rh.fg_bg_sampler.batch_size_per_image, rh.fg_bg_sampler.positive_fraction,
+        rh.box_coder.weights, rh.score_thresh, rh.nms_thresh, rh.detections_per_img,
+        rh.mask_roi_pool, rh.mask_head, rh.mask_predictor,
+        rh.keypoint_roi_pool, rh.keypoint_head, rh.keypoint_predictor,
+    )
+    return model
+’‘’
+综上所属：
+当只是常规的train和eval则需要将from torchvision.models.detection.roi_heads::ROIHeads::postprocess_detections(...)中的第887行应该使用"scores": scores_full[i]
+当需要收集全类别时则需要from torchvision.models.detection.roi_heads::ROIHeads#L887 要使用
+"scores": scores_full[i].max(dim=1).values,  # 也会保留原来的 top1 score  # collect_train_info.py
+"probs": scores_full[i]                   # 这里是每个检测的全类别概率 # collect_train_info.py
+而且弃用下面的代码：
+from torchvision.models.detection.roi_heads::ROIHeads
+'''
+    def postprocess_detections(
+        self,
+        class_logits,  # type: Tensor
+        box_regression,  # type: Tensor
+        proposals,  # type: List[Tensor]
+        image_shapes,  # type: List[Tuple[int, int]]
+    ):
+    我自定义的弃用了
+'''
