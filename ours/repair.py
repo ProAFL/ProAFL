@@ -379,10 +379,11 @@ def main():
     print(f"cost:{budget}, spent cost:{budget - cost}, remain cost:{cost}")
     print(f"repaired anno json saved at: {save_path}")
 
-    coco_anno_json_path = save_path
-    yolo_output_dir = SAVE_DIR/"yolo_format"
-    os.makedirs(yolo_output_dir,exist_ok=True)
-    coco2yolo(coco_anno_json_path,yolo_output_dir,"train")
+    if MODEL_NAME in ["yolov7","rtdetr"]:
+        coco_anno_json_path = save_path
+        yolo_output_dir = SAVE_DIR/"yolo_format"
+        os.makedirs(yolo_output_dir,exist_ok=True)
+        coco2yolo(coco_anno_json_path,yolo_output_dir,"train")
 
     end_time = time.time()                   
     elapsed_time = end_time - start_time                                     
@@ -401,7 +402,7 @@ if __name__ == "__main__":
     DATA_ROOT = Path(config['exp_data_dir'])
     METHOD = "loss" # ours|datactive|objectlab|deepgini|entropy|margin|loss
     DATASET_NAME = "visdrone" # voc|kitti|visdrone
-    MODEL_NAME = "rtdetr" # yolov7|rtdetr|frcnn
+    MODEL_NAME = "frcnn" # yolov7|rtdetr|frcnn, 对于METHOD==datactive时，这个参数是无效的
     FAULT_RATIO = 0.1
     REPEAT_ID = 1
     '''
@@ -413,7 +414,7 @@ if __name__ == "__main__":
     ("visdrone", "rtdetr"): 1792504350,
     ("voc", "frcnn"): 1792570209,
     ("kitti", "frcnn"): 1792642708,
-    ("visdrone", "frcnn"): 1792917048, # 1792748834,1792917048(500per)，1792933936
+    ("visdrone", "frcnn"): 1792917048, # 1792748834,1792917048(500per), 1792933936
     ("visdrone", "fcos"):1793025492 
     EXPID = 1791968956
     '''

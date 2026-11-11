@@ -85,7 +85,7 @@ def build_frcnn_model(num_classes):
         # 保留低分候选，减少因 0.05 阈值造成的零重叠。
         box_score_thresh=0.05,
         # 显式设置，避免退回默认100；先控制在1000而非无限增加。
-        box_detections_per_img=1000
+        box_detections_per_img=500
     )
                                                       
     in_features = model.roi_heads.box_predictor.cls_score.in_features
