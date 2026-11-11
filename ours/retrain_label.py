@@ -8,9 +8,9 @@ import shutil
 
 config = read_yaml("config.yaml")
 exp_root_dir = Path(config["exp_data_dir"])
-method_name = "ours"  # ours|datactive|objectlab|deepgini|entropy|margin|loss
-dataset_name = "voc"  # voc|kitti|visdrone
-model_name = "frcnn" # yolov7|rtdetr|frcnn
+method_name = "loss"  # ours|datactive|objectlab|deepgini|entropy|margin|loss
+dataset_name = "visdrone"  # voc|kitti|visdrone
+model_name = "frcnn" # yolov7|rtdetr|frcnn  当 method_name = "datactive"时无效
 fault_ratio = 0.1
 repeat_id = 1
 
@@ -107,6 +107,7 @@ def split_for_coco():
         output_label = repair_label_file.parent / f"annotations_{split}.json"
         with output_label.open("w", encoding="utf-8") as file:
             json.dump(data, file, ensure_ascii=False, indent=2)
+            print(f"Saved retrain COCO labels to {output_label}")
 
 if __name__ == "__main__":
     if model_name in ["yolov7", "rtdetr"]:
