@@ -1,4 +1,5 @@
 import argparse
+import gc
 import logging
 import math
 import os
@@ -56,7 +57,7 @@ def train(hyp, opt, device, tb_writer=None):
 
     plots = not opt.evolve
     cuda = device.type != 'cpu'
-    init_seeds(2 + rank)
+    init_seeds(getattr(opt, 'seed', 2 + rank) + max(rank, 0))
     with open(opt.data) as f:
         data_dict = yaml.load(f, Loader=yaml.SafeLoader)
     is_coco = opt.data.endswith('coco.yaml')
@@ -467,7 +468,8 @@ def train(hyp, opt, device, tb_writer=None):
     torch.cuda.empty_cache()
     return results
 
-def label_replace(dataset_name,train_labels_dir,val_labels_dir):
+def label_replace(dataset_name, train_labels_dir, val_labels_dir, data_root=None):
+    exp_data_root = data_root if data_root is not None else globals()['exp_data_root']
     cur_train_labels_dir = f"{exp_data_root}/datasets/{dataset_name}-yolo/train/labels"
     cur_val_labels_dir = f"{exp_data_root}/datasets/{dataset_name}-yolo/val/labels"
     if is_directory_exists(cur_train_labels_dir):
@@ -492,17 +494,11 @@ def label_replace(dataset_name,train_labels_dir,val_labels_dir):
         else:
             print(f"标签缓存不存在，无需删除")
 
-if __name__ == '__main__':
-    print("PID:",os.getpid())
-    exp_data_root = "/data/mml/data_debugging_data/ProAFL_data"
-    dataset_name = "voc" # voc|kitti|visdrone
-    inject_ratio = 0.1
-    repeat_id = 2
-    is_save_each_epoch = True  # True: 每轮额外保存权重；False: 只保存 last.pt 和 best.pt
-    batch_size = 128
-    workers = 16
-    gpu_id = 0
-
+def run_training(dataset_name, repeat_id, *, exp_data_root, inject_ratio=0.1,
+                 is_save_each_epoch=True, batch_size=128, workers=16, gpu_id=0,
+                 is_batch=False):
+    """完成一次实验：初始化参数、置换标签、训练、保存并清理资源。"""
+    print(f"开始训练: dataset={dataset_name}, repeat={repeat_id}", flush=True)
     # 仅训练 fault 标签，训练状态默认从头初始化。
     train_labels_dir = f"{exp_data_root}/fault_inject/{inject_ratio}/{dataset_name}/yolo_format/labels_train"
     val_labels_dir = f"{exp_data_root}/fault_inject/{inject_ratio}/{dataset_name}/yolo_format/labels_val"
@@ -547,9 +543,17 @@ if __name__ == '__main__':
     parser.add_argument('--v5-metric', action='store_true', help='assume maximum recall as 1.0 in AP calculation')
 
     opt = parser.parse_args()
+    if is_batch:
+        if opt.resume or opt.evolve:
+            parser.error('多次实验不支持 --resume 或 --evolve；需要时请将实验范围设为单次')
+        if opt.data != f'data/{dataset_name}.yaml':
+            parser.error('多次实验请使用各数据集默认 YAML，不要指定 --data')
+        if opt.local_rank != -1 or int(os.environ.get('WORLD_SIZE', '1')) > 1:
+            parser.error('多次实验请直接运行 python train.py，暂不支持分布式启动')
+    opt.seed = repeat_id
     opt.save_each_epoch = is_save_each_epoch
     # 参数检查后再置换标签，--help 或错误参数不会改动数据。
-    label_replace(dataset_name, train_labels_dir, val_labels_dir)
+    label_replace(dataset_name, train_labels_dir, val_labels_dir, data_root=exp_data_root)
     os.makedirs(model_save_dir, exist_ok=True)
 
     opt.world_size = int(os.environ['WORLD_SIZE']) if 'WORLD_SIZE' in os.environ else 1
@@ -593,7 +597,14 @@ if __name__ == '__main__':
             prefix = colorstr('tensorboard: ')
             logger.info(f"{prefix}Start with 'tensorboard --logdir {opt.project}', view at http://localhost:6006/")
             tb_writer = SummaryWriter(opt.save_dir)
-        train(hyp, opt, device, tb_writer)
+        try:
+            train(hyp, opt, device, tb_writer)
+        finally:
+            if tb_writer is not None:
+                tb_writer.close()
+            gc.collect()
+            if torch.cuda.is_available():
+                torch.cuda.empty_cache()
 
     else:
 
@@ -677,3 +688,60 @@ if __name__ == '__main__':
         plot_evolution(yaml_file)
         print(f'Hyperparameter evolution complete. Best results saved as: {yaml_file}\n'
               f'Command to train a new model with these hyperparameters: $ python train.py --hyp {yaml_file}')
+    print(f"训练完成: dataset={dataset_name}, repeat={repeat_id}", flush=True)
+
+
+def run_repeat_experiments():
+    """重复实验入口：在这里设置数据集、重复范围和训练配置。"""
+    print("PID:",os.getpid())
+    exp_data_root = "/data/mml/data_debugging_data/ProAFL_data"
+    dataset_names = ["voc", "kitti", "visdrone"]
+    repeat_ids = range(1, 11)  # 重复编号 1～10
+    inject_ratio = 0.1
+    is_save_each_epoch = True  # True: 每轮额外保存权重；False: 只保存 last.pt 和 best.pt
+    batch_size = 128
+    workers = 16
+    gpu_id = 0
+
+    is_batch = len(dataset_names) * len(repeat_ids) > 1
+    for dataset_name in dataset_names:
+        for repeat_id in repeat_ids:
+            run_training(
+                dataset_name, repeat_id,
+                exp_data_root=exp_data_root,
+                inject_ratio=inject_ratio,
+                is_save_each_epoch=is_save_each_epoch,
+                batch_size=batch_size,
+                workers=workers,
+                gpu_id=gpu_id,
+                is_batch=is_batch,
+            )
+
+
+def run_single_experiment():
+    """单次训练入口：在这里设置本次数据集、重复编号和训练配置。"""
+    print("PID:", os.getpid())
+    dataset_name = "voc"  # voc|kitti|visdrone
+    repeat_id = 1
+    exp_data_root = "/data/mml/data_debugging_data/ProAFL_data"
+    inject_ratio = 0.1
+    is_save_each_epoch = True
+    batch_size = 128
+    workers = 16
+    gpu_id = 0
+
+    run_training(
+        dataset_name, repeat_id,
+        exp_data_root=exp_data_root,
+        inject_ratio=inject_ratio,
+        is_save_each_epoch=is_save_each_epoch,
+        batch_size=batch_size,
+        workers=workers,
+        gpu_id=gpu_id,
+        is_batch=False,
+    )
+
+
+if __name__ == '__main__':
+    run_repeat_experiments()
+    # run_single_experiment()  # 单次训练时启用此行，并注释上一行
