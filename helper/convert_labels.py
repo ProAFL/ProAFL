@@ -34,7 +34,6 @@ def coco2voc(coco_anno_json_path:Path,voc_output_dir:Path):
 
 
 if __name__ == "__main__":
-
     inject_ratio = 0.1 # 0.01,0.05,0.1,0.15
     repeat_id = 1
     dataset_name = "kitti" # voc|kitti|visdrone
