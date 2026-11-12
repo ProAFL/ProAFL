@@ -7,7 +7,6 @@ import time
 from copy import deepcopy
 from pathlib import Path
 from threading import Thread
-import pprint
 import shutil
 import numpy as np
 import torch.distributed as dist
@@ -17,437 +16,362 @@ import torch.optim as optim
 import torch.optim.lr_scheduler as lr_scheduler
 import torch.utils.data
 import yaml
-from torch.cuda import amp
 from torch.nn.parallel import DistributedDataParallel as DDP
 from torch.utils.tensorboard import SummaryWriter
 from tqdm import tqdm
-import test                                              
+import test
 from models.experimental import attempt_load
 from models.yolo import Model
 from utils.autoanchor import check_anchors
 from utils.datasets import create_dataloader
 from utils.general import labels_to_class_weights, increment_path, labels_to_image_weights, init_seeds,\
-    fitness, strip_optimizer, get_latest_run, check_dataset, check_file, check_git_status, check_img_size,\
-    check_requirements, print_mutation, set_logging, one_cycle, colorstr
+    fitness, get_latest_run, check_dataset, check_file, check_img_size,\
+    print_mutation, set_logging, one_cycle, colorstr
 from utils.google_utils import attempt_download
 from utils.loss import ComputeLoss, ComputeLossOTA
-from utils.plots import plot_images, plot_labels, plot_results, plot_evolution
+from utils.plots import plot_images, plot_results, plot_evolution
 from utils.torch_utils import ModelEMA, select_device, intersect_dicts, torch_distributed_zero_first, is_parallel
 from utils.wandb_logging.wandb_utils import WandbLogger, check_wandb_resume
 
 logger = logging.getLogger(__name__)
 
-def read_yaml(yaml_path):
-    with open(yaml_path, "r", encoding="utf-8") as f:
-        config = yaml.safe_load(f)
-    return config
-
 def is_directory_exists(path):
     return os.path.exists(path) and os.path.isdir(path)
 
 def train(hyp, opt, device, tb_writer=None):
-    reset_retrain = getattr(opt, 'retrain_mode', 'resume') == 'reset'
-    if reset_retrain:
-        if opt.resume:
-            raise ValueError('reset retraining cannot restore a resume checkpoint state')
-        hyp = dict(hyp)
-        hyp.update(lr0=opt.retrain_lr, lrf=0.1,
-                   warmup_epochs=opt.retrain_warmup_epochs, warmup_bias_lr=0.01)
     logger.info(colorstr('hyperparameters: ') + ', '.join(f'{k}={v}' for k, v in hyp.items()))
     save_dir, epochs, batch_size, total_batch_size, weights, rank, freeze =\
         Path(opt.save_dir), opt.epochs, opt.batch_size, opt.total_batch_size, opt.weights, opt.global_rank, opt.freeze
 
-                 
     wdir = save_dir / 'weights'
-    wdir.mkdir(parents=True, exist_ok=True)            
+    wdir.mkdir(parents=True, exist_ok=True)
     last = wdir / 'last.pt'
     best = wdir / 'best.pt'
     results_file = save_dir / 'results.txt'
 
-                       
     with open(save_dir / 'hyp.yaml', 'w') as f:
         yaml.dump(hyp, f, sort_keys=False)
     with open(save_dir / 'opt.yaml', 'w') as f:
         yaml.dump(vars(opt), f, sort_keys=False)
 
-               
-    plots = not opt.evolve                
+    plots = not opt.evolve
     cuda = device.type != 'cpu'
     init_seeds(2 + rank)
     with open(opt.data) as f:
-        data_dict = yaml.load(f, Loader=yaml.SafeLoader)             
+        data_dict = yaml.load(f, Loader=yaml.SafeLoader)
     is_coco = opt.data.endswith('coco.yaml')
 
-                                                                             
-    loggers = {'wandb': None}                
+    loggers = {'wandb': None}
     if rank in [-1, 0]:
-        opt.hyp = hyp                       
-        run_id = torch.load(weights, map_location=device, weights_only=False).get('wandb_id') if not reset_retrain and weights.endswith('.pt') and os.path.isfile(weights) else None
+        opt.hyp = hyp
+        run_id = torch.load(weights, map_location=device, weights_only=False).get('wandb_id') if opt.resume and weights.endswith('.pt') and os.path.isfile(weights) else None
         wandb_logger = WandbLogger(opt, Path(opt.save_dir).stem, run_id, data_dict)
         loggers['wandb'] = wandb_logger.wandb
         data_dict = wandb_logger.data_dict
         if wandb_logger.wandb:
-            weights, epochs, hyp = opt.weights, opt.epochs, opt.hyp                                                        
+            weights, epochs, hyp = opt.weights, opt.epochs, opt.hyp
 
-    nc = 1 if opt.single_cls else int(data_dict['nc'])                     
-    names = ['item'] if opt.single_cls and len(data_dict['names']) != 1 else data_dict['names']               
-    assert len(names) == nc, '%g names found for nc=%g dataset in %s' % (len(names), nc, opt.data)         
+    nc = 1 if opt.single_cls else int(data_dict['nc'])
+    names = ['item'] if opt.single_cls and len(data_dict['names']) != 1 else data_dict['names']
+    assert len(names) == nc, '%g names found for nc=%g dataset in %s' % (len(names), nc, opt.data)
 
-           
     pretrained = weights.endswith('.pt')
     if pretrained:
         with torch_distributed_zero_first(rank):
-            attempt_download(weights)                                 
-        ckpt = torch.load(weights, map_location=device, weights_only=False)                   
-        model = Model(opt.cfg or ckpt['model'].yaml, ch=3, nc=nc, anchors=hyp.get('anchors')).to(device)          
-        exclude = ['anchor'] if (opt.cfg or hyp.get('anchors')) and not opt.resume else []                
-        state_dict = ckpt['model'].float().state_dict()           
-        state_dict = intersect_dicts(state_dict, model.state_dict(), exclude=exclude)             
-        model.load_state_dict(state_dict, strict=False)        
-        logger.info('Transferred %g/%g items from %s' % (len(state_dict), len(model.state_dict()), weights))          
+            attempt_download(weights)
+        ckpt = torch.load(weights, map_location=device, weights_only=False)
+        model = Model(opt.cfg or ckpt['model'].yaml, ch=3, nc=nc, anchors=hyp.get('anchors')).to(device)
+        exclude = ['anchor'] if (opt.cfg or hyp.get('anchors')) and not opt.resume else []
+        state_dict = ckpt['model'].float().state_dict()
+        state_dict = intersect_dicts(state_dict, model.state_dict(), exclude=exclude)
+        model.load_state_dict(state_dict, strict=False)
+        logger.info('Transferred %g/%g items from %s' % (len(state_dict), len(model.state_dict()), weights))
     else:
-        model = Model(opt.cfg, ch=3, nc=nc, anchors=hyp.get('anchors')).to(device)          
+        model = Model(opt.cfg, ch=3, nc=nc, anchors=hyp.get('anchors')).to(device)
     with torch_distributed_zero_first(rank):
-        check_dataset(data_dict)         
+        check_dataset(data_dict)
     train_path = data_dict['train']
     test_path = data_dict['val']
 
-            
-    freeze = [f'model.{x}.' for x in (freeze if len(freeze) > 1 else range(freeze[0]))]                                               
+    freeze = [f'model.{x}.' for x in (freeze if len(freeze) > 1 else range(freeze[0]))]
     for k, v in model.named_parameters():
-        v.requires_grad = True                    
+        v.requires_grad = True
         if any(x in k for x in freeze):
             print('freezing %s' % k)
             v.requires_grad = False
 
-               
-    nbs = 64                      
-    accumulate = max(round(nbs / total_batch_size), 1)                                     
-    hyp['weight_decay'] *= total_batch_size * accumulate / nbs                      
+    nbs = 64
+    accumulate = max(round(nbs / total_batch_size), 1)
+    hyp['weight_decay'] *= total_batch_size * accumulate / nbs
     logger.info(f"Scaled weight_decay = {hyp['weight_decay']}")
 
-    pg0, pg1, pg2 = [], [], []                              
+    pg0, pg1, pg2 = [], [], []
     for k, v in model.named_modules():
         if hasattr(v, 'bias') and isinstance(v.bias, nn.Parameter):
-            pg2.append(v.bias)          
+            pg2.append(v.bias)
         if isinstance(v, nn.BatchNorm2d):
-            pg0.append(v.weight)            
+            pg0.append(v.weight)
         elif hasattr(v, 'weight') and isinstance(v.weight, nn.Parameter):
-            pg1.append(v.weight)               
+            pg1.append(v.weight)
         if hasattr(v, 'im'):
-            if hasattr(v.im, 'implicit'):           
+            if hasattr(v.im, 'implicit'):
                 pg0.append(v.im.implicit)
             else:
                 for iv in v.im:
                     pg0.append(iv.implicit)
         if hasattr(v, 'imc'):
-            if hasattr(v.imc, 'implicit'):           
+            if hasattr(v.imc, 'implicit'):
                 pg0.append(v.imc.implicit)
             else:
                 for iv in v.imc:
                     pg0.append(iv.implicit)
         if hasattr(v, 'imb'):
-            if hasattr(v.imb, 'implicit'):           
+            if hasattr(v.imb, 'implicit'):
                 pg0.append(v.imb.implicit)
             else:
                 for iv in v.imb:
                     pg0.append(iv.implicit)
         if hasattr(v, 'imo'):
-            if hasattr(v.imo, 'implicit'):           
+            if hasattr(v.imo, 'implicit'):
                 pg0.append(v.imo.implicit)
             else:
                 for iv in v.imo:
                     pg0.append(iv.implicit)
         if hasattr(v, 'ia'):
-            if hasattr(v.ia, 'implicit'):           
+            if hasattr(v.ia, 'implicit'):
                 pg0.append(v.ia.implicit)
             else:
                 for iv in v.ia:
                     pg0.append(iv.implicit)
         if hasattr(v, 'attn'):
-            if hasattr(v.attn, 'logit_scale'):   
+            if hasattr(v.attn, 'logit_scale'):
                 pg0.append(v.attn.logit_scale)
-            if hasattr(v.attn, 'q_bias'):   
+            if hasattr(v.attn, 'q_bias'):
                 pg0.append(v.attn.q_bias)
-            if hasattr(v.attn, 'v_bias'):  
+            if hasattr(v.attn, 'v_bias'):
                 pg0.append(v.attn.v_bias)
-            if hasattr(v.attn, 'relative_position_bias_table'):  
+            if hasattr(v.attn, 'relative_position_bias_table'):
                 pg0.append(v.attn.relative_position_bias_table)
         if hasattr(v, 'rbr_dense'):
-            if hasattr(v.rbr_dense, 'weight_rbr_origin'):  
+            if hasattr(v.rbr_dense, 'weight_rbr_origin'):
                 pg0.append(v.rbr_dense.weight_rbr_origin)
-            if hasattr(v.rbr_dense, 'weight_rbr_avg_conv'): 
+            if hasattr(v.rbr_dense, 'weight_rbr_avg_conv'):
                 pg0.append(v.rbr_dense.weight_rbr_avg_conv)
-            if hasattr(v.rbr_dense, 'weight_rbr_pfir_conv'):  
+            if hasattr(v.rbr_dense, 'weight_rbr_pfir_conv'):
                 pg0.append(v.rbr_dense.weight_rbr_pfir_conv)
-            if hasattr(v.rbr_dense, 'weight_rbr_1x1_kxk_idconv1'): 
+            if hasattr(v.rbr_dense, 'weight_rbr_1x1_kxk_idconv1'):
                 pg0.append(v.rbr_dense.weight_rbr_1x1_kxk_idconv1)
-            if hasattr(v.rbr_dense, 'weight_rbr_1x1_kxk_conv2'):   
+            if hasattr(v.rbr_dense, 'weight_rbr_1x1_kxk_conv2'):
                 pg0.append(v.rbr_dense.weight_rbr_1x1_kxk_conv2)
-            if hasattr(v.rbr_dense, 'weight_rbr_gconv_dw'):   
+            if hasattr(v.rbr_dense, 'weight_rbr_gconv_dw'):
                 pg0.append(v.rbr_dense.weight_rbr_gconv_dw)
-            if hasattr(v.rbr_dense, 'weight_rbr_gconv_pw'):   
+            if hasattr(v.rbr_dense, 'weight_rbr_gconv_pw'):
                 pg0.append(v.rbr_dense.weight_rbr_gconv_pw)
-            if hasattr(v.rbr_dense, 'vector'):   
+            if hasattr(v.rbr_dense, 'vector'):
                 pg0.append(v.rbr_dense.vector)
 
     if opt.adam:
-        optimizer = optim.Adam(pg0, lr=hyp['lr0'], betas=(hyp['momentum'], 0.999))                            
+        optimizer = optim.Adam(pg0, lr=hyp['lr0'], betas=(hyp['momentum'], 0.999))
     else:
         optimizer = optim.SGD(pg0, lr=hyp['lr0'], momentum=hyp['momentum'], nesterov=True)
 
-    optimizer.add_param_group({'params': pg1, 'weight_decay': hyp['weight_decay']})                             
-    optimizer.add_param_group({'params': pg2})                    
+    optimizer.add_param_group({'params': pg1, 'weight_decay': hyp['weight_decay']})
+    optimizer.add_param_group({'params': pg2})
     logger.info('Optimizer groups: %g .bias, %g conv.weight, %g other' % (len(pg2), len(pg1), len(pg0)))
     del pg0, pg1, pg2
 
-                                                    
-                                                                                       
     if opt.linear_lr:
-        lf = lambda x: (1 - x / (epochs - 1)) * (1.0 - hyp['lrf']) + hyp['lrf']          
+        lf = lambda x: (1 - x / (epochs - 1)) * (1.0 - hyp['lrf']) + hyp['lrf']
     else:
-        lf = one_cycle(1, hyp['lrf'], epochs)                        
+        lf = one_cycle(1, hyp['lrf'], epochs)
     scheduler = lr_scheduler.LambdaLR(optimizer, lr_lambda=lf)
-                                                     
 
-         
     ema = ModelEMA(model) if rank in [-1, 0] else None
 
-            
     start_epoch, best_fitness = 0, 0.0
+    if pretrained and opt.resume:
+
+        if ckpt['optimizer'] is not None:
+            optimizer.load_state_dict(ckpt['optimizer'])
+            best_fitness = ckpt['best_fitness']
+
+        if ema and ckpt.get('ema'):
+            ema.ema.load_state_dict(ckpt['ema'].float().state_dict())
+            ema.updates = ckpt['updates']
+
+        if ckpt.get('training_results') is not None:
+            results_file.write_text(ckpt['training_results'])
+
+        start_epoch = ckpt['epoch'] + 1
+        if opt.resume:
+            assert start_epoch > 0, '%s training to %g epochs is finished, nothing to resume.' % (weights, epochs)
+            assert start_epoch < epochs, \
+                f'Resume checkpoint has completed {start_epoch} epochs; target epochs ({epochs}) must be greater.'
+        elif epochs < start_epoch:
+            logger.info('%s has been trained for %g epochs. Fine-tuning for %g additional epochs.' %
+                        (weights, ckpt['epoch'], epochs))
+            epochs += ckpt['epoch']
+
     if pretrained:
-        if not reset_retrain:
-                   
-            if ckpt['optimizer'] is not None:
-                optimizer.load_state_dict(ckpt['optimizer'])
-                best_fitness = ckpt['best_fitness']
-
-             
-            if ema and ckpt.get('ema'):
-                ema.ema.load_state_dict(ckpt['ema'].float().state_dict())
-                ema.updates = ckpt['updates']
-
-                 
-            if ckpt.get('training_results') is not None:
-                results_file.write_text(ckpt['training_results'])
-
-                
-            start_epoch = ckpt['epoch'] + 1
-            if opt.resume:
-                assert start_epoch > 0, '%s training to %g epochs is finished, nothing to resume.' % (weights, epochs)
-                assert start_epoch < epochs, \
-                    f'Resume checkpoint has completed {start_epoch} epochs; target epochs ({epochs}) must be greater.'
-            elif epochs < start_epoch:
-                logger.info('%s has been trained for %g epochs. Fine-tuning for %g additional epochs.' %
-                            (weights, ckpt['epoch'], epochs))
-                epochs += ckpt['epoch']
-
-        else:
-            logger.info('Reset retraining: model weights loaded; optimizer, EMA, scheduler, '
-                        'epoch, best_fitness and training history start fresh.')
-
         del ckpt, state_dict
 
-                 
-    gs = max(int(model.stride.max()), 32)                          
-    nl = model.model[-1].nl                                                            
-    imgsz, imgsz_test = [check_img_size(x, gs) for x in opt.img_size]                                 
+    gs = max(int(model.stride.max()), 32)
+    nl = model.model[-1].nl
+    imgsz, imgsz_test = [check_img_size(x, gs) for x in opt.img_size]
 
-             
     if cuda and rank == -1 and torch.cuda.device_count() > 1:
         model = torch.nn.DataParallel(model)
 
-                   
     if opt.sync_bn and cuda and rank != -1:
         model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model).to(device)
         logger.info('Using SyncBatchNorm()')
 
-                 
     dataloader, dataset = create_dataloader(train_path, imgsz, batch_size, gs, opt,
                                             hyp=hyp, augment=True, cache=opt.cache_images, rect=opt.rect, rank=rank,
                                             world_size=opt.world_size, workers=opt.workers,
                                             image_weights=opt.image_weights, quad=opt.quad, prefix=colorstr('train: '))
-    mlc = np.concatenate(dataset.labels, 0)[:, 0].max()                   
-    nb = len(dataloader)                     
+    mlc = np.concatenate(dataset.labels, 0)[:, 0].max()
+    nb = len(dataloader)
     assert mlc < nc, 'Label class %g exceeds nc=%g in %s. Possible class labels are 0-%g' % (mlc, nc, opt.data, nc - 1)
 
-               
     if rank in [-1, 0]:
-        testloader = create_dataloader(test_path, imgsz_test, batch_size*2, gs, opt,              
+        testloader = create_dataloader(test_path, imgsz_test, batch_size*2, gs, opt,
                                        hyp=hyp, cache=opt.cache_images and not opt.notest, rect=True, rank=-1,
                                        world_size=opt.world_size, workers=opt.workers,
                                        pad=0.5, prefix=colorstr('val: '))[0]
-        '''
-        train_t_loader = create_dataloader(train_path, imgsz_test, 1, gs, opt,  # testloader
-                                       hyp=hyp, cache=opt.cache_images and not opt.notest, rect=True, rank=-1,
-                                       world_size=opt.world_size, workers=opt.workers,
-                                       pad=0.5, prefix=colorstr('val: '))[0]
-        '''
 
         if not opt.resume:
             labels = np.concatenate(dataset.labels, 0)
-            c = torch.tensor(labels[:, 0])           
-                                                                           
-                                                     
+            c = torch.tensor(labels[:, 0])
+
             if plots:
-                                                              
+
                 if tb_writer:
                     tb_writer.add_histogram('classes', c, 0)
 
-                     
-            if not opt.noautoanchor and not reset_retrain:
+            if not opt.noautoanchor:
                 check_anchors(dataset, model=model, thr=hyp['anchor_t'], imgsz=imgsz)
-            model.half().float()                               
+            model.half().float()
 
-              
     if cuda and rank != -1:
         model = DDP(model, device_ids=[opt.local_rank], output_device=opt.local_rank,
-                                                                                                                    
+
                     find_unused_parameters=any(isinstance(layer, nn.MultiheadAttention) for layer in model.modules()))
 
-                      
-    hyp['box'] *= 3. / nl                   
-    hyp['cls'] *= nc / 80. * 3. / nl                               
-    hyp['obj'] *= (imgsz / 640) ** 2 * 3. / nl                                  
+    hyp['box'] *= 3. / nl
+    hyp['cls'] *= nc / 80. * 3. / nl
+    hyp['obj'] *= (imgsz / 640) ** 2 * 3. / nl
     hyp['label_smoothing'] = opt.label_smoothing
-    model.nc = nc                                     
-    model.hyp = hyp                                   
-    model.gr = 1.0                                          
-    model.class_weights = labels_to_class_weights(dataset.labels, nc).to(device) * nc                        
+    model.nc = nc
+    model.hyp = hyp
+    model.gr = 1.0
+    model.class_weights = labels_to_class_weights(dataset.labels, nc).to(device) * nc
     model.names = names
 
-                    
     t0 = time.time()
-    # 新方案按指定轮数 warmup，避免小数据集也被强制 warmup 1000 个 batch。
-    nw = max(round(hyp['warmup_epochs'] * nb), 0 if reset_retrain else 1000)
-                                                                                        
-    maps = np.zeros(nc)                 
-    results = (0, 0, 0, 0, 0, 0, 0)                                                     
-    scheduler.last_epoch = start_epoch - 1               
-    # scaler = amp.GradScaler(enabled=cuda)
-    scaler = torch.amp.GradScaler('cuda')
-    compute_loss_ota = ComputeLossOTA(model)                   
-    compute_loss = ComputeLoss(model)                   
+    nw = max(round(hyp['warmup_epochs'] * nb), 1000)
+
+    maps = np.zeros(nc)
+    results = (0, 0, 0, 0, 0, 0, 0)
+    scheduler.last_epoch = start_epoch - 1
+    scaler = torch.amp.GradScaler('cuda', enabled=cuda)
+    compute_loss_ota = ComputeLossOTA(model)
+    compute_loss = ComputeLoss(model)
     logger.info(f'Image sizes {imgsz} train, {imgsz_test} test\n'
                 f'Using {dataloader.num_workers} dataloader workers\n'
                 f'Logging results to {save_dir}\n'
                 f'Starting training for {epochs} epochs...')
     torch.save(model, wdir / 'init.pt')
-    for epoch in range(start_epoch, epochs):                                                                            
+    for epoch in range(start_epoch, epochs):
         model.train()
 
-                                         
         if opt.image_weights:
-                              
+
             if rank in [-1, 0]:
-                cw = model.class_weights.cpu().numpy() * (1 - maps) ** 2 / nc                 
-                iw = labels_to_image_weights(dataset.labels, nc=nc, class_weights=cw)                 
-                dataset.indices = random.choices(range(dataset.n), weights=iw, k=dataset.n)                     
-                              
+                cw = model.class_weights.cpu().numpy() * (1 - maps) ** 2 / nc
+                iw = labels_to_image_weights(dataset.labels, nc=nc, class_weights=cw)
+                dataset.indices = random.choices(range(dataset.n), weights=iw, k=dataset.n)
+
             if rank != -1:
                 indices = (torch.tensor(dataset.indices) if rank == 0 else torch.zeros(dataset.n)).int()
                 dist.broadcast(indices, 0)
                 if rank != 0:
                     dataset.indices = indices.cpu().numpy()
 
-                              
-                                                                             
-                                                                          
-
-        mloss = torch.zeros(4, device=device)               
+        mloss = torch.zeros(4, device=device)
         if rank != -1:
             dataloader.sampler.set_epoch(epoch)
         pbar = enumerate(dataloader)
         logger.info(('\n' + '%10s' * 8) % ('Epoch', 'gpu_mem', 'box', 'obj', 'cls', 'total', 'labels', 'img_size'))
         if rank in [-1, 0]:
-            pbar = tqdm(pbar, total=nb)                
+            pbar = tqdm(pbar, total=nb)
         optimizer.zero_grad()
-        for i, (imgs, targets, paths, _) in pbar:                                                                       
-            ni = i + nb * epoch                                                 
-            imgs = imgs.to(device, non_blocking=True).float() / 255.0                                      
+        for i, (imgs, targets, paths, _) in pbar:
+            ni = i + nb * epoch
+            imgs = imgs.to(device, non_blocking=True).float() / 255.0
 
-                    
             if nw > 0 and ni <= nw:
-                xi = [0, nw]            
-                                                                                                    
+                xi = [0, nw]
+
                 accumulate = max(1, np.interp(ni, xi, [1, nbs / total_batch_size]).round())
                 for j, x in enumerate(optimizer.param_groups):
-                                                                                       
+
                     x['lr'] = np.interp(ni, xi, [hyp['warmup_bias_lr'] if j == 2 else 0.0, x['initial_lr'] * lf(epoch)])
                     if 'momentum' in x:
                         x['momentum'] = np.interp(ni, xi, [hyp['warmup_momentum'], hyp['momentum']])
 
-                         
             if opt.multi_scale:
-                sz = random.randrange(imgsz * 0.5, imgsz * 1.5 + gs) // gs * gs        
-                sf = sz / max(imgs.shape[2:])                
+                sz = random.randrange(imgsz * 0.5, imgsz * 1.5 + gs) // gs * gs
+                sf = sz / max(imgs.shape[2:])
                 if sf != 1:
-                    ns = [math.ceil(x * sf / gs) * gs for x in imgs.shape[2:]]                                        
+                    ns = [math.ceil(x * sf / gs) * gs for x in imgs.shape[2:]]
                     imgs = F.interpolate(imgs, size=ns, mode='bilinear', align_corners=False)
-                    
-            with torch.amp.autocast('cuda'):
-                pred = model(imgs)           
+
+            with torch.amp.autocast(device_type=device.type, enabled=cuda):
+                pred = model(imgs)
                 if 'loss_ota' not in hyp or hyp['loss_ota'] == 1:
-                    loss, loss_items = compute_loss_ota(pred, targets.to(device), imgs)                             
+                    loss, loss_items = compute_loss_ota(pred, targets.to(device), imgs)
                 else:
-                    loss, loss_items = compute_loss(pred, targets.to(device))                             
+                    loss, loss_items = compute_loss(pred, targets.to(device))
                 if rank != -1:
-                    loss *= opt.world_size                                                 
+                    loss *= opt.world_size
                 if opt.quad:
                     loss *= 4.
 
-                      
             scaler.scale(loss).backward()
 
-                      
             if ni % accumulate == 0:
-                scaler.step(optimizer)                  
+                scaler.step(optimizer)
                 scaler.update()
                 optimizer.zero_grad()
                 if ema:
                     ema.update(model)
 
-                   
             if rank in [-1, 0]:
-                mloss = (mloss * i + loss_items) / (i + 1)                      
-                mem = '%.3gG' % (torch.cuda.memory_reserved() / 1E9 if torch.cuda.is_available() else 0)        
+                mloss = (mloss * i + loss_items) / (i + 1)
+                mem = '%.3gG' % (torch.cuda.memory_reserved() / 1E9 if torch.cuda.is_available() else 0)
                 s = ('%10s' * 2 + '%10.4g' * 6) % (
                     '%g/%g' % (epoch, epochs - 1), mem, *mloss, targets.shape[0], imgs.shape[-1])
                 pbar.set_description(s)
 
-                      
                 if plots and ni < 10:
-                    f = save_dir / f'train_batch{ni}.jpg'            
+                    f = save_dir / f'train_batch{ni}.jpg'
                     Thread(target=plot_images, args=(imgs, targets, paths, f), daemon=True).start()
-                                   
-                                                                                              
-                                                                                                                
+
                 elif plots and ni == 10 and wandb_logger.wandb:
                     wandb_logger.log({"Mosaics": [wandb_logger.wandb.Image(str(x), caption=x.name) for x in
                                                   save_dir.glob('train*.jpg') if x.exists()]})
 
-                                                                                                                        
-                                                                                                                        
-
-                   
-        lr = [x['lr'] for x in optimizer.param_groups]                   
+        lr = [x['lr'] for x in optimizer.param_groups]
         scheduler.step()
 
-                                     
         if rank in [-1, 0]:
-                 
+
             ema.update_attr(model, include=['yaml', 'nc', 'hyp', 'gr', 'names', 'stride', 'class_weights'])
             final_epoch = epoch + 1 == epochs
-            if not opt.notest or final_epoch:                 
+            if not opt.notest or final_epoch:
                 wandb_logger.current_epoch = epoch + 1
-                
-                                                                                            
-                                                                
-                                                                     
-                                                                   
-                                                            
-                                                                          
-                
+
                 results, maps, times = test.test(data_dict,
                                                  batch_size=batch_size * 2,
                                                  imgsz=imgsz_test,
@@ -462,31 +386,27 @@ def train(hyp, opt, device, tb_writer=None):
                                                  is_coco=is_coco,
                                                  v5_metric=opt.v5_metric)
 
-                   
             with open(results_file, 'a') as f:
-                f.write(s + '%10.4g' * 7 % results + '\n')                            
+                f.write(s + '%10.4g' * 7 % results + '\n')
             if len(opt.name) and opt.bucket:
                 os.system('gsutil cp %s gs://%s/results/results%s.txt' % (results_file, opt.bucket, opt.name))
 
-                 
-            tags = ['train/box_loss', 'train/obj_loss', 'train/cls_loss',              
+            tags = ['train/box_loss', 'train/obj_loss', 'train/cls_loss',
                     'metrics/precision', 'metrics/recall', 'metrics/mAP_0.5', 'metrics/mAP_0.5:0.95',
-                    'val/box_loss', 'val/obj_loss', 'val/cls_loss',            
-                    'x/lr0', 'x/lr1', 'x/lr2']          
+                    'val/box_loss', 'val/obj_loss', 'val/cls_loss',
+                    'x/lr0', 'x/lr1', 'x/lr2']
             for x, tag in zip(list(mloss[:-1]) + list(results) + lr, tags):
                 if tb_writer:
-                    tb_writer.add_scalar(tag, x, epoch)               
+                    tb_writer.add_scalar(tag, x, epoch)
                 if wandb_logger.wandb:
-                    wandb_logger.log({tag: x})       
+                    wandb_logger.log({tag: x})
 
-                             
-            fi = fitness(np.array(results).reshape(1, -1))                                                      
+            fi = fitness(np.array(results).reshape(1, -1))
             if fi > best_fitness:
                 best_fitness = fi
             wandb_logger.end_epoch(best_result=best_fitness == fi)
 
-                        
-            if (not opt.nosave) or (final_epoch and not opt.evolve):           
+            if (not opt.nosave) or (final_epoch and not opt.evolve):
                 ckpt = {'epoch': epoch,
                         'best_fitness': best_fitness,
                         'training_results': results_file.read_text(),
@@ -496,43 +416,30 @@ def train(hyp, opt, device, tb_writer=None):
                         'optimizer': optimizer.state_dict(),
                         'wandb_id': wandb_logger.wandb_run.id if wandb_logger.wandb else None}
 
-                                            
                 torch.save(ckpt, last)
-                                                          
-                if is_save_each_epoch:
+
+                if opt.save_each_epoch:
                     torch.save(ckpt['model'].float().state_dict(), wdir /f'epoch_{epoch}.pt')
                 if best_fitness == fi:
                     torch.save(ckpt, best)
-                '''
-                if (best_fitness == fi) and (epoch >= 200):
-                    torch.save(ckpt, wdir / 'best_{:03d}.pt'.format(epoch))
-                if epoch == 0: # Save checkpoint after epoch 0
-                    torch.save(ckpt, wdir / 'epoch_{:03d}.pt'.format(epoch))
-                elif ((epoch+1) % 25) == 0: # Save a checkpoint every 25 epochs
-                    torch.save(ckpt, wdir / 'epoch_{:03d}.pt'.format(epoch))
-                elif epoch >= (epochs-5): # Save checkpoints for the last five epochs
-                    torch.save(ckpt, wdir / 'epoch_{:03d}.pt'.format(epoch))
-                '''
                 if wandb_logger.wandb:
                     if ((epoch + 1) % opt.save_period == 0 and not final_epoch) and opt.save_period != -1:
                         wandb_logger.log_model(
                             last.parent, opt, epoch, fi, best_model=best_fitness == fi)
                 del ckpt
 
-                                                                                                                        
-                  
     if rank in [-1, 0]:
-               
+
         if plots:
-            plot_results(save_dir=save_dir)                       
+            plot_results(save_dir=save_dir)
             if wandb_logger.wandb:
                 files = ['results.png', 'confusion_matrix.png', *[f'{x}_curve.png' for x in ('F1', 'PR', 'P', 'R')]]
                 wandb_logger.log({"Results": [wandb_logger.wandb.Image(str(save_dir / f), caption=f) for f in files
                                               if (save_dir / f).exists()]})
-                      
+
         logger.info('%g epochs completed in %.3f hours.\n' % (epoch - start_epoch + 1, (time.time() - t0) / 3600))
-        if opt.data.endswith('coco.yaml') and nc == 80:           
-            for m in (last, best) if best.exists() else (last):                    
+        if opt.data.endswith('coco.yaml') and nc == 80:
+            for m in (last, best) if best.exists() else (last):
                 results, _, _ = test.test(opt.data,
                                           batch_size=batch_size * 2,
                                           imgsz=imgsz_test,
@@ -547,16 +454,10 @@ def train(hyp, opt, device, tb_writer=None):
                                           is_coco=is_coco,
                                           v5_metric=opt.v5_metric)
 
-                          
-        final = best if best.exists() else last               
-        '''
-        for f in last, best:
-            if f.exists():
-                strip_optimizer(f)  # strip optimizers
-        '''
+        final = best if best.exists() else last
         if opt.bucket:
-            os.system(f'gsutil cp {final} gs://{opt.bucket}/weights')          
-        if wandb_logger.wandb and not opt.evolve:                          
+            os.system(f'gsutil cp {final} gs://{opt.bucket}/weights')
+        if wandb_logger.wandb and not opt.evolve:
             wandb_logger.wandb.log_artifact(str(final), type='model',
                                             name='run_' + wandb_logger.wandb_run.id + '_model',
                                             aliases=['last', 'best', 'stripped'])
@@ -565,7 +466,6 @@ def train(hyp, opt, device, tb_writer=None):
         dist.destroy_process_group()
     torch.cuda.empty_cache()
     return results
-
 
 def label_replace(dataset_name,train_labels_dir,val_labels_dir):
     cur_train_labels_dir = f"{exp_data_root}/datasets/{dataset_name}-yolo/train/labels"
@@ -592,69 +492,21 @@ def label_replace(dataset_name,train_labels_dir,val_labels_dir):
         else:
             print(f"标签缓存不存在，无需删除")
 
-    '''
-    if _args["trainset_stat"] == "ours":
-        new_train_labels_dir = os.path.join(exp_data_root,"ours",dataset_name,"yolov7","retrain","splitted_labels","train")
-        new_val_labels_dir = os.path.join(exp_data_root,"ours",dataset_name,"yolov7","retrain","splitted_labels","val")
-    elif _args["trainset_stat"] in baselines:
-        if _args["trainset_stat"] == "datactive":
-            new_train_labels_dir = os.path.join(exp_data_root,"baselines","datactive", dataset_name,"retrain","splitted_labels","train")
-            new_val_labels_dir = os.path.join(exp_data_root,"baselines","datactive",dataset_name,"retrain","splitted_labels","val")
-        else:
-            new_train_labels_dir = os.path.join(exp_data_root,"baselines",_args["trainset_stat"],dataset_name,"yolov7","retrain","splitted_labels","train")
-            new_val_labels_dir = os.path.join(exp_data_root,"baselines",_args["trainset_stat"],dataset_name,"yolov7","retrain","splitted_labels","val")
-    else:
-        raise Exception(f'{_args["trainset_stat"]}, invalid')
-                    
-    shutil.copytree(new_train_labels_dir, cur_train_labels_dir)
-    shutil.copytree(new_val_labels_dir, cur_val_labels_dir)
-    '''
-
 if __name__ == '__main__':
-    PID = os.getpid()
-    print("PID:",PID)
-    config = read_yaml("../config.yaml") # 读取主项目的配置
-    exp_data_root = config["exp_data_dir"]
-    dataset_name = "kitti" # voc|kitti|visdrone
-    is_save_each_epoch = False # 是否每个epoch的checkpoint都保存
-    inject_ratio = 0.1 # 0.01,0.05,0.1,0.15
-    repeat_id = 1
-    label_flag = "loss" # fault|ours|datactive|objectlab|deepgini|entropy|margin|loss
-    retrain_mode = "resume" # resume: 原方案；reset: 仅继承权重，重置训练状态
-    is_resume = True # 是否从故障训练恢复(corrected train)
-    is_save_each_epoch = False # 是否每个epoch的checkpoint都保存
-    batch_size = 128 # 128
-    workers = 16 # 16
-    gpu_id = 1
-    if label_flag in ["ours","datactive","objectlab","deepgini","entropy","margin","loss"]:
-        is_resume = True
-    if is_resume == True:
-        is_save_each_epoch = False # corrected train 只保存 best
-        resume_pt_file = os.path.join(exp_data_root,"models",dataset_name,"yolov7","fault_train",
-                     f"{inject_ratio}", f"repeat_{repeat_id}","weights","last.pt") # 从fault train last pt开始恢复训练
-        resume_opt_yaml_path = os.path.join(exp_data_root,"models",dataset_name,"yolov7","fault_train",
-                     f"{inject_ratio}", f"repeat_{repeat_id}","logs","opt.yaml")
-        resume_end_epoch = 75
-    
-    # 设置label文件夹
-    if label_flag == "fault":
-        train_labels_dir = f"{exp_data_root}/fault_inject/{inject_ratio}/{dataset_name}/yolo_format/labels_train"
-        val_labels_dir = f"{exp_data_root}/fault_inject/{inject_ratio}/{dataset_name}/yolo_format/labels_val"
-    elif label_flag == "ours":
-        train_labels_dir = f"{exp_data_root}/repair/ours/{dataset_name}/yolov7/{inject_ratio}_repeat/repeat_{repeat_id}/yolo_format/labels_train"
-        val_labels_dir = f"{exp_data_root}/repair/ours/{dataset_name}/yolov7/{inject_ratio}_repeat/repeat_{repeat_id}/yolo_format/labels_val"
-    elif label_flag == "datactive":
-        train_labels_dir = f"{exp_data_root}/repair/datactive/{dataset_name}/{inject_ratio}_repeat/repeat_{repeat_id}/yolo_format/labels_train" 
-        val_labels_dir = f"{exp_data_root}/repair/datactive/{dataset_name}/{inject_ratio}_repeat/repeat_{repeat_id}/yolo_format/labels_val" 
-    elif label_flag in ["objectlab","deepgini","entropy","margin","loss"]:
-        train_labels_dir = f"{exp_data_root}/repair/{label_flag}/{dataset_name}/yolov7/{inject_ratio}_repeat/repeat_{repeat_id}/yolo_format/labels_train" 
-        val_labels_dir = f"{exp_data_root}/repair/{label_flag}/{dataset_name}/yolov7/{inject_ratio}_repeat/repeat_{repeat_id}/yolo_format/labels_val" 
-    
-    # 设置模型保存目录
-    if label_flag == "fault":
-        model_save_dir = f"{exp_data_root}/models/{dataset_name}/yolov7/fault_train/{inject_ratio}/repeat_{str(repeat_id)}"
-    elif label_flag in ["ours","datactive","objectlab","deepgini","entropy","margin","loss"] :
-        model_save_dir = f"{exp_data_root}/retrained_models/{label_flag}/{dataset_name}/yolov7/{inject_ratio}/repeat_{str(repeat_id)}"
+    print("PID:",os.getpid())
+    exp_data_root = "/data/mml/data_debugging_data/ProAFL_data"
+    dataset_name = "voc" # voc|kitti|visdrone
+    inject_ratio = 0.1
+    repeat_id = 2
+    is_save_each_epoch = True  # True: 每轮额外保存权重；False: 只保存 last.pt 和 best.pt
+    batch_size = 128
+    workers = 16
+    gpu_id = 0
+
+    # 仅训练 fault 标签，训练状态默认从头初始化。
+    train_labels_dir = f"{exp_data_root}/fault_inject/{inject_ratio}/{dataset_name}/yolo_format/labels_train"
+    val_labels_dir = f"{exp_data_root}/fault_inject/{inject_ratio}/{dataset_name}/yolo_format/labels_val"
+    model_save_dir = f"{exp_data_root}/models/{dataset_name}/yolov7/fault_train/{inject_ratio}/repeat_{repeat_id}"
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--weights', type=str, default='yolov7.pt', help='initial weights path')
@@ -666,14 +518,6 @@ if __name__ == '__main__':
     parser.add_argument('--img-size', nargs='+', type=int, default=[640, 640], help='[train, test] image sizes')
     parser.add_argument('--rect', action='store_true', help='rectangular training')
     parser.add_argument('--resume', nargs='?', const=True, default=False, help='resume most recent training')
-    parser.add_argument('--retrain-mode', choices=['resume', 'reset'], default=retrain_mode,
-                        help='resume: original retraining; reset: inherit only fault model weights')
-    parser.add_argument('--retrain-epochs', type=int, default=25,
-                        help='additional training epochs for reset mode')
-    parser.add_argument('--retrain-lr', type=float, default=0.003,
-                        help='initial learning rate for reset mode')
-    parser.add_argument('--retrain-warmup-epochs', type=float, default=2.0,
-                        help='warmup epochs for reset mode (0 disables warmup)')
     parser.add_argument('--nosave', action='store_true', help='only save final checkpoint')
     parser.add_argument('--notest', action='store_true', help='only test final epoch')
     parser.add_argument('--noautoanchor', action='store_true', help='disable autoanchor check')
@@ -703,182 +547,133 @@ if __name__ == '__main__':
     parser.add_argument('--v5-metric', action='store_true', help='assume maximum recall as 1.0 in AP calculation')
 
     opt = parser.parse_args()
-    if opt.retrain_mode == 'reset':
-        if not is_resume:
-            parser.error('--retrain-mode reset requires label_flag="ours" or "datactive"')
-        if opt.resume:
-            parser.error('--resume cannot be combined with --retrain-mode reset')
-        if opt.evolve:
-            parser.error('--evolve cannot be combined with --retrain-mode reset')
-        if opt.retrain_epochs < 1 or (opt.linear_lr and opt.retrain_epochs < 2):
-            parser.error('--retrain-epochs must be positive (at least 2 with --linear-lr)')
-        if not math.isfinite(opt.retrain_lr) or opt.retrain_lr <= 0:
-            parser.error('--retrain-lr must be finite and positive')
-        if not math.isfinite(opt.retrain_warmup_epochs) or opt.retrain_warmup_epochs < 0:
-            parser.error('--retrain-warmup-epochs must be finite and nonnegative')
-        if not os.path.isfile(resume_pt_file):
-            parser.error(f'Fault checkpoint does not exist: {resume_pt_file}')
-        opt.weights, opt.cfg, opt.resume = resume_pt_file, '', False
-        opt.epochs = opt.retrain_epochs
-        # 独立目录保存新方案结果，重复运行自动递增，保留原方案结果。
-        model_save_dir = str(increment_path(Path(model_save_dir) / f'reset_{opt.epochs}ep', exist_ok=False))
-    elif is_resume:
-        opt.resume = resume_pt_file # 权重文件pt
-        opt.opt_yaml_path = resume_opt_yaml_path # 优化的相关配置
-        opt.epochs = resume_end_epoch
-
+    opt.save_each_epoch = is_save_each_epoch
     # 参数检查后再置换标签，--help 或错误参数不会改动数据。
     label_replace(dataset_name, train_labels_dir, val_labels_dir)
     os.makedirs(model_save_dir, exist_ok=True)
-    
-    '''
-    ours_and_baselines = config["all_methods"]
-    if _args["trainset_stat"] in ours_and_baselines:
-        error_resume_dir = os.path.join(config["exp_data_dir"],"ProAFL_data",_args["dataset_name"])
-                                            
-        opt.resume = f"{error_resume_dir}/error_resume.pt"
-                                                 
-        opt.opt_yaml_path = f"{error_resume_dir}/error_resume_opt.yaml"
-                                           
-        epochs = 75
-        label_replace(dataset_name)
-    '''
-                       
+
     opt.world_size = int(os.environ['WORLD_SIZE']) if 'WORLD_SIZE' in os.environ else 1
-                                                                                    
+
     opt.global_rank = int(os.environ['RANK']) if 'RANK' in os.environ else -1
     set_logging(opt.global_rank)
 
-    wandb_run = check_wandb_resume(opt)                                      
-    if opt.resume and not wandb_run:                             
-        ckpt = opt.resume if isinstance(opt.resume, str) else get_latest_run()                                 
+    wandb_run = check_wandb_resume(opt)
+    if opt.resume and not wandb_run:
+        ckpt = opt.resume if isinstance(opt.resume, str) else get_latest_run()
         assert os.path.isfile(ckpt), 'ERROR: --resume checkpoint does not exist'
-        apriori = opt.global_rank, opt.local_rank
-        resume_epochs = opt.epochs                              
-        with open(opt.opt_yaml_path) as f:
-            resume_opt = argparse.Namespace(**yaml.load(f, Loader=yaml.SafeLoader))           
-        opt.epochs = resume_epochs
-        # opt.cfg, opt.weights, opt.resume, opt.batch_size, opt.global_rank, opt.local_rank = '', ckpt, True, resume_opt.total_batch_size, *apriori             
-        opt.cfg, opt.weights, opt.resume, opt.global_rank, opt.local_rank = '', ckpt, True, *apriori             
-        opt.save_dir = model_save_dir                             
+        opt.cfg, opt.weights, opt.resume = '', ckpt, True
+        opt.save_dir = str(Path(ckpt).resolve().parent.parent)
+        opt.data, opt.hyp = check_file(opt.data), check_file(opt.hyp)
+        opt.img_size.extend([opt.img_size[-1]] * (2 - len(opt.img_size)))
         logger.info('Resuming training from %s' % ckpt)
-    else:                                                                                  
-        opt.data, opt.cfg, opt.hyp = check_file(opt.data), check_file(opt.cfg), check_file(opt.hyp)               
+    else:
+        opt.data, opt.cfg, opt.hyp = check_file(opt.data), check_file(opt.cfg), check_file(opt.hyp)
         assert len(opt.cfg) or len(opt.weights), 'either --cfg or --weights must be specified'
-        opt.img_size.extend([opt.img_size[-1]] * (2 - len(opt.img_size)))                                   
+        opt.img_size.extend([opt.img_size[-1]] * (2 - len(opt.img_size)))
         opt.name = 'evolve' if opt.evolve else opt.name
         opt.save_dir = model_save_dir
 
-              
     opt.total_batch_size = opt.batch_size
     device = select_device(opt.device, batch_size=opt.batch_size)
     if opt.local_rank != -1:
         assert torch.cuda.device_count() > opt.local_rank
         torch.cuda.set_device(opt.local_rank)
         device = torch.device('cuda', opt.local_rank)
-        dist.init_process_group(backend='nccl', init_method='env://')                       
+        dist.init_process_group(backend='nccl', init_method='env://')
         assert opt.batch_size % opt.world_size == 0, '--batch-size must be multiple of CUDA device count'
         opt.batch_size = opt.total_batch_size // opt.world_size
 
-                     
     with open(opt.hyp) as f:
-        hyp = yaml.load(f, Loader=yaml.SafeLoader)             
+        hyp = yaml.load(f, Loader=yaml.SafeLoader)
 
-           
     logger.info(opt)
     if not opt.evolve:
-        tb_writer = None                
+        tb_writer = None
         if opt.global_rank in [-1, 0]:
             prefix = colorstr('tensorboard: ')
             logger.info(f"{prefix}Start with 'tensorboard --logdir {opt.project}', view at http://localhost:6006/")
-            tb_writer = SummaryWriter(opt.save_dir)               
+            tb_writer = SummaryWriter(opt.save_dir)
         train(hyp, opt, device, tb_writer)
 
-                                       
     else:
-                                                                                          
-        meta = {'lr0': (1, 1e-5, 1e-1),                                               
-                'lrf': (1, 0.01, 1.0),                                              
-                'momentum': (0.3, 0.6, 0.98),                           
-                'weight_decay': (1, 0.0, 0.001),                          
-                'warmup_epochs': (1, 0.0, 5.0),                                
-                'warmup_momentum': (1, 0.0, 0.95),                           
-                'warmup_bias_lr': (1, 0.0, 0.2),                          
-                'box': (1, 0.02, 0.2),                 
-                'cls': (1, 0.2, 4.0),                 
-                'cls_pw': (1, 0.5, 2.0),                               
-                'obj': (1, 0.2, 4.0),                                     
-                'obj_pw': (1, 0.5, 2.0),                               
-                'iou_t': (0, 0.1, 0.7),                          
-                'anchor_t': (1, 2.0, 8.0),                             
-                'anchors': (2, 2.0, 10.0),                                         
-                'fl_gamma': (0, 0.0, 2.0),                                                     
-                'hsv_h': (1, 0.0, 0.1),                                         
-                'hsv_s': (1, 0.0, 0.9),                                                
-                'hsv_v': (1, 0.0, 0.9),                                           
-                'degrees': (1, 0.0, 45.0),                            
-                'translate': (1, 0.0, 0.9),                                    
-                'scale': (1, 0.0, 0.9),                          
-                'shear': (1, 0.0, 10.0),                         
-                'perspective': (0, 0.0, 0.001),                                                   
-                'flipud': (1, 0.0, 1.0),                                    
-                'fliplr': (0, 0.0, 1.0),                                       
-                'mosaic': (1, 0.0, 1.0),                             
-                'mixup': (1, 0.0, 1.0),                              
-                'copy_paste': (1, 0.0, 1.0),                                    
-                'paste_in': (1, 0.0, 1.0)}                                      
-        
+
+        meta = {'lr0': (1, 1e-5, 1e-1),
+                'lrf': (1, 0.01, 1.0),
+                'momentum': (0.3, 0.6, 0.98),
+                'weight_decay': (1, 0.0, 0.001),
+                'warmup_epochs': (1, 0.0, 5.0),
+                'warmup_momentum': (1, 0.0, 0.95),
+                'warmup_bias_lr': (1, 0.0, 0.2),
+                'box': (1, 0.02, 0.2),
+                'cls': (1, 0.2, 4.0),
+                'cls_pw': (1, 0.5, 2.0),
+                'obj': (1, 0.2, 4.0),
+                'obj_pw': (1, 0.5, 2.0),
+                'iou_t': (0, 0.1, 0.7),
+                'anchor_t': (1, 2.0, 8.0),
+                'anchors': (2, 2.0, 10.0),
+                'fl_gamma': (0, 0.0, 2.0),
+                'hsv_h': (1, 0.0, 0.1),
+                'hsv_s': (1, 0.0, 0.9),
+                'hsv_v': (1, 0.0, 0.9),
+                'degrees': (1, 0.0, 45.0),
+                'translate': (1, 0.0, 0.9),
+                'scale': (1, 0.0, 0.9),
+                'shear': (1, 0.0, 10.0),
+                'perspective': (0, 0.0, 0.001),
+                'flipud': (1, 0.0, 1.0),
+                'fliplr': (0, 0.0, 1.0),
+                'mosaic': (1, 0.0, 1.0),
+                'mixup': (1, 0.0, 1.0),
+                'copy_paste': (1, 0.0, 1.0),
+                'paste_in': (1, 0.0, 1.0)}
+
         with open(opt.hyp, errors='ignore') as f:
-            hyp = yaml.safe_load(f)                  
-            if 'anchors' not in hyp:                                 
+            hyp = yaml.safe_load(f)
+            if 'anchors' not in hyp:
                 hyp['anchors'] = 3
-                
+
         assert opt.local_rank == -1, 'DDP mode not implemented for --evolve'
-        opt.notest, opt.nosave = True, True                              
-                                                                                       
-        yaml_file = Path(opt.save_dir) / 'hyp_evolved.yaml'                         
+        opt.notest, opt.nosave = True, True
+
+        yaml_file = Path(opt.save_dir) / 'hyp_evolved.yaml'
         if opt.bucket:
-            os.system('gsutil cp gs://%s/evolve.txt .' % opt.bucket)                                 
+            os.system('gsutil cp gs://%s/evolve.txt .' % opt.bucket)
 
-        for _ in range(300):                         
-            if Path('evolve.txt').exists():                                                     
-                                  
-                parent = 'single'                                                   
+        for _ in range(300):
+            if Path('evolve.txt').exists():
+
+                parent = 'single'
                 x = np.loadtxt('evolve.txt', ndmin=2)
-                n = min(5, len(x))                                          
-                x = x[np.argsort(-fitness(x))][:n]                   
-                w = fitness(x) - fitness(x).min()           
+                n = min(5, len(x))
+                x = x[np.argsort(-fitness(x))][:n]
+                w = fitness(x) - fitness(x).min()
                 if parent == 'single' or len(x) == 1:
-                                                                         
-                    x = x[random.choices(range(n), weights=w)[0]]                      
-                elif parent == 'weighted':
-                    x = (x * w.reshape(n, 1)).sum(0) / w.sum()                        
 
-                        
-                mp, s = 0.8, 0.2                               
+                    x = x[random.choices(range(n), weights=w)[0]]
+                elif parent == 'weighted':
+                    x = (x * w.reshape(n, 1)).sum(0) / w.sum()
+
+                mp, s = 0.8, 0.2
                 npr = np.random
                 npr.seed(int(time.time()))
-                g = np.array([x[0] for x in meta.values()])             
+                g = np.array([x[0] for x in meta.values()])
                 ng = len(meta)
                 v = np.ones(ng)
-                while all(v == 1):                                                     
+                while all(v == 1):
                     v = (g * (npr.random(ng) < mp) * npr.randn(ng) * npr.random() * s + 1).clip(0.3, 3.0)
-                for i, k in enumerate(hyp.keys()):                            
-                    hyp[k] = float(x[i + 7] * v[i])          
+                for i, k in enumerate(hyp.keys()):
+                    hyp[k] = float(x[i + 7] * v[i])
 
-                                 
             for k, v in meta.items():
-                hyp[k] = max(hyp[k], v[1])               
-                hyp[k] = min(hyp[k], v[2])               
-                hyp[k] = round(hyp[k], 5)                      
+                hyp[k] = max(hyp[k], v[1])
+                hyp[k] = min(hyp[k], v[2])
+                hyp[k] = round(hyp[k], 5)
 
-                            
             results = train(hyp.copy(), opt, device)
 
-                                    
             print_mutation(hyp.copy(), results, yaml_file, opt.bucket)
 
-                      
         plot_evolution(yaml_file)
         print(f'Hyperparameter evolution complete. Best results saved as: {yaml_file}\n'
               f'Command to train a new model with these hyperparameters: $ python train.py --hyp {yaml_file}')
