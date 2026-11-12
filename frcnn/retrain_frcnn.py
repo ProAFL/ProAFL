@@ -19,7 +19,7 @@ from small_utils import timestamp_to_hms
 
 ROOT_DIR = Path("/data/mml/data_debugging_data/ProAFL_data")
 DATASET_NAME = "voc"  # voc|kitti|visdrone
-METHOD_NAME = "ours" # ours|datactive|objectlab|deepgini|entropy|margin|loss
+METHOD_NAME = "datactive" # ours|datactive|objectlab|deepgini|entropy|margin|loss
 GPU_ID = 0
 FAULT_RATIO = 0.1
 REPEAT_ID = 1
