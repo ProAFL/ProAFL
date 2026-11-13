@@ -695,13 +695,13 @@ def run_repeat_experiments():
     """重复实验入口：在这里设置数据集、重复范围和训练配置。"""
     print("PID:",os.getpid())
     exp_data_root = "/data/mml/data_debugging_data/ProAFL_data"
-    dataset_names = ["voc", "kitti", "visdrone"]
+    dataset_names = ["kitti"] # ["voc", "kitti", "visdrone"]
     repeat_ids = range(1, 11)  # 重复编号 1～10
     inject_ratio = 0.1
     is_save_each_epoch = True  # True: 每轮额外保存权重；False: 只保存 last.pt 和 best.pt
     batch_size = 128
     workers = 16
-    gpu_id = 0
+    gpu_id = 1
 
     is_batch = len(dataset_names) * len(repeat_ids) > 1
     for dataset_name in dataset_names:
@@ -740,7 +740,6 @@ def run_single_experiment():
         gpu_id=gpu_id,
         is_batch=False,
     )
-
 
 if __name__ == '__main__':
     run_repeat_experiments()
