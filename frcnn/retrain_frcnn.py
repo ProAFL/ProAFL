@@ -19,43 +19,6 @@ from cutom_module.small_utils import read_yaml
 
 config = read_yaml("config.yaml")
 ROOT_DIR = Path(config["exp_data_dir"])
-DATASET_NAME = "voc"  # voc|kitti|visdrone
-METHOD_NAME = "datactive" # ours|datactive|objectlab|deepgini|entropy|margin|loss
-GPU_ID = 0
-FAULT_RATIO = 0.1
-REPEAT_ID = 1
-EPOCH_ID = 49
-WEIGHT_PATH = (
-    ROOT_DIR / "models" / DATASET_NAME / "frcnn" / "fault_train"
-    / str(FAULT_RATIO) / f"repeat_{REPEAT_ID}" / f"epoch_{EPOCH_ID}.pth"
-)
-EPOCHS = 25
-INIT_LR = 5e-3
-BATCH_SIZE = 16
-NUM_WORKERS = 4
-SEED = 42
-
-if METHOD_NAME in ["ours", "objectlab", "deepgini", "entropy", "margin", "loss"]:
-    REPAIR_DIR = (
-        ROOT_DIR / "repair" / METHOD_NAME / DATASET_NAME / "frcnn"
-        / f"{FAULT_RATIO}_repeat" / f"repeat_{REPEAT_ID}"
-    )
-elif METHOD_NAME == "datactive":
-    # 按 prompt.txt 的要求，datactive 使用 repair/ours 下不含 frcnn 的目录。
-    REPAIR_DIR = (
-        ROOT_DIR / "repair" / METHOD_NAME / DATASET_NAME
-        / f"{FAULT_RATIO}_repeat" / f"repeat_{REPEAT_ID}"
-    )
-else:
-    raise ValueError(f"Unsupported method: {METHOD_NAME}")
-
-TRAINSET_ANNO_JSON_PATH = REPAIR_DIR / "annotations_train.json"
-VALSET_ANNO_JSON_PATH = REPAIR_DIR / "annotations_val.json"
-TRAIN_IMGS_DIR = ROOT_DIR / "datasets" / f"{DATASET_NAME}-coco" / "train"
-VAL_IMGS_DIR = TRAIN_IMGS_DIR # train和val的图像文件其实在一个目录里面
-OUTPUT_DIR = ROOT_DIR / "retrained_models" / METHOD_NAME / DATASET_NAME / "frcnn"
-# 不同故障率和重复实验分别保留一个最佳权重，避免互相覆盖。
-BEST_WEIGHT_PATH = OUTPUT_DIR / f"best_{FAULT_RATIO}_repeat_{REPEAT_ID}.pth"
 
 
 def get_transform(train=False):
@@ -196,4 +159,41 @@ def train():
 
 if __name__ == "__main__":
     print("PID:", os.getpid()) # 打印pid
+    DATASET_NAME = "kitti"  # voc|kitti|visdrone
+    METHOD_NAME = "ours" # ours|datactive|objectlab|deepgini|entropy|margin|loss
+    GPU_ID = 7
+    FAULT_RATIO = 0.1
+    REPEAT_ID = 1
+    EPOCH_ID = 49
+    WEIGHT_PATH = (
+        ROOT_DIR / "models" / DATASET_NAME / "frcnn" / "fault_train"
+        / str(FAULT_RATIO) / f"repeat_{REPEAT_ID}" / f"epoch_{EPOCH_ID}.pth"
+    )
+    EPOCHS = 25
+    INIT_LR = 5e-3
+    BATCH_SIZE = 4
+    NUM_WORKERS = 2
+    SEED = 42
+
+    if METHOD_NAME in ["ours", "objectlab", "deepgini", "entropy", "margin", "loss"]:
+        REPAIR_DIR = (
+            ROOT_DIR / "repair" / METHOD_NAME / DATASET_NAME / "frcnn"
+            / f"{FAULT_RATIO}_repeat" / f"repeat_{REPEAT_ID}"
+        )
+    elif METHOD_NAME == "datactive":
+        # 按 prompt.txt 的要求，datactive 使用 repair/ours 下不含 frcnn 的目录。
+        REPAIR_DIR = (
+            ROOT_DIR / "repair" / METHOD_NAME / DATASET_NAME
+            / f"{FAULT_RATIO}_repeat" / f"repeat_{REPEAT_ID}"
+        )
+    else:
+        raise ValueError(f"Unsupported method: {METHOD_NAME}")
+
+    TRAINSET_ANNO_JSON_PATH = REPAIR_DIR / "annotations_train.json"
+    VALSET_ANNO_JSON_PATH = REPAIR_DIR / "annotations_val.json"
+    TRAIN_IMGS_DIR = ROOT_DIR / "datasets" / f"{DATASET_NAME}-coco" / "train"
+    VAL_IMGS_DIR = TRAIN_IMGS_DIR # train和val的图像文件其实在一个目录里面
+    OUTPUT_DIR = ROOT_DIR / "retrained_models" / METHOD_NAME / DATASET_NAME / "frcnn"
+    # 不同故障率和重复实验分别保留一个最佳权重，避免互相覆盖。
+    BEST_WEIGHT_PATH = OUTPUT_DIR / f"best_{FAULT_RATIO}_repeat_{REPEAT_ID}.pth"
     train()

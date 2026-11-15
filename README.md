@@ -1,3 +1,8 @@
+虚拟环境说明:
+yolov7项目:yolov7
+frcnn项目:data_debugging
+rtdetr_u项目:ultralytics
+ProAFL:data_debugging
 ### Annotation Fault Injection:
 
 fault_inject.py
