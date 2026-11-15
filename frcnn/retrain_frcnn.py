@@ -15,9 +15,10 @@ from torchvision.transforms import ToTensor
 from datasets import CocoDetectionDataset
 from engine import evaluate, train_one_epoch
 from small_utils import timestamp_to_hms
+from cutom_module.small_utils import read_yaml
 
-
-ROOT_DIR = Path("/data/mml/data_debugging_data/ProAFL_data")
+config = read_yaml("config.yaml")
+ROOT_DIR = Path(config["exp_data_dir"])
 DATASET_NAME = "voc"  # voc|kitti|visdrone
 METHOD_NAME = "datactive" # ours|datactive|objectlab|deepgini|entropy|margin|loss
 GPU_ID = 0

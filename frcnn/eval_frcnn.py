@@ -16,7 +16,6 @@ from datasets import CocoDetectionDataset
 from engine import evaluate, train_one_epoch
 from small_utils import timestamp_to_hms
 
-
 ROOT_DIR = Path("/data/mml/data_debugging_data/ProAFL_data")
 DATASET_NAME = "voc"  # voc|kitti|visdrone
 METHOD_NAME = "ours" # ours|datactive|objectlab|deepgini|entropy|margin|loss

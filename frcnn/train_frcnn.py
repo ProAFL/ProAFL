@@ -157,15 +157,11 @@ def train(distributed=False):
     run_time = timestamp_to_hms(cost_time)
     print(f"Elapsed time: {run_time}")
 
-if __name__ == "__main__":
-    PID = os.getpid()
-    print("PID:",PID)
+if __name__ == "__main__": 
+    print("PID:",os.getpid())
     config = read_yaml("config.yaml")
-    seed = 42
     exp_data_root_dir = config["exp_data_dir"]
-    dataset_name = "visdrone" # voc|kitti|visdrone
     fault_ratio = 0.1
-    repeat_id = 1
     gpu_id = 1
     num_epochs = 50
     init_lr = 5e-3
@@ -175,15 +171,17 @@ if __name__ == "__main__":
     _args["batch_size"] = 64
     _args["ColorJitter"] = True
     _args["Normal"] = False # 应该是False
-
-    epoch_save_dir = os.path.join(exp_data_root_dir,"models",dataset_name,
-                                  "frcnn", f"fault_train/{fault_ratio}/repeat_{repeat_id}")
-    os.makedirs(epoch_save_dir,exist_ok=True)
-    _args["epoch_save_dir"] = epoch_save_dir
-    pprint.pprint(_args)
-
-    train_imgs_dir = f"{exp_data_root_dir}/datasets/{dataset_name}-coco/train" # 这其实就是全部的训练集了
-    val_imgs_dir = f"{exp_data_root_dir}/datasets/{dataset_name}-coco/val"
-    train_annotation_path = f"{exp_data_root_dir}/fault_inject/{fault_ratio}/{dataset_name}/coco_format/annotations_no_miss.json"
-    val_annotation_path = f"{exp_data_root_dir}/datasets/{dataset_name}-coco/val/_annotations.coco.json"
-    train(distributed=False)
+    for dataset_name in ["voc","kitti","visdrone"]:
+        seed = 42
+        for repeat_id in range(1,11):
+            seed = seed + (repeat_id-1)
+            epoch_save_dir = os.path.join(exp_data_root_dir,"models",dataset_name,
+                                        "frcnn", f"fault_train/{fault_ratio}/repeat_{repeat_id}")
+            os.makedirs(epoch_save_dir,exist_ok=True)
+            _args["epoch_save_dir"] = epoch_save_dir
+            pprint.pprint(_args)
+            train_imgs_dir = f"{exp_data_root_dir}/datasets/{dataset_name}-coco/train" # 这其实就是全部的训练集了
+            val_imgs_dir = f"{exp_data_root_dir}/datasets/{dataset_name}-coco/val"
+            train_annotation_path = f"{exp_data_root_dir}/fault_inject/{fault_ratio}/{dataset_name}/coco_format/annotations_no_miss.json"
+            val_annotation_path = f"{exp_data_root_dir}/datasets/{dataset_name}-coco/val/_annotations.coco.json"
+            train(distributed=False)
