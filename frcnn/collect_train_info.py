@@ -13,12 +13,6 @@ import torch,torchvision
 from cutom_module.small_utils import read_yaml
 from customROI import RoIHeadsCustom
 
-
-# 无损压缩只影响磁盘格式，完整保留坐标和类别概率。
-COMPRESS_OUTPUT = False
-GZIP_LEVEL = 6
-
-
 class CollectionDataset(Dataset):
     """采集只需图片与路径，避免每轮重复构建训练用标注张量。"""
 
@@ -105,6 +99,7 @@ def build_frcnn_model(num_classes):
     return model
 
 def get_trainset():
+    # 已经包含了bg class(0)
     train_dataset = CollectionDataset(
         image_dir=f"{exp_data_root_dir}/datasets/{dataset_name}-coco/train", # 这其实就是全部的训练集了
         annotation_path=f"{exp_data_root_dir}/fault_inject/{fault_ratio}/{dataset_name}/coco_format/annotations_no_miss.json",
@@ -117,6 +112,7 @@ def get_model(num_classes):
     return model
 
 def set_nms(model, model_name, conf_threshold=0.25,iou_threshold=0.65):
+    '''实验暂时不用'''
     if model_name == "SSD":
         model.score_thresh = conf_threshold
         model.nms_thresh = iou_threshold
@@ -192,31 +188,24 @@ def save_one_epoch(collect_dict,epoch):
     return save_path
 
 
-def collect_predicted_boxes():
-    start_time = time.time()                     
+def collect_predicted_boxes():                
     train_dataset = get_trainset()
-    device = torch.device(f"cuda:{gpu_id}")
-    workers = _args["num_workers"]
+    
     loader_options = {
-        "batch_size": _args["batch_size"], "num_workers": workers,
-        "shuffle": False, "collate_fn": collate_batch,
-        "pin_memory": device.type == "cuda",
+        "batch_size": batch_size, 
+        "num_workers": dataloader_workers,
+        "shuffle": False, 
+        "collate_fn": collate_batch,
+        "pin_memory": True
     }
     # num_workers=0 时不能配置 persistent_workers 或 prefetch_factor。
-    if workers > 0:
-        loader_options.update(persistent_workers=True, prefetch_factor=_args["prefetch_factor"])
+    if dataloader_workers > 0:
+        loader_options.update(persistent_workers=True, prefetch_factor=dataloader_prefetch_factor)
     train_loader = DataLoader(train_dataset, **loader_options)
-    num_classes = train_dataset.num_classes
-                 
+    num_classes = train_dataset.num_classes # bg class(0) 已经考虑了
     model = get_model(num_classes)
-    if _args["custom_nms"] is True:
+    if custom_nms is True:
         model = set_nms(model,model_name=model_name)
-    print("采集设置：", {
-        "score_threshold": model.roi_heads.score_thresh,
-        "nms_threshold": model.roi_heads.nms_thresh,
-        "max_detections": model.roi_heads.detections_per_img,
-        "gzip": COMPRESS_OUTPUT,
-    })
     model.to(device)
     for epoch in range(num_epochs):
         print(f"\nEpoch {epoch}/{num_epochs}")
@@ -236,37 +225,34 @@ def collect_predicted_boxes():
               f"文件大小：{os.path.getsize(save_path) / 1024 ** 2:.1f} MiB")
         # 下轮开始前释放上一轮结果，避免同时保留两轮的大字典。
         del collect_dict
-    end_time = time.time()                   
-    elapsed_time = end_time - start_time                                     
+    
+def get_cost_format_time(elapsed_time):
     hours = int(elapsed_time // 3600)                   
     minutes = int((elapsed_time % 3600) // 60)                     
     seconds = elapsed_time % 60                               
-    print(f"Elapsed time: {hours:02d}:{minutes:02d}:{seconds:02.0f}")
-
+    return (f"{hours:02d}:{minutes:02d}:{seconds:02.0f}")
 if __name__ == "__main__":
-    PID = os.getpid()
-    print("PID:",PID)
+    print("PID:",os.getpid())
     config = read_yaml("config.yaml")
     exp_data_root_dir = config["exp_data_dir"]
     gpu_id = 0
-    _args = {
-        "dataset_name":"visdrone", # voc|kitti|visdrone
-        "model_name":"frcnn",
-        "num_epochs":50,
-        "batch_size":64,
-        "num_workers":16,  # CPU 并行读图数；设为 0 可切换单进程加载。
-        "prefetch_factor":2,
-        "custom_nms":False
-    }
-    pprint.pprint(_args)
-    
-    dataset_name = _args["dataset_name"]
-    model_name = _args["model_name"]
-    num_epochs = _args["num_epochs"]
+    device = torch.device(f"cuda:{gpu_id}")
+    model_name = "frcnn"
+    num_epochs = 50
+    batch_size = 64
+    dataloader_workers = 16
+    dataloader_prefetch_factor = 2
+    custom_nms = False
     fault_ratio = 0.1
-    repeat_id =1
-    ts = int(time.time())
-    error_model_pth_dir = f"{exp_data_root_dir}/models/{dataset_name}/frcnn/fault_train/{fault_ratio}/repeat_{repeat_id}"
-    collect_save_dir = f"{exp_data_root_dir}/collection_process_info/{dataset_name}/frcnn/collected_predict_boxes/inject_{fault_ratio}_repeat/repeat_{repeat_id}_{ts}"
-    os.makedirs(collect_save_dir,exist_ok=True)
-    collect_predicted_boxes()
+    # ts = int(time.time())
+    for dataset_name in ["voc","kitti","visdrone"]:
+        dataset_start_time = time.time()
+        for repeat_id in range(1,11):
+            error_model_pth_dir = f"{exp_data_root_dir}/models/{dataset_name}/frcnn/fault_train/{fault_ratio}/repeat_{repeat_id}"
+            collect_save_dir = f"{exp_data_root_dir}/collection_process_info/{dataset_name}/frcnn/collected_predict_boxes/inject_{fault_ratio}_repeat/repeat_{repeat_id}"
+            os.makedirs(collect_save_dir,exist_ok=True)
+            repeat_start_time = time.time()
+            collect_predicted_boxes()
+            cost_time = get_cost_format_time(time.time()-repeat_start_time)
+            print(f"dataset_name:{dataset_name}|repeat:{repeat_id}|cost_time:{cost_time}")
+        print(f"dataset_name:{dataset_name}|Avg cost time:{get_cost_format_time((time.time()-dataset_start_time)/10)}")
