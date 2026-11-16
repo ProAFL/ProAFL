@@ -41,7 +41,7 @@ def build_dataset(mask_type,class_num):
 def build_ResNet50(class_num):
     model = torchvision.models.resnet50(weights=ResNet50_Weights.IMAGENET1K_V1)
     model.fc = torch.nn.Linear(2048, class_num)
-    # 只微调 layer3、layer4 和 fc，其余层(conv1/bn1/layer1~2)冻结
+    # 只微调 layer4 和 fc，其余层(conv1/bn1/layer1~2)冻结
     for name, param in model.named_parameters():
         if not (name.startswith("layer4.") or name.startswith("fc.")):
             param.requires_grad = False
@@ -134,8 +134,7 @@ def train():
     optimizer = torch.optim.SGD(model.parameters(), lr=0.001, momentum=0.9)
     lr_scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=[7, 11], gamma=0.1)
 
-    best_acc = 0.0
-
+    # best_acc = 0.0
     for epoch in range(epoches):
         epoch_start_time = time.time()
         loss_avg = train_one_epoch(epoch,model,train_dataloader,
@@ -144,55 +143,38 @@ def train():
                     model_save_dir,
                     device)
         lr_scheduler.step()
-        print(" | Loss_avg: {:.4}".format(loss_avg))
+        
         val_acc = val_one_epoch(model,val_dataloader,device)
+        print(" | Loss_avg: {:.4}".format(loss_avg))
+        print("val_acc(trainset): {} %".format(val_acc))
         
-        
-        if val_acc > best_acc:
-            best_acc = val_acc
+        # if val_acc > best_acc:
+        #     best_acc = val_acc
+        #     torch.save({
+        #         "epoch": epoch,
+        #         "model": model.state_dict(),
+        #         "optimizer": optimizer.state_dict(),
+        #         "loss": loss_avg,
+        #         "acc": val_acc
+        #     }, os.path.join(model_save_dir,"best.pt"))
+        if epoch == epoches-1:
             torch.save({
                 "epoch": epoch,
                 "model": model.state_dict(),
                 "optimizer": optimizer.state_dict(),
                 "loss": loss_avg,
                 "acc": val_acc
-            }, os.path.join(model_save_dir,"best.pt"))
-        
-
-        print("Now best acc: {} %".format(best_acc))
-        
-        torch.save({
-            "epoch": epoch,
-            "model": model.state_dict(),
-            "optimizer": optimizer.state_dict(),
-            "loss": loss_avg,
-            "acc": val_acc
-        }, os.path.join(model_save_dir,f"epoch_{epoch}.pt"))
+            }, os.path.join(model_save_dir,f"epoch_{epoch}.pt"))
         epoch_end_time = time.time()
         elapsed_time = epoch_end_time - epoch_start_time                                     
         hours = int(elapsed_time // 3600)                   
         minutes = int((elapsed_time % 3600) // 60)                     
         seconds = elapsed_time % 60                               
         print(f"Epoch({epoch+1}/{epoches}) cost time: {hours:02d}:{minutes:02d}:{seconds:02.0f}")
-        now_str = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-        print(f"完成时刻({epoch+1}/{epoches}): {now_str}")
+        # now_str = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        # print(f"完成时刻({epoch+1}/{epoches}): {now_str}")
 
-
-if __name__ == "__main__":
-    start_time = time.time()
-    pid = os.getpid()
-    print(f"PID: {pid}")
-    config = read_yaml("config.yaml")
-    exp_data_root = config["exp_data_dir"]
-    dataset_name = "voc" # voc|visdrone|kitti                   
-    img_root_dir = os.path.join(exp_data_root,"datasets",f"{dataset_name}-coco","train")
-    # annotation_path = f"{exp_data_root}/datasets/{dataset_name}-coco/train/_annotations.coco_error.json"
-    inject_ratio = 0.1
-    repeat_id = 1
-    annotation_path = os.path.join(exp_data_root,"fault_inject",str(inject_ratio),dataset_name,
-                        "coco_format","annotations_no_miss.json")
-    mask_type = "crop" # crop|other_objects
-    device = torch.device("cuda:0")
+def get_class_num(dataset_name):
     if dataset_name == "voc":
         class_num = 21
     elif dataset_name == "visdrone":
@@ -201,37 +183,57 @@ if __name__ == "__main__":
         class_num = 9
     else:
         raise Exception(f"dataset_name:{dataset_name} not supported")
-    epoches = 10  # 5,13
-    
-    model_save_dir = os.path.join(exp_data_root,"datactive_models",dataset_name,str(inject_ratio),f"repeat_{str(repeat_id)}_temp",mask_type)
-    os.makedirs(model_save_dir,exist_ok=True)
-    train()
-    end_time = time.time()
-    elapsed_time = end_time - start_time
-    cost_time = get_cost_time(elapsed_time)
-    print(f"Total cost time: {cost_time}")
+    return class_num
+if __name__ == "__main__":
+    start_time = time.time()
+    pid = os.getpid()
+    print(f"PID: {pid}")
+    config = read_yaml("config.yaml")
+    exp_data_root = config["exp_data_dir"]
+    inject_ratio = 0.1
+    gpu_id = 0
+    device = torch.device(f"cuda:{gpu_id}")
+    epoches = 10
+    for dataset_name in ["voc","kitti","visdrone"]:
+        img_root_dir = os.path.join(exp_data_root,"datasets",f"{dataset_name}-coco","train")
+        # annotation_path = f"{exp_data_root}/datasets/{dataset_name}-coco/train/_annotations.coco_error.json"
+        annotation_path = os.path.join(exp_data_root,"fault_inject",str(inject_ratio),dataset_name,
+                            "coco_format","annotations_no_miss.json")
+        class_num = get_class_num(dataset_name)
+        for repeat_id in range(1,11):
+            for mask_type in ["crop","other_objects"]:
+                model_save_dir = os.path.join(exp_data_root,"datactive_models",dataset_name,str(inject_ratio),f"repeat_{str(repeat_id)}",mask_type)
+                os.makedirs(model_save_dir,exist_ok=True)
+                train()
+            end_time = time.time()
+            elapsed_time = end_time - start_time
+            cost_time = get_cost_time(elapsed_time)
+            print(f"一次重复实验耗时: {cost_time}")
+    cost_time = get_cost_time(time.time()- start_time)
+    print(f"10次重复实验耗时: {cost_time}")
     print(f"完成时间:{get_formatted_time()}")
-'''
-train_model(mask_type='crop', class_num=class_num, img_root=img_root,
-            trainlabel_root=train_label_path,
-            testlabel_root=test_label_path,
-            model_save_path="./models/crop_model_epoch_{}.pt")
-train_model(mask_type='other objects', class_num=class_num, img_root=img_root,
-            trainlabel_root=train_label_path,
-            testlabel_root=test_label_path,
-            model_save_path="./models/mask_others_model_epoch_{}.pt")
-inf_model(root_path=img_root, mask_type='crop',
-              dirty_path=test_label_path,
-              modelpath='./models/crop_model_epoch_13.pt',
-              results_save_path='./crop_test_inf.json')
-inf_model(root_path=img_root, mask_type='mask others',
-              dirty_path=test_label_path,
-              modelpath='./models/mask_others_model_epoch_13.pt',
-              results_save_path='./mask_others_test_inf.json')
-detective(crop_path='./crop_test_inf.json',
-              mask_others_path='./mask_others_test_inf.json',
-              dirty_path='./dataset/COCO/casestudy_test.json')
-'''
+
+    '''
+    train_model(mask_type='crop', class_num=class_num, img_root=img_root,
+                trainlabel_root=train_label_path,
+                testlabel_root=test_label_path,
+                model_save_path="./models/crop_model_epoch_{}.pt")
+    train_model(mask_type='other objects', class_num=class_num, img_root=img_root,
+                trainlabel_root=train_label_path,
+                testlabel_root=test_label_path,
+                model_save_path="./models/mask_others_model_epoch_{}.pt")
+    inf_model(root_path=img_root, mask_type='crop',
+                dirty_path=test_label_path,
+                modelpath='./models/crop_model_epoch_13.pt',
+                results_save_path='./crop_test_inf.json')
+    inf_model(root_path=img_root, mask_type='mask others',
+                dirty_path=test_label_path,
+                modelpath='./models/mask_others_model_epoch_13.pt',
+                results_save_path='./mask_others_test_inf.json')
+    detective(crop_path='./crop_test_inf.json',
+                mask_others_path='./mask_others_test_inf.json',
+                dirty_path='./dataset/COCO/casestudy_test.json')
+    '''
 
         
                                                                                   
