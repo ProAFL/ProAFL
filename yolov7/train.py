@@ -699,10 +699,9 @@ def run_repeat_experiments():
     repeat_ids = range(1, 11)  # 重复编号 1～10
     inject_ratio = 0.1
     is_save_each_epoch = True  # True: 每轮额外保存权重；False: 只保存 last.pt 和 best.pt
-    batch_size = 128
-    workers = 16
+    batch_size = 64 # 128
+    workers = 8
     gpu_id = 1
-
     is_batch = len(dataset_names) * len(repeat_ids) > 1
     for dataset_name in dataset_names:
         for repeat_id in repeat_ids:
