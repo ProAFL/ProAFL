@@ -20,8 +20,8 @@ from cutom_module.small_utils import read_yaml
 config = read_yaml("config.yaml")
 ROOT_DIR = Path(config["exp_data_dir"])
 
-DATASET_NAME = "visdrone"  # voc|kitti|visdrone
-METHOD_NAME = "datactive" # ours|datactive|objectlab|deepgini|entropy|margin|loss
+DATASET_NAME = "voc"  # voc|kitti|visdrone
+METHOD_NAME = "objectlab" # ours|datactive|objectlab|deepgini|entropy|margin|loss
 GPU_ID = 3
 FAULT_RATIO = 0.1
 REPEAT_ID = 1
