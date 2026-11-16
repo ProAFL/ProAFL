@@ -695,7 +695,7 @@ def run_repeat_experiments():
     """重复实验入口：在这里设置数据集、重复范围和训练配置。"""
     print("PID:",os.getpid())
     exp_data_root = "/data/mml/data_debugging_data/ProAFL_data"
-    dataset_names = ["kitti"] # ["voc", "kitti", "visdrone"]
+    dataset_names = ["visdrone"] # ["voc", "kitti", "visdrone"]
     repeat_ids = range(1, 11)  # 重复编号 1～10
     inject_ratio = 0.1
     is_save_each_epoch = True  # True: 每轮额外保存权重；False: 只保存 last.pt 和 best.pt
