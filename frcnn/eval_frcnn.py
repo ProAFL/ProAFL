@@ -21,7 +21,7 @@ config = read_yaml("config.yaml")
 ROOT_DIR = Path(config["exp_data_dir"])
 
 DATASET_NAME = "voc"  # voc|kitti|visdrone
-METHOD_NAME = "objectlab" # ours|datactive|objectlab|deepgini|entropy|margin|loss
+METHOD_NAME = "ours" # ours|datactive|objectlab|deepgini|entropy|margin|loss
 GPU_ID = 3
 FAULT_RATIO = 0.1
 REPEAT_ID = 1

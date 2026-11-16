@@ -8,8 +8,8 @@ import shutil
 
 config = read_yaml("config.yaml")
 exp_root_dir = Path(config["exp_data_dir"])
-method_name = "datactive"  # ours|datactive|objectlab|deepgini|entropy|margin|loss
-dataset_name = "kitti"  # voc|kitti|visdrone
+method_name = "objectlab"  # ours|datactive|objectlab|deepgini|entropy|margin|loss
+dataset_name = "voc"  # voc|kitti|visdrone
 model_name = "frcnn" # yolov7|rtdetr|frcnn  当 method_name = "datactive"时无效
 fault_ratio = 0.1
 repeat_id = 1
