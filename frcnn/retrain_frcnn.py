@@ -159,9 +159,9 @@ def train():
 
 if __name__ == "__main__":
     print("PID:", os.getpid()) # 打印pid
-    DATASET_NAME = "visdrone"  # voc|kitti|visdrone
-    METHOD_NAME = "entropy" # ours|datactive|objectlab|deepgini|entropy|margin|loss
-    GPU_ID = 7
+    DATASET_NAME = "voc"  # voc|kitti|visdrone
+    METHOD_NAME = "margin" # ours|datactive|objectlab|deepgini|entropy|margin|loss
+    GPU_ID = 6
     FAULT_RATIO = 0.1
     REPEAT_ID = 1
     EPOCH_ID = 49
