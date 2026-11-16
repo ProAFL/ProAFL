@@ -160,7 +160,7 @@ def train():
 if __name__ == "__main__":
     print("PID:", os.getpid()) # 打印pid
     DATASET_NAME = "kitti"  # voc|kitti|visdrone
-    METHOD_NAME = "ours" # ours|datactive|objectlab|deepgini|entropy|margin|loss
+    METHOD_NAME = "objectlab" # ours|datactive|objectlab|deepgini|entropy|margin|loss
     GPU_ID = 7
     FAULT_RATIO = 0.1
     REPEAT_ID = 1
