@@ -20,19 +20,6 @@ from cutom_module.small_utils import read_yaml
 config = read_yaml("config.yaml")
 ROOT_DIR = Path(config["exp_data_dir"])
 
-DATASET_NAME = "voc"  # voc|kitti|visdrone
-METHOD_NAME = "ours" # ours|datactive|objectlab|deepgini|entropy|margin|loss
-GPU_ID = 3
-FAULT_RATIO = 0.1
-REPEAT_ID = 1
-BATCH_SIZE = 16
-NUM_WORKERS = 4
-SEED = 42
-
-TESTSET_ANNO_JSON_PATH = ROOT_DIR / "datasets" / f"{DATASET_NAME}-coco"/ "val" / "_annotations.coco.json" # 干净的测试集
-TEST_IMGS_DIR = ROOT_DIR / "datasets" / f"{DATASET_NAME}-coco"/ "val"
-# 不同故障率和重复实验分别保留一个最佳权重，避免互相覆盖。
-WEIGHT_PATH = ROOT_DIR / "retrained_models" / METHOD_NAME / DATASET_NAME / "frcnn" / f"best_{FAULT_RATIO}_repeat_{REPEAT_ID}.pth"
 
 
 def get_num_classes():
@@ -140,4 +127,16 @@ def eval():
 
 if __name__ == "__main__":
     print("PID:", os.getpid()) # 打印pid
-    eval()
+    GPU_ID = 6
+    FAULT_RATIO = 0.1
+    REPEAT_ID = 1
+    BATCH_SIZE = 16
+    NUM_WORKERS = 4
+    SEED = 42
+    for DATASET_NAME in ["voc","kitti","visdrone"]:
+        TESTSET_ANNO_JSON_PATH = ROOT_DIR / "datasets" / f"{DATASET_NAME}-coco"/ "val" / "_annotations.coco.json" # 干净的测试集
+        TEST_IMGS_DIR = ROOT_DIR / "datasets" / f"{DATASET_NAME}-coco"/ "val"
+        for METHOD_NAME in ["entropy","margin","loss"]: # ["ours","datactive","objectlab","deepgini","entropy","margin","loss"]:
+            # 不同故障率和重复实验分别保留一个最佳权重，避免互相覆盖。
+            WEIGHT_PATH = ROOT_DIR / "retrained_models" / METHOD_NAME / DATASET_NAME / "frcnn" / f"best_{FAULT_RATIO}_repeat_{REPEAT_ID}.pth"
+            eval()
