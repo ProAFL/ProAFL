@@ -8,7 +8,7 @@ from pathlib import Path
 
 import numpy as np
 
-from baselines_new.objectLab import (
+from otherbaselines.objectLab import (
     box_matrices, build_ranking, image_miss_score, objectlab_score, softmin,
 )
 

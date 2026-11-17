@@ -9,7 +9,7 @@ from unittest.mock import patch
 
 import joblib
 
-from baselines_new import others
+from otherbaselines import others
 
 
 class OtherBaselineTests(unittest.TestCase):
@@ -105,7 +105,7 @@ class OtherBaselineTests(unittest.TestCase):
             self.assertEqual(others.merge_rankings([], [(1, 5)], [("a.jpg", 0.2)]), ["a.jpg", 1])
 
     def test_image_scores_reuse_objectlab_dataset_minimum(self):
-        from baselines_new import objectLab
+        from otherbaselines import objectLab
         by_image = {"a.jpg": [("0", 0, [0, 0, 10, 10])]}
         image_info = {name: {"width": 100, "height": 100} for name in ("a.jpg", "b.jpg", "c.jpg")}
         far = {"bbox": [80, 80, 90, 90], "conf": 0.99, "predicted_cls": 0}

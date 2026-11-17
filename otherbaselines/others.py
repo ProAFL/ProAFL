@@ -70,7 +70,7 @@ def caclu_rank_score(baseline_name, probs, category, prediction_box, annotation_
 
 def collect_image_scores(by_image, image_info, prediction_data):
     """直接复用 ObjectLab 的阈值、相似度和漏标分公式，包括全数据集 sim*。"""
-    from baselines_new import objectLab
+    from otherbaselines import objectLab
 
     if not 0 <= objectLab.LOW_CONF_THRESHOLD <= objectLab.HIGH_CONF_THRESHOLD <= 1:
         raise ValueError("ObjectLab 阈值须满足 0 <= low <= high <= 1")
