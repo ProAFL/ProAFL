@@ -4,7 +4,7 @@ Intermediate experiment data management
 import os
 from custom_module.small_utils import read_yaml
 
-config = read_yaml("../config.yaml")
+config = read_yaml("config.yaml")
 baselines = config["baselines"]
 exp_data_root_dir = config["exp_data_dir"]
 
