@@ -200,7 +200,7 @@ if __name__ == "__main__":
         annotation_path = os.path.join(exp_data_root,"fault_inject",str(inject_ratio),dataset_name,
                             "coco_format","annotations_no_miss.json")
         class_num = get_class_num(dataset_name)
-        for repeat_id in range(1,11):
+        for repeat_id in range(2,11):
             repeat_start_time = time.time()
             for mask_type in ["crop","other_objects"]:
                 model_save_dir = os.path.join(exp_data_root,"datactive_models",dataset_name,str(inject_ratio),f"repeat_{str(repeat_id)}",mask_type)
