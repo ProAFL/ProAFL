@@ -215,6 +215,7 @@ if __name__ == "__main__":
             pbox_confi_thres = 0.25
             iou_thres = 0.65
         for repeat_id in range(2,11):
+            print(f"datasetname:{dataset_name}|repeat:{repeat_id}|开始收集")
             repeat_start_time = time.time()
             # 基于yaml配置加载出model:Model,并放到device
             model = Model("cfg/training/yolov7.yaml", ch=3, nc=nc, anchors=3).to(device)
