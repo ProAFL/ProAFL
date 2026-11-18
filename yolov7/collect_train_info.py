@@ -203,10 +203,10 @@ if __name__ == "__main__":
     device = torch.device(f'cuda:{gpu_id}')
     inject_ratio = 0.1 # 0.01,0.05,0.1,0.15
     epochs = 50
-    start_time = time.time()
+    model_name = "yolov7"
+    
     for dataset_name in ["voc","kitti","visdrone"]:
-        dataset_name = "kitti" # voc|kitti|visdrone
-        model_name = "yolov7"
+        dataset_start_time = time.time()    
         nc = get_nc_by_datasetname(dataset_name) # 数据集分类数
         if dataset_name in ["visdrone","kitti"]:
             pbox_confi_thres = 0.1 # 低于这个置信度的预测框会被丢弃。值越大保留的预测框越少。visdrone.kitti使用0.1，voc使用0.25
@@ -215,6 +215,7 @@ if __name__ == "__main__":
             pbox_confi_thres = 0.25
             iou_thres = 0.65
         for repeat_id in range(1,11):
+            repeat_start_time = time.time()
             # 基于yaml配置加载出model:Model,并放到device
             model = Model("cfg/training/yolov7.yaml", ch=3, nc=nc, anchors=3).to(device)
             collect_p_box_dir = os.path.join(exp_data_root,
@@ -225,10 +226,9 @@ if __name__ == "__main__":
             # 收集整个训练轮次的预测框
             collect_predicted_box(model, device, batch_size, dataloader_workers,
                                 conf_thres=pbox_confi_thres, iou_thres=iou_thres)
-    end_time = time.time()
-    cost_time = end_time -start_time
-    print(f"10次重复实验耗时:{get_cost_time(cost_time)}")
-
+            print(f"dataset:{dataset_name},repeat:{repeat_id},cost_time:{get_cost_time(time.time()-repeat_start_time)}") 
+        avg_cost_time = (time.time() - dataset_start_time)/10
+        print(f"dataset:{dataset_name},10次平均时间:{get_cost_time(avg_cost_time)}")
     
     '''
     不需要重新收集这个gt_box信息
