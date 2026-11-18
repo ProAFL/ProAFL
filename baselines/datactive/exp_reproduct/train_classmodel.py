@@ -134,7 +134,7 @@ def train():
     optimizer = torch.optim.SGD(model.parameters(), lr=0.001, momentum=0.9)
     lr_scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=[7, 11], gamma=0.1)
 
-    # best_acc = 0.0
+    best_acc = 0.0
     for epoch in range(epoches):
         epoch_start_time = time.time()
         loss_avg = train_one_epoch(epoch,model,train_dataloader,
@@ -148,15 +148,15 @@ def train():
         print(" | Loss_avg: {:.4}".format(loss_avg))
         print("val_acc(trainset): {} %".format(val_acc))
         
-        # if val_acc > best_acc:
-        #     best_acc = val_acc
-        #     torch.save({
-        #         "epoch": epoch,
-        #         "model": model.state_dict(),
-        #         "optimizer": optimizer.state_dict(),
-        #         "loss": loss_avg,
-        #         "acc": val_acc
-        #     }, os.path.join(model_save_dir,"best.pt"))
+        if val_acc > best_acc:
+            best_acc = val_acc
+            torch.save({
+                "epoch": epoch,
+                "model": model.state_dict(),
+                "optimizer": optimizer.state_dict(),
+                "loss": loss_avg,
+                "acc": val_acc
+            }, os.path.join(model_save_dir,"best.pt"))
         if epoch == epoches-1:
             torch.save({
                 "epoch": epoch,
