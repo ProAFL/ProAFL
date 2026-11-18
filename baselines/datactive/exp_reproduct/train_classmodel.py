@@ -191,10 +191,10 @@ if __name__ == "__main__":
     config = read_yaml("config.yaml")
     exp_data_root = config["exp_data_dir"]
     inject_ratio = 0.1
-    gpu_id = 0
+    gpu_id = 6
     device = torch.device(f"cuda:{gpu_id}")
     epoches = 10
-    for dataset_name in ["voc","kitti","visdrone"]:
+    for dataset_name in ["voc","kitti"]: # ["voc","kitti","visdrone"]:
         img_root_dir = os.path.join(exp_data_root,"datasets",f"{dataset_name}-coco","train")
         # annotation_path = f"{exp_data_root}/datasets/{dataset_name}-coco/train/_annotations.coco_error.json"
         annotation_path = os.path.join(exp_data_root,"fault_inject",str(inject_ratio),dataset_name,
