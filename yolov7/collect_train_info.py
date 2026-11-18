@@ -199,7 +199,7 @@ if __name__ == "__main__":
     exp_data_root = config["exp_data_dir"]
     batch_size = 128
     dataloader_workers = 8
-    gpu_id = 0
+    gpu_id = 4
     device = torch.device(f'cuda:{gpu_id}')
     inject_ratio = 0.1 # 0.01,0.05,0.1,0.15
     epochs = 50
