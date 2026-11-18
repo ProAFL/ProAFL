@@ -157,14 +157,14 @@ def train():
                 "loss": loss_avg,
                 "acc": val_acc
             }, os.path.join(model_save_dir,"best.pt"))
-        if epoch == epoches-1:
-            torch.save({
-                "epoch": epoch,
-                "model": model.state_dict(),
-                "optimizer": optimizer.state_dict(),
-                "loss": loss_avg,
-                "acc": val_acc
-            }, os.path.join(model_save_dir,f"epoch_{epoch}.pt"))
+       
+        torch.save({
+            "epoch": epoch,
+            "model": model.state_dict(),
+            "optimizer": optimizer.state_dict(),
+            "loss": loss_avg,
+            "acc": val_acc
+        }, os.path.join(model_save_dir,f"epoch_{epoch}.pt"))
         epoch_end_time = time.time()
         elapsed_time = epoch_end_time - epoch_start_time                                     
         hours = int(elapsed_time // 3600)                   
@@ -173,6 +173,12 @@ def train():
         print(f"Epoch({epoch+1}/{epoches}) cost time: {hours:02d}:{minutes:02d}:{seconds:02.0f}")
         # now_str = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         # print(f"完成时刻({epoch+1}/{epoches}): {now_str}")
+
+    for epoch in range(epoches-1): # epochs == 10, 0-8的checkpoint会被删除
+        checkpoint_path = os.path.join(model_save_dir, f"epoch_{epoch}.pt")
+        if os.path.isfile(checkpoint_path):
+            os.remove(checkpoint_path)
+    print("多余的checkpoint被从磁盘删除")
 
 def get_class_num(dataset_name):
     if dataset_name == "voc":
