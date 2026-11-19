@@ -205,7 +205,7 @@ if __name__ == "__main__":
     epochs = 50
     model_name = "yolov7"
     
-    for dataset_name in ["visdrone"]: # ["voc","kitti","visdrone"]:
+    for dataset_name in ["kitti"]: # ["voc","kitti","visdrone"]:
         dataset_start_time = time.time()    
         nc = get_nc_by_datasetname(dataset_name) # 数据集分类数
         if dataset_name in ["visdrone","kitti"]:
