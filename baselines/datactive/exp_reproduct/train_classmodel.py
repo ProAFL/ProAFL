@@ -212,7 +212,7 @@ if __name__ == "__main__":
                 model_save_dir = os.path.join(exp_data_root,"datactive_models",dataset_name,str(inject_ratio),f"repeat_{str(repeat_id)}",mask_type)
                 os.makedirs(model_save_dir,exist_ok=True)
                 train()
-            cost_time = get_cost_time(time.time() - start_time)
+            cost_time = get_cost_time(time.time() - repeat_start_time)
             print(f"datasetname:{dataset_name}|repeat:{repeat_id}|cost_time: {cost_time}")
         avg_cost_time = get_cost_time((time.time()- dataset_start_time)/10)
         print(f"datasetname:{dataset_name}|10次平均耗时: {avg_cost_time}")
