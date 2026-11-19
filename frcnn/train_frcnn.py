@@ -168,12 +168,17 @@ if __name__ == "__main__":
     _args = {}
     _args["init_lr"] = init_lr
     _args["num_epochs"] = num_epochs
-    _args["batch_size"] = 64
+    _args["batch_size"] = 32
     _args["ColorJitter"] = True
     _args["Normal"] = False # 应该是False
     for dataset_name in ["voc","kitti","visdrone"]:
         datasetname_start_time = time.time()
-        for repeat_id in range(2,11):
+        train_imgs_dir = f"{exp_data_root_dir}/datasets/{dataset_name}-coco/train" # 这其实就是全部的训练集了
+        val_imgs_dir = f"{exp_data_root_dir}/datasets/{dataset_name}-coco/val"
+        val_annotation_path = f"{exp_data_root_dir}/datasets/{dataset_name}-coco/val/_annotations.coco.json"
+        train_annotation_path = f"{exp_data_root_dir}/fault_inject/{fault_ratio}/{dataset_name}/coco_format/annotations_no_miss.json"
+        repeat_ids = list(range(2,11))
+        for repeat_id in repeat_ids:
             repeat_start_time = time.time()
             seed = 42 + (repeat_id-1)
             epoch_save_dir = os.path.join(exp_data_root_dir,"models",dataset_name,
@@ -181,11 +186,7 @@ if __name__ == "__main__":
             os.makedirs(epoch_save_dir,exist_ok=True)
             _args["epoch_save_dir"] = epoch_save_dir
             pprint.pprint(_args)
-            train_imgs_dir = f"{exp_data_root_dir}/datasets/{dataset_name}-coco/train" # 这其实就是全部的训练集了
-            val_imgs_dir = f"{exp_data_root_dir}/datasets/{dataset_name}-coco/val"
-            train_annotation_path = f"{exp_data_root_dir}/fault_inject/{fault_ratio}/{dataset_name}/coco_format/annotations_no_miss.json"
-            val_annotation_path = f"{exp_data_root_dir}/datasets/{dataset_name}-coco/val/_annotations.coco.json"
             train(distributed=False)
             print(f"datasetname:{dataset_name}|repeat:{repeat_id}|costTime:{get_cost_time(time.time()-repeat_start_time)}")
-        avg_timestamp = (time.time()-datasetname_start_time)/10
+        avg_timestamp = (time.time()-datasetname_start_time)/len(repeat_ids)
         print(f"datasetname:{dataset_name}|avgTime:{get_cost_time(avg_timestamp)}")
