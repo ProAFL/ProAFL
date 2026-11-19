@@ -214,7 +214,8 @@ if __name__ == "__main__":
         elif dataset_name in ["voc"]:
             pbox_confi_thres = 0.25
             iou_thres = 0.65
-        for repeat_id in range(2,11):
+        repeat_ids = list(range(2,11))
+        for repeat_id in repeat_ids:
             print(f"datasetname:{dataset_name}|repeat:{repeat_id}|开始收集")
             repeat_start_time = time.time()
             # 基于yaml配置加载出model:Model,并放到device
@@ -228,7 +229,7 @@ if __name__ == "__main__":
             collect_predicted_box(model, device, batch_size, dataloader_workers,
                                 conf_thres=pbox_confi_thres, iou_thres=iou_thres)
             print(f"dataset:{dataset_name},repeat:{repeat_id},cost_time:{get_cost_time(time.time()-repeat_start_time)}") 
-        avg_cost_time = (time.time() - dataset_start_time)/10
+        avg_cost_time = (time.time() - dataset_start_time)/len(repeat_ids)
         print(f"dataset:{dataset_name},10次平均时间:{get_cost_time(avg_cost_time)}")
     
     '''
