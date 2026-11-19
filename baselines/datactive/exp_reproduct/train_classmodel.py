@@ -191,7 +191,6 @@ def get_class_num(dataset_name):
         raise Exception(f"dataset_name:{dataset_name} not supported")
     return class_num
 if __name__ == "__main__":
-    start_time = time.time()
     pid = os.getpid()
     print(f"PID: {pid}")
     config = read_yaml("config.yaml")
