@@ -1,11 +1,12 @@
 import os
 import json
+import time
 import torch
 import torchvision
 from torchvision import transforms
 from torch.utils.data import DataLoader
 from inference_disassemble_dataset import Inference_classificationDataSet
-from custom_module.small_utils import read_yaml
+from custom_module.small_utils import read_yaml,get_cost_time
 
 
 def build_dataset(mask_type):
@@ -68,30 +69,38 @@ def infer():
         json_file.write(json_str)
     print(f"\nResult saved at:{results_save_path}") #\r是回到本行开头，\n是换行
 
-if __name__ == "__main__":
-    config = read_yaml("config.yaml")
-    exp_data_root = config["exp_data_dir"]
-    dataset_name = "voc" # "visdrone" "kitti" "voc"
-    img_root = f"{exp_data_root}/datasets/{dataset_name}-coco/train"
-    inject_ratio = 0.1
-    annotation_path = annotation_path = f"{exp_data_root}/fault_inject/{str(inject_ratio)}/{dataset_name}/coco_format/annotations_no_miss.json"
+def get_class_num_with_bg(dataset_name):
     if dataset_name == "voc":
         class_num = 21               
     elif dataset_name == "visdrone":
         class_num = 11               
     elif dataset_name == "kitti":
         class_num = 9
-    gpu_id = 1
-    for repeat_id in [1]:
-        for mask_type in ["crop","other_objects"]:
-            # trained_model_path = f"{exp_data_root}/baselines/datactive/{dataset_name}/rank/models/{mask_type}/epoch_12.pt"
-            # results_save_path = f"{exp_data_root}/baselines/datactive/{dataset_name}/rank/infer/{mask_type}.json"
-            trained_model_path = os.path.join(exp_data_root,"datactive_models",dataset_name,str(inject_ratio),
-                                            f"repeat_{repeat_id}_temp",mask_type,"epoch_9.pt")
-            result_save_dir = os.path.join(exp_data_root,"datactive_infer_res",dataset_name,str(inject_ratio),f"repeat_{repeat_id}")
-            os.makedirs(result_save_dir,exist_ok=True)
-            results_save_path = os.path.join(result_save_dir,f"{mask_type}.json")
-            infer()
+    return class_num
+
+if __name__ == "__main__":
+    config = read_yaml("config.yaml")
+    exp_data_root = config["exp_data_dir"]
+    inject_ratio = 0.1
+    gpu_id = 6
+    for dataset_name in ["voc","kitti","visdrone"]:
+        dataset_start_time = time.time()
+        class_num = get_class_num_with_bg(dataset_name)
+        img_root = f"{exp_data_root}/datasets/{dataset_name}-coco/train"    
+        annotation_path = annotation_path = f"{exp_data_root}/fault_inject/{str(inject_ratio)}/{dataset_name}/coco_format/annotations_no_miss.json"
+        repeat_ids = list(range(2,11))
+        for repeat_id in repeat_ids:
+            repeat_start_time = time.time()
+            for mask_type in ["crop","other_objects"]:
+                trained_model_path = os.path.join(exp_data_root,"datactive_models",dataset_name,str(inject_ratio),
+                                                f"repeat_{repeat_id}",mask_type,"epoch_9.pt")
+                result_save_dir = os.path.join(exp_data_root,"datactive_infer_res",dataset_name,str(inject_ratio),f"repeat_{repeat_id}")
+                os.makedirs(result_save_dir,exist_ok=True)
+                results_save_path = os.path.join(result_save_dir,f"{mask_type}.json")
+                infer()
+            print(f"datasetname:{dataset_name}|repeat:{repeat_id}|costTime:{get_cost_time(time.time()-repeat_start_time)}")
+        avg_timestamp = (time.time()-dataset_start_time)/len(repeat_ids)
+        print(f"datasetname:{dataset_name}|avgTime:{get_cost_time(avg_timestamp)}")
 
 '''
 train_model(mask_type='crop', class_num=class_num, img_root=img_root,
