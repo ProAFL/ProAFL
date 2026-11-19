@@ -21,7 +21,7 @@ from PIL import Image
 import pandas as pd
 import os
 import time
-from cutom_module.small_utils import read_yaml
+from cutom_module.small_utils import read_yaml,get_cost_time
                                         
 def get_transform(train=False): 
     t = [ToTensor()]
@@ -172,9 +172,10 @@ if __name__ == "__main__":
     _args["ColorJitter"] = True
     _args["Normal"] = False # 应该是False
     for dataset_name in ["voc","kitti","visdrone"]:
-        seed = 42
-        for repeat_id in range(1,11):
-            seed = seed + (repeat_id-1)
+        datasetname_start_time = time.time()
+        for repeat_id in range(2,11):
+            repeat_start_time = time.time()
+            seed = 42 + (repeat_id-1)
             epoch_save_dir = os.path.join(exp_data_root_dir,"models",dataset_name,
                                         "frcnn", f"fault_train/{fault_ratio}/repeat_{repeat_id}")
             os.makedirs(epoch_save_dir,exist_ok=True)
@@ -185,3 +186,6 @@ if __name__ == "__main__":
             train_annotation_path = f"{exp_data_root_dir}/fault_inject/{fault_ratio}/{dataset_name}/coco_format/annotations_no_miss.json"
             val_annotation_path = f"{exp_data_root_dir}/datasets/{dataset_name}-coco/val/_annotations.coco.json"
             train(distributed=False)
+            print(f"datasetname:{dataset_name}|repeat:{repeat_id}|costTime:{get_cost_time(time.time()-repeat_start_time)}")
+        avg_timestamp = (time.time()-datasetname_start_time)/10
+        print(f"datasetname:{dataset_name}|avgTime:{get_cost_time(avg_timestamp)}")
