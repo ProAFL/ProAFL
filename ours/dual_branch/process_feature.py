@@ -31,7 +31,7 @@ MIN_PREDICTION_CONF = 0.25
 STRONG_CLASS_MARGIN = 0.5
 METRICS_PATH = METRICS_DIR / "process_metrics.json"
 OUTPUT_DIR = FEATURES_DIR
-DEFAULT_GEOMETRY_WEIGHT = 1.0
+DEFAULT_GEOMETRY_WEIGHT = 1.0 # float:（0,1]
 DEFAULT_FEATURE_DIMENSIONS = 8
 CLASS_PROCESS_FEATURE_NAMES = ("persistent_class_margin", "alternative_class_persistence")
 FEATURE_NAMES = BASE_FEATURE_NAMES + CLASS_PROCESS_FEATURE_NAMES + ("persistent_iou_deficit",)
@@ -100,7 +100,7 @@ def collect_class_features(annotations, metrics, predictions_dir, epochs):
     for epoch in range(epochs):
         path = predictions_dir / f"epoch_{epoch}_predicted_bboxs.json"
         if not path.is_file():
-            raise FileNotFoundError(f"缺少完整类别预测文件：{path}；请指定 --predictions-dir")
+            raise FileNotFoundError(f"缺少完整类别预测文件：{path}")
     names = {image["id"]: image["file_name"] for image in annotations["images"]}
     ids = sorted(metrics, key=int)
     index = {aid: i for i, aid in enumerate(ids)}
@@ -133,6 +133,7 @@ def collect_class_features(annotations, metrics, predictions_dir, epochs):
                         or not math.isfinite(iou) or not 0 <= iou <= 1):
                     raise ValueError(f"匹配轨迹不合法：{aid}, epoch {epoch}")
                 if prediction_id is None:
+                    # 当前这个aid在这个epoch下没有与任何一个预测框产生overlap
                     current[i], previous[i] = 0, -1
                     continue
                 prediction = selected.get(prediction_id)
@@ -154,11 +155,6 @@ def collect_class_features(annotations, metrics, predictions_dir, epochs):
         float(total_margin[i] / epochs), float(longest[i] / epochs),
     ))) for i, aid in enumerate(ids)}
 
-
-def validate_geometry_weight(weight):
-    if (isinstance(weight, bool) or not isinstance(weight, (int, float))
-            or not np.isfinite(weight) or not 0 <= weight <= 1):
-        raise ValueError("geometry_weight 必须是 [0,1] 内的有限数值")
 
 
 def fuse_branch_percentiles(class_percentiles, geometry_percentiles,
@@ -188,7 +184,7 @@ def persistent_iou_deficit(metric):
 
 def extract_features(metric, category_id, class_features):
     """保留原六特征，补充类别/几何持续冲突及类别连续支持辅助统计。"""
-    features, never_overlapped = extract_base_features(metric)
+    features, never_overlapped = extract_base_features(metric) # 6个基本特征，是否从来都没有overlap
     if type(category_id) is not int or category_id < 0:
         raise ValueError("标注类别必须是非负整数")
     for name in CLASS_TRAJECTORY_FEATURE_NAMES:
@@ -210,9 +206,10 @@ def build_results(annotations_path, metrics_path, predictions_dir=None, class_fe
                   geometry_weight=DEFAULT_GEOMETRY_WEIGHT,
                   feature_dimensions=DEFAULT_FEATURE_DIMENSIONS):
     """只使用当前标注类别和预测轨迹，不使用 fault_type 或正确标签。"""
-    class_names, geometry_names = get_branch_feature_names(feature_dimensions)
-    validate_geometry_weight(geometry_weight)
-    annotation_data = read_json(annotations_path)
+    # ("late_conf_deficit", "all_conf_deficit", "first_conf_reach", "persistent_class_margin")
+    # ("late_iou_deficit", "all_iou_deficit", "first_iou_reach","persistent_iou_deficit")
+    class_names, geometry_names = get_branch_feature_names(feature_dimensions) 
+    annotation_data = read_json(annotations_path) # fault no miss coco anno
     annotations = annotation_data["annotations"]
     by_id = {annotation["id"]: annotation for annotation in annotations}
     ids = sorted(by_id)
@@ -267,7 +264,8 @@ def build_results(annotations_path, metrics_path, predictions_dir=None, class_fe
     missing_ids = [i for i, missing in zip(ids, missing_flags) if missing]
     no_overlap_report = {
         "definition": "has_overlap_list is false in every epoch",
-        "count": len(missing_ids), "annotation_ids": missing_ids,
+        "count": len(missing_ids), 
+        "annotation_ids": missing_ids,
         "topsis_scores": {str(i): 0.0 for i in missing_ids},
         "note": "无重叠标注不参与百分位校准；合并时按原规则放在最前。",
     }
