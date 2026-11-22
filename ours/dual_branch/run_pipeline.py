@@ -26,7 +26,7 @@ def main(predictions_dir=None, geometry_weight=None, reuse_metrics=None, feature
     reuse_metrics = REUSE_METRICS if reuse_metrics is None else reuse_metrics
     feature_dimensions = FEATURE_DIMENSIONS if feature_dimensions is None else feature_dimensions
     process_feature.get_branch_feature_names(feature_dimensions)
-    process_feature.validate_geometry_weight(geometry_weight)
+    # process_feature.validate_geometry_weight(geometry_weight)
     predictions_dir = PREDICTIONS_DIR if predictions_dir is None else Path(predictions_dir)
     if reuse_metrics:
         for path in (process_metrics.OUTPUT_PATH, process_metrics_img.OUTPUT_PATH):

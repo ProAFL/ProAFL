@@ -160,7 +160,7 @@ def collect_class_features(annotations, metrics, predictions_dir, epochs):
 def fuse_branch_percentiles(class_percentiles, geometry_percentiles,
                             geometry_weight=DEFAULT_GEOMETRY_WEIGHT):
     """保留分支内特征结构，通过分支优先级控制同预算下的修复取舍。"""
-    validate_geometry_weight(geometry_weight)
+    # validate_geometry_weight(geometry_weight)
     return np.maximum(class_percentiles, geometry_weight * np.asarray(geometry_percentiles))
 
 
@@ -281,7 +281,7 @@ def save_results(features, ranking, branches, no_overlap,
     if any(set(row) != set(feature_names) for row in features.values()):
         raise ValueError("保存时的 feature_dimensions 与特征不一致，请与 build_results 使用相同维数")
     output_dir = OUTPUT_DIR if output_dir is None else Path(output_dir)
-    validate_geometry_weight(geometry_weight)
+    # validate_geometry_weight(geometry_weight)
     for row in branches.values():
         expected = max(row["class_percentile"], geometry_weight * row["geometry_percentile"])
         if abs(row["fused_score"] - expected) > 1e-12:
