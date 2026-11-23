@@ -108,7 +108,7 @@ if __name__ == "__main__":
     config = read_yaml("config.yaml")
     root_dir = Path(config["exp_data_dir"])
 
-    dataset_name = "voc"
+    dataset_name = "visdrone" # voc|kitti|visdrone
     model_name = "yolov7"
     fault_ratio = 0.1
     repeat_id = 1
