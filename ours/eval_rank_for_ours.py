@@ -18,8 +18,10 @@ from ours.rank.analyse.common import (
 
 
 DATA_ROOT = Path("/data/mml/data_debugging_data/ProAFL_data")
-DATASETNAME = "visdrone" # voc|kitti|visdrone 
-MODEL_NAME = "frcnn" # yolov7|rtdetr|frcnn|fcos
+DATASETNAME = "voc" # voc|kitti|visdrone 
+MODEL_NAME = "yolov7" # yolov7|rtdetr|frcnn|fcos
+FAULT_RATIO= 0.1
+REPEAT_ID = 2
 # yolov7-voc: 1791094449
 # yolov7-kitti: 1792056154
 # yolov7-visdrone: 1791968956
@@ -34,9 +36,9 @@ MODEL_NAME = "frcnn" # yolov7|rtdetr|frcnn|fcos
 
 # RANK_DIR = DATA_ROOT / "dual_branch" / f"process_features/{DATASETNAME}/{MODEL_NAME}/0.1_repeat/repeat_1_{EXPID}"
 
-RANK_DIR = DATA_ROOT / "dual_branch" / f"process_features/{DATASETNAME}/{MODEL_NAME}/0.1_repeat/repeat_1"
+RANK_DIR = DATA_ROOT / "dual_branch" / f"process_features/{DATASETNAME}/{MODEL_NAME}/{FAULT_RATIO}_repeat/repeat_{REPEAT_ID}"
 RANK_PATH = RANK_DIR / "merged_rank.json"
-ANNOTATIONS_PATH = DATA_ROOT / f"fault_inject/0.1/{DATASETNAME}/coco_format/annotations_with_miss.json"
+ANNOTATIONS_PATH = DATA_ROOT / f"fault_inject/{FAULT_RATIO}/{DATASETNAME}/coco_format/annotations_with_miss.json"
 RANK_HOT_PATH = RANK_DIR / "rank_hot.png"
 CUTOFF = 0.4
 

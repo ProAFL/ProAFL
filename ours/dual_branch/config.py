@@ -5,10 +5,10 @@ from pathlib import Path
 from ours.small_utils import read_yaml
 
 DATA_ROOT = Path(read_yaml("config.yaml")["exp_data_dir"])
-DATASETNAME = "visdrone"    # voc | kitti | visdrone
-MODEL_NAME = "frcnn"     # yolov7 | rtdetr | frcnn | fcos
+DATASETNAME = "voc"    # voc | kitti | visdrone
+MODEL_NAME = "yolov7"  # yolov7 | rtdetr | frcnn | fcos
 FAULT_RATIO = 0.1
-REPEAT_ID = 1
+REPEAT_ID = 2
 '''
 EXPERIMENT_IDS = {
     ("voc", "yolov7"): 1791094449,
