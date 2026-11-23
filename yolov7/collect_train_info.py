@@ -205,7 +205,7 @@ if __name__ == "__main__":
     epochs = 50
     model_name = "yolov7"
     
-    for dataset_name in ["visdrone"]: # ["voc","kitti","visdrone"]:
+    for dataset_name in ["voc"]: # ["voc","kitti","visdrone"]:
         dataset_start_time = time.time()    
         nc = get_nc_by_datasetname(dataset_name) # 数据集分类数
         if dataset_name in ["visdrone","kitti"]:
@@ -214,7 +214,7 @@ if __name__ == "__main__":
         elif dataset_name in ["voc"]:
             pbox_confi_thres = 0.25
             iou_thres = 0.65
-        repeat_ids = list(range(2,11))
+        repeat_ids = [1] # list(range(2,11))
         for repeat_id in repeat_ids:
             print(f"datasetname:{dataset_name}|repeat:{repeat_id}|开始收集")
             repeat_start_time = time.time()
