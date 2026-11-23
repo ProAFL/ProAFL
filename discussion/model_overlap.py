@@ -124,10 +124,6 @@ def main():
     frcnn_rank = get_rank_by_model_name("frcnn")
     vis_venn(yolo_rank,rtdetr_rank,frcnn_rank,fault_items,cut_off=0.4)
 
-    
-    
-
-
 if __name__ == "__main__":
     config = read_yaml("config.yaml")
     root_dir = Path(config["exp_data_dir"])
