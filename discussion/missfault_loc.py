@@ -40,17 +40,29 @@ def main():
     miss_process_metric_json = read_json(miss_process_metric_json_path)
     missannoid2info = get_miss_anno()
     mingzhong_dict = {}
+    tack_mingzhong_dict = {}
     for missannoid,info in missannoid2info.items():
         mingzhong_flag = False
         imgname = info["imgname"]
+        tack_mingzhong_dict[imgname] = {}
         anno  = info["anno"]
         xmin,ymin,width,height = anno["bbox"]
         x1,y1,x2,y2 = xmin,ymin,xmin+width,ymin+height
         box_anno = [x1,y1,x2,y2]
         tracks = miss_process_metric_json["images"][imgname]["tracks"]
+        last_epoches = 5
+        last_epoch_tracks = []
         for track in tracks:
+            bbox_list = track["bbox_list"][-last_epoches:]
+            if all(x is None for x in bbox_list):
+                # 这条track 后5个轮次没有bbox
+                continue
+            last_epoch_tracks.append(track)
+
+        for track in last_epoch_tracks:
             track_id = track["track_id"]
-            bbox_list = track["bbox_list"]
+            tack_mingzhong_dict[imgname][track_id] = False
+            bbox_list = track["bbox_list"][-5:]
             for bbox in bbox_list:
                 if bbox is None:
                     continue
@@ -60,6 +72,7 @@ def main():
                     mingzhong_flag = True # 如果当前track中存在一个bbox命中了这个missannoid则直接停止遍历track
                     break
             if mingzhong_flag is True:
+                tack_mingzhong_dict[imgname][track_id] = True
                 break # 如果当前track已经命中，则不需要遍历后面的track了。
         mingzhong_dict[missannoid] = mingzhong_flag
     recall_counter = 0
@@ -67,7 +80,17 @@ def main():
         if isminghzhong:
             recall_counter += 1
     recall = round(recall_counter / len(mingzhong_dict.keys()),4)
-    print(f"iou_threshold:{iou_threshold},recall:{recall}")
+
+    precision_count = 0
+    track_count =0 
+    for imgname in tack_mingzhong_dict.keys():
+        for trackid,ismingzhong in tack_mingzhong_dict[imgname].items():
+            track_count += 1
+            if ismingzhong:
+                precision_count += 1
+
+    precision = round((precision_count / track_count),4)
+    print(f"iou_threshold:{iou_threshold},recall:{recall},precision:{precision}")
 
 
 if __name__ == "__main__":
