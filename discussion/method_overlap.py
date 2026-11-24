@@ -14,7 +14,7 @@ def get_missfault_imgname_set(anno_json)->set[str]:
     missfault_imgname_set = set()
     for anno in annos:
         if int(anno["fault_type"]) == 4:
-            missfault_imgname_set.add(imgId2imgname[anno["image_id"]] )
+            missfault_imgname_set.add(imgId2imgname[anno["image_id"]])
     return missfault_imgname_set
 
 def get_fault_items(anno_json) -> set:
