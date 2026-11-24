@@ -199,13 +199,14 @@ if __name__ == "__main__":
     gpu_id = 5
     device = torch.device(f"cuda:{gpu_id}")
     epoches = 10
+    repeat_ids = list(range(2,11))
     for dataset_name in ["visdrone"]: # ["voc","kitti","visdrone"]:
         dataset_start_time = time.time()
         img_root_dir = os.path.join(exp_data_root,"datasets",f"{dataset_name}-coco","train")
         annotation_path = os.path.join(exp_data_root,"fault_inject",str(inject_ratio),dataset_name,
                             "coco_format","annotations_no_miss.json")
         class_num = get_class_num(dataset_name)
-        for repeat_id in range(2,11):
+        for repeat_id in repeat_ids:
             repeat_start_time = time.time()
             for mask_type in ["crop","other_objects"]:
                 model_save_dir = os.path.join(exp_data_root,"datactive_models",dataset_name,str(inject_ratio),f"repeat_{str(repeat_id)}",mask_type)
@@ -213,8 +214,8 @@ if __name__ == "__main__":
                 train()
             cost_time = get_cost_time(time.time() - repeat_start_time)
             print(f"datasetname:{dataset_name}|repeat:{repeat_id}|cost_time: {cost_time}")
-        avg_cost_time = get_cost_time((time.time()- dataset_start_time)/10)
-        print(f"datasetname:{dataset_name}|10次平均耗时: {avg_cost_time}")
+        avg_cost_time = get_cost_time((time.time()- dataset_start_time)/len(repeat_ids))
+        print(f"datasetname:{dataset_name}|{len(repeat_ids)}次平均耗时: {avg_cost_time}")
         print(f"完成时刻:{get_formatted_time()}")
 
     '''

@@ -60,10 +60,13 @@ def vis_venn(yolo_rank,rtdetr_rank,frcnn_rank,fault_items,cut_off=0.4):
         # cutoff is a fraction of the complete ranking; floor to whole items.
         cutoff_count = int(len(rank) * cut_off)
         return set(rank[:cutoff_count]) & fault_items
+        # return set(rank[:cutoff_count])
 
     yolo_faults = top_faults(yolo_rank)
     rtdetr_faults = top_faults(rtdetr_rank)
     frcnn_faults = top_faults(frcnn_rank)
+
+    # merge_set = set(yolo_faults) | set(rtdetr_faults) | set(frcnn_faults)
 
     # Counts for the seven mutually exclusive regions of a three-set Venn.
     regions = {
@@ -96,6 +99,7 @@ def vis_venn(yolo_rank,rtdetr_rank,frcnn_rank,fault_items,cut_off=0.4):
     }
     for region, count in regions.items():
         percentage = count / len(fault_items) * 100 if fault_items else 0
+        # percentage = count / len(merge_set) * 100
         ax.text(*positions[region], f"{percentage:.1f}%", ha="center", va="center",
                 fontsize=11)
 
@@ -128,11 +132,11 @@ if __name__ == "__main__":
     config = read_yaml("config.yaml")
     root_dir = Path(config["exp_data_dir"])
 
-    dataset_name = "kitti" # voc|kitti|visdrone
+    dataset_name = "voc" # voc|kitti|visdrone
     fault_ratio = 0.1
     repeat_id = 1
     
     annotation_withmiss_json_path = root_dir/f"fault_inject/{fault_ratio}/{dataset_name}/coco_format/annotations_with_miss.json"
-    output_file_path = f"discussion/overlap_imgs/{dataset_name}.pdf"
+    output_file_path = f"discussion/overlap_imgs/{dataset_name}_toponly.pdf"
     main()
     

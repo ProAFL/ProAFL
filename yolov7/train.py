@@ -690,21 +690,29 @@ def run_training(dataset_name, repeat_id, *, exp_data_root, inject_ratio=0.1,
               f'Command to train a new model with these hyperparameters: $ python train.py --hyp {yaml_file}')
     print(f"训练完成: dataset={dataset_name}, repeat={repeat_id}", flush=True)
 
+def get_cost_time(cost_timetamp)->str:
+    hours = int(cost_timetamp // 3600)                   
+    minutes = int((cost_timetamp % 3600) // 60)                     
+    seconds = cost_timetamp % 60                               
+    return f"{hours:02d}h:{minutes:02d}m:{seconds:02.0f}s"
+
 
 def run_repeat_experiments():
     """重复实验入口：在这里设置数据集、重复范围和训练配置。"""
     print("PID:",os.getpid())
     exp_data_root = "/data/mml/data_debugging_data/ProAFL_data"
     dataset_names = ["visdrone"] # ["voc", "kitti", "visdrone"]
-    repeat_ids = range(1, 11)  # 重复编号 1～10
+    repeat_ids = range(10, 11)  # 重复编号 1～10
     inject_ratio = 0.1
     is_save_each_epoch = True  # True: 每轮额外保存权重；False: 只保存 last.pt 和 best.pt
     batch_size = 64 # 128
     workers = 8
-    gpu_id = 1
+    gpu_id = 0
     is_batch = len(dataset_names) * len(repeat_ids) > 1
     for dataset_name in dataset_names:
+        dataset_start_time = time.time()
         for repeat_id in repeat_ids:
+            repeat_start_time = time.time()
             run_training(
                 dataset_name, repeat_id,
                 exp_data_root=exp_data_root,
@@ -715,6 +723,11 @@ def run_repeat_experiments():
                 gpu_id=gpu_id,
                 is_batch=is_batch,
             )
+            cost_time = get_cost_time(time.time() - repeat_start_time)
+            print(f"datasetname:{dataset_name}|repeat:{repeat_id}|cost_time: {cost_time}")
+        avg_cost_time = get_cost_time((time.time()- dataset_start_time)/len(repeat_ids))
+        print(f"datasetname:{dataset_name}|{len(repeat_ids)}次平均耗时: {avg_cost_time}")
+
 
 
 def run_single_experiment():
