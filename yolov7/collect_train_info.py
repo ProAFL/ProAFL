@@ -199,13 +199,13 @@ if __name__ == "__main__":
     exp_data_root = config["exp_data_dir"]
     batch_size = 64 # 64(210),128(114)
     dataloader_workers = 4  # 4(210) # 8(114)
-    gpu_id = 4
+    gpu_id = 7
     device = torch.device(f'cuda:{gpu_id}')
     inject_ratio = 0.1 # 0.01,0.05,0.1,0.15
     epochs = 50
     model_name = "yolov7"
     
-    for dataset_name in ["voc"]: # ["voc","kitti","visdrone"]:
+    for dataset_name in ["visdrone"]: # ["voc","kitti","visdrone"]:
         dataset_start_time = time.time()    
         nc = get_nc_by_datasetname(dataset_name) # 数据集分类数
         if dataset_name in ["visdrone","kitti"]:
