@@ -82,8 +82,8 @@ if __name__ == "__main__":
     config = read_yaml("config.yaml")
     exp_data_root = config["exp_data_dir"]
     inject_ratio = 0.1
-    gpu_id = 6
-    for dataset_name in ["voc","kitti"]: # ["voc","kitti","visdrone"]:
+    gpu_id = 7
+    for dataset_name in ["visdrone"]: # ["voc","kitti","visdrone"]:
         dataset_start_time = time.time()
         class_num = get_class_num_with_bg(dataset_name)
         img_root = f"{exp_data_root}/datasets/{dataset_name}-coco/train"    
