@@ -100,7 +100,7 @@ if __name__ == "__main__":
                 infer()
             print(f"datasetname:{dataset_name}|repeat:{repeat_id}|costTime:{get_cost_time(time.time()-repeat_start_time)}")
         avg_timestamp = (time.time()-dataset_start_time)/len(repeat_ids)
-        print(f"datasetname:{dataset_name}|avgTime:{get_cost_time(avg_timestamp)}")
+        print(f"datasetname:{dataset_name}|重复实验{len(repeat_ids)}次平均耗时:{get_cost_time(avg_timestamp)}")
 
 '''
 train_model(mask_type='crop', class_num=class_num, img_root=img_root,
