@@ -1,15 +1,15 @@
 # train and val data as 1) directory: path/images/, 2) file: path/images.txt, or 3) list: [path1/images/, path2/images/]
 # 114
-origin_train: /data/mml/data_debugging_data/ProAFL_data/datasets/visdrone-yolo/origin/train/images # 6471张图像
-train: /data/mml/data_debugging_data/ProAFL_data/datasets/visdrone-yolo/train/images # 5177张图像
-val: /data/mml/data_debugging_data/ProAFL_data/datasets/visdrone-yolo/val/images # 1294张图像
-test: /data/mml/data_debugging_data/ProAFL_data/datasets/visdrone-yolo/test/images # 1610张图像
+# origin_train: /data/mml/data_debugging_data/ProAFL_data/datasets/visdrone-yolo/origin/train/images # 6471张图像
+# train: /data/mml/data_debugging_data/ProAFL_data/datasets/visdrone-yolo/train/images # 5177张图像
+# val: /data/mml/data_debugging_data/ProAFL_data/datasets/visdrone-yolo/val/images # 1294张图像
+# test: /data/mml/data_debugging_data/ProAFL_data/datasets/visdrone-yolo/test/images # 1610张图像
 
 # 210
-# origin_train: /data2/mml/ProAFL_data/datasets/visdrone-yolo/origin/train/images # 6471张图像
-# train: /data2/mml/ProAFL_data/datasets/visdrone-yolo/train/images # 5177张图像
-# val: /data2/mml/ProAFL_data/datasets/visdrone-yolo/val/images # 1294张图像
-# test: /data2/mml/ProAFL_data/datasets/visdrone-yolo/test/images # 1610张图像
+origin_train: /data2/mml/ProAFL_data/datasets/visdrone-yolo/origin/train/images # 6471张图像
+train: /data2/mml/ProAFL_data/datasets/visdrone-yolo/train/images # 5177张图像
+val: /data2/mml/ProAFL_data/datasets/visdrone-yolo/val/images # 1294张图像
+test: /data2/mml/ProAFL_data/datasets/visdrone-yolo/test/images # 1610张图像
 
 # number of classes
 nc: 10
