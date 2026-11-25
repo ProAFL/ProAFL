@@ -162,7 +162,7 @@ if __name__ == "__main__":
     config = read_yaml("config.yaml")
     exp_data_root_dir = config["exp_data_dir"]
     fault_ratio = 0.1
-    gpu_id = 1
+    gpu_id = 0
     num_epochs = 50
     init_lr = 5e-3
     _args = {}
@@ -171,13 +171,13 @@ if __name__ == "__main__":
     _args["batch_size"] = 32
     _args["ColorJitter"] = True
     _args["Normal"] = False # 应该是False
-    for dataset_name in ["kitti"]: # ["voc","kitti","visdrone"]:
+    for dataset_name in ["visdrone"]: # ["voc","kitti","visdrone"]:
         datasetname_start_time = time.time()
         train_imgs_dir = f"{exp_data_root_dir}/datasets/{dataset_name}-coco/train" # 这其实就是全部的训练集了
         val_imgs_dir = f"{exp_data_root_dir}/datasets/{dataset_name}-coco/val"
         val_annotation_path = f"{exp_data_root_dir}/datasets/{dataset_name}-coco/val/_annotations.coco.json"
         train_annotation_path = f"{exp_data_root_dir}/fault_inject/{fault_ratio}/{dataset_name}/coco_format/annotations_no_miss.json"
-        repeat_ids = list(range(4,11))
+        repeat_ids = list(range(2,11))
         for repeat_id in repeat_ids:
             repeat_start_time = time.time()
             seed = 42 + (repeat_id-1)
@@ -189,4 +189,4 @@ if __name__ == "__main__":
             train(distributed=False)
             print(f"datasetname:{dataset_name}|repeat:{repeat_id}|costTime:{get_cost_time(time.time()-repeat_start_time)}")
         avg_timestamp = (time.time()-datasetname_start_time)/len(repeat_ids)
-        print(f"datasetname:{dataset_name}|avgTime:{get_cost_time(avg_timestamp)}")
+        print(f"datasetname:{dataset_name}|重复{len(repeat_ids)}次平均耗时:{get_cost_time(avg_timestamp)}")
