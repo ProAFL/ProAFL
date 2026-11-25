@@ -1,5 +1,6 @@
 # exp_data_dir: /data/mml/data_debugging_data/ProAFL_data # 114
-exp_data_dir: /data2/mml/ProAFL_data # 210
+# exp_data_dir: /data2/mml/ProAFL_data # 210
+exp_data_dir: /cloud/ProAFL_data # 云
 dataset_name_list: ["voc","kitti","visdrone"]
 model_name_list: ["yolov7","frcnn","rtdetr"]
 baselines: ["datactive","entropy","loss","deepgini","margin","objectlab"]
