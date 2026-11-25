@@ -214,7 +214,7 @@ if __name__ == "__main__":
         elif dataset_name in ["voc"]:
             pbox_confi_thres = 0.25
             iou_thres = 0.65
-        repeat_ids = [1] # list(range(2,11))
+        repeat_ids = [10] # list(range(2,11))
         for repeat_id in repeat_ids:
             print(f"datasetname:{dataset_name}|repeat:{repeat_id}|开始收集")
             repeat_start_time = time.time()
