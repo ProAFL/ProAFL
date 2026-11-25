@@ -230,7 +230,7 @@ if __name__ == "__main__":
                                 conf_thres=pbox_confi_thres, iou_thres=iou_thres)
             print(f"dataset:{dataset_name},repeat:{repeat_id},cost_time:{get_cost_time(time.time()-repeat_start_time)}") 
         avg_cost_time = (time.time() - dataset_start_time)/len(repeat_ids)
-        print(f"dataset:{dataset_name},10次平均时间:{get_cost_time(avg_cost_time)}")
+        print(f"dataset:{dataset_name},{len(repeat_ids)}次平均时间:{get_cost_time(avg_cost_time)}")
     
     '''
     不需要重新收集这个gt_box信息
