@@ -236,7 +236,7 @@ if __name__ == "__main__":
     coco_anno_json_path = Path(f"{exp_data_root}/fault_inject/{fault_ratio}/{dataset_name}/coco_format/annotations_no_miss.json")
     yolo_output_dir = Path(f"{exp_data_root}/fault_inject/{fault_ratio}/{dataset_name}/yolo_format")
     coco2yolo(coco_anno_json_path,yolo_output_dir,"train")
-    # （1）yolo split
+    # （2）yolo split
     yolo_labels_dir = yolo_output_dir / "labels"
     split_for_yolo(dataset_name, yolo_labels_dir)
 
